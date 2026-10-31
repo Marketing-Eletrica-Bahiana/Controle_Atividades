@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Controle de Atividades | Elétrica Bahiana</title>
+    <script>
+      // Endereço sem "#" (ex.: /Controle_Atividades/demandas) volta para a rota certa do app.
+      var base = '/Controle_Atividades/'
+      var resto = location.pathname.indexOf(base) === 0 ? location.pathname.slice(base.length) : ''
+      location.replace(base + '#/' + resto.replace(/^\/+/, '') + location.search)
+    </script>
+  </head>
+  <body></body>
+</html>

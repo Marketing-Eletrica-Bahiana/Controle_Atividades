@@ -8,10 +8,9 @@ import { PAPEIS, telasDoPapel } from './lib/papeis.js'
 import Carregando from './telas/Carregando.jsx'
 import Login from './telas/Login.jsx'
 import SemAcesso from './telas/SemAcesso.jsx'
-import TelaProvisoria from './telas/TelaProvisoria.jsx'
 
-// Telas já construídas, carregadas sob demanda. As demais mostram a tela provisória até a sua fase.
-const TELAS_PRONTAS = {
+// Cada tela é carregada sob demanda, só quando a pessoa abre.
+const TELAS = {
   '/cronometro': lazy(() => import('./telas/cronometro/MeuCronometro.jsx')),
   '/demandas': lazy(() => import('./telas/demandas/Demandas.jsx')),
   '/semana': lazy(() => import('./telas/semana/Semana.jsx')),
@@ -31,8 +30,8 @@ function Rotas() {
     <Layout telas={telas}>
       <Routes>
         {telas.map((tela) => {
-          const Tela = TELAS_PRONTAS[tela.caminho]
-          return Tela ? (
+          const Tela = TELAS[tela.caminho]
+          return (
             <Route
               key={tela.caminho}
               path={`${tela.caminho}/*`}
@@ -42,8 +41,6 @@ function Rotas() {
                 </Suspense>
               }
             />
-          ) : (
-            <Route key={tela.caminho} path={tela.caminho} element={<TelaProvisoria tela={tela} />} />
           )
         })}
         {/* Qualquer outro endereço, inclusive a entrada, leva à tela inicial do papel (diretoria: Painel). */}

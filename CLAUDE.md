@@ -41,7 +41,7 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
    gráficos Chart.js (`src/componentes/Grafico.jsx`) só com as cores da paleta na ordem pedida
    (no fundo escuro do modo apresentação o branco entra no lugar do marinho); evolução mês a mês
    desde julho de 2026; modo apresentação em tela cheia com o gradiente premium.
-7. Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
+7. (Feita) Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
    importar de volta.
 
 Em 31/10/2026 a pessoa autorizou fazer as fases 3 a 7 em sequência, com commit e publicação
@@ -458,9 +458,23 @@ Colunas nesta ordem:
 ## Pendências
 
 - Arquivos da Klavika: colocar em `public/fontes/` quando chegarem (nomes acima).
-- Regras do Firestore: o texto publicado ainda não foi conferido aqui. A Fase 2 grava, como
+- Regras do Firestore: o texto publicado ainda não foi conferido aqui. `firestore.rules` tem as
+  regras que o app espera (papel por papel, Fase 7); comparar com as publicadas no console antes de
+  trocar. Resumo do que o app grava, como
   admin, em `areas`, `membros`, `solicitacoes` (apaga ao liberar ou recusar), `tipos`,
   `palavrasChave`, `config/listas` e `demandas`.
 - Coluna Responsável na `relatorio_designers_atualizado.xlsx` antes da importação real.
 - Nomes trocados no par de logos azuis: se a marca corrigir os arquivos, ajustar a tabela de logos
   e `src/lib/marca.js`.
+
+## Revisão (Fase 7)
+
+- Cores: só as 7 da paleta e transparências delas, inclusive nos gráficos (Chart.js sem o cinza
+  padrão) e no Excel (cabeçalho #001780, texto branco; sem zebra, que exigiria um tom fora da paleta).
+- Fontes: Lato (local) e Klavika (com Lato Black de alternativa), sem outras famílias nomeadas.
+- Logo só como imagem oficial (componente `Logo`), nunca em texto.
+- Datas em DD/MM/AAAA e tempos em HH:MM:SS em todas as telas, inclusive "Corrigir início".
+- Toda consulta de demandas filtra por área (`src/dados/demandas.js` e `src/dados/importacao.js`).
+- Endereços com `#/` recarregam sem 404; `public/404.html` leva endereços sem `#` para a rota certa.
+- `src/lib/excel.test.js` garante que os arquivos exportados (mês, semana e tabela de referência)
+  voltam iguais na importação.

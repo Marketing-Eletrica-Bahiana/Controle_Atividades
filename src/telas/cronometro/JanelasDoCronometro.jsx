@@ -88,7 +88,7 @@ export function JanelaCorrigirInicio({ aberta, inicioAtual, aoSalvar, aoFechar }
 }
 
 const horaNaBahia = (data) =>
-  new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', minute: '2-digit', hour12: false }).format(data)
+  new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(data)
 
 function FormCorrigirInicio({ inicioAtual, aoSalvar, aoFechar }) {
   const [hora, setHora] = useState(inicioAtual ? horaNaBahia(inicioAtual) : '')
@@ -97,13 +97,13 @@ function FormCorrigirInicio({ inicioAtual, aoSalvar, aoFechar }) {
 
   async function enviar(evento) {
     evento.preventDefault()
-    const partes = hora.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/)
+    const partes = hora.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/)
     if (!partes) {
-      setErro('Use o formato HH:MM, por exemplo 08:30.')
+      setErro('Use o formato HH:MM:SS, por exemplo 08:30:00.')
       return
     }
     const dia = hojeISO(inicioAtual ?? new Date())
-    const novo = new Date(`${dia}T${partes[1].padStart(2, '0')}:${partes[2]}:00-03:00`)
+    const novo = new Date(`${dia}T${partes[1].padStart(2, '0')}:${partes[2]}:${partes[3] ?? '00'}-03:00`)
     if (novo.getTime() > Date.now()) {
       setErro('O início não pode ser no futuro.')
       return
@@ -118,7 +118,7 @@ function FormCorrigirInicio({ inicioAtual, aoSalvar, aoFechar }) {
     <form className="formulario" onSubmit={enviar} noValidate>
       <label className="campo">
         <span className="campo__rotulo">Ligado às</span>
-        <input value={hora} onChange={(e) => setHora(e.target.value)} placeholder="HH:MM" inputMode="numeric" aria-invalid={Boolean(erro)} />
+        <input value={hora} onChange={(e) => setHora(e.target.value)} placeholder="HH:MM:SS" inputMode="numeric" aria-invalid={Boolean(erro)} />
         <ErroCampo texto={erro} />
       </label>
       <p className="texto-suave texto-pequeno">A mudança entra no histórico da demanda.</p>

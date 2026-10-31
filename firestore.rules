@@ -1,0 +1,80 @@
+rules_version = '2';
+
+// Regras que o app espera (Fase 7). Conferir com as publicadas no console do Firebase antes de
+// publicar estas: Firestore Database > Regras. Papéis: admin, equipe, gestor, diretoria.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Só e-mails @eletricabahiana.com.br, com login do Google.
+    function logado() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@eletricabahiana[.]com[.]br$');
+    }
+    function email() { return request.auth.token.email.lower(); }
+    function cadastro() { return get(/databases/$(database)/documents/membros/$(email())).data; }
+    function ativo() {
+      return logado()
+        && exists(/databases/$(database)/documents/membros/$(email()))
+        && cadastro().ativo == true;
+    }
+    function papel() { return cadastro().papel; }
+    function admin() { return ativo() && papel() == 'admin'; }
+    function equipe() { return ativo() && papel() == 'equipe'; }
+    // Admin, gestão e diretoria veem todas as áreas.
+    function veTodas() { return ativo() && papel() in ['admin', 'gestor', 'diretoria']; }
+    function minhaArea(area) { return ativo() && area in cadastro().areas; }
+
+    // Cadastro: cada pessoa lê o próprio (para saber se tem acesso); quem tem acesso lê os demais
+    // (nomes e cargos nas telas e exportações). Só o admin grava.
+    match /membros/{id} {
+      allow read: if logado() && (id == email() || ativo());
+      allow write: if admin();
+    }
+
+    // Pedido de acesso: a pessoa cria o próprio; o admin lê e apaga ao liberar ou recusar.
+    match /solicitacoes/{id} {
+      allow create: if logado() && id == email() && request.resource.data.email == email();
+      allow read, delete: if admin();
+    }
+
+    // Áreas nunca são apagadas, só desativadas.
+    match /areas/{id} {
+      allow read: if ativo();
+      allow create, update: if admin();
+    }
+
+    match /config/{id} {
+      allow read: if ativo();
+      allow write: if admin();
+    }
+
+    match /tipos/{id} {
+      allow read: if ativo();
+      allow write: if admin();
+    }
+
+    match /palavrasChave/{id} {
+      allow read: if ativo();
+      allow write: if admin();
+    }
+
+    // Demandas: toda consulta do app filtra por área. Equipe lê as próprias áreas e grava só as
+    // próprias demandas (inclusive juntar duas repetidas, que apaga uma delas). Admin grava tudo.
+    match /demandas/{id} {
+      allow read: if veTodas() || minhaArea(resource.data.area);
+      allow create: if admin()
+        || (equipe() && request.resource.data.responsavelEmail == email() && minhaArea(request.resource.data.area));
+      allow update: if admin()
+        || (equipe() && resource.data.responsavelEmail == email()
+            && request.resource.data.responsavelEmail == email()
+            && minhaArea(request.resource.data.area));
+      allow delete: if admin() || (equipe() && resource.data.responsavelEmail == email());
+    }
+
+    // Cronômetro: cada pessoa lê e grava só o próprio. Ninguém vê o de outra pessoa.
+    match /cronometros/{id} {
+      allow read, write: if ativo() && id == email() && papel() in ['admin', 'equipe'];
+    }
+  }
+}

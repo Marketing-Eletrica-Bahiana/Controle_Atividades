@@ -6,7 +6,7 @@ import { formatarAjustes, formatarData, formatarMes } from './datas.js'
 import { formatarTempo, horasParaSegundos } from './tempo.js'
 
 const MARINHO = 'FF001780'
-const MEDIO_CLARO = 'FFECF0FF' // #4069ff a 10% sobre branco
+
 
 export const COLUNAS_EXPORTACAO = [
   { titulo: 'Tipo de Demanda', largura: 34, valor: (d) => d.tipo ?? '' },
@@ -50,7 +50,6 @@ function estilizarCorpo(aba, primeiraLinha) {
     if (numero < primeiraLinha) return
     linha.eachCell({ includeEmpty: true }, (celula) => {
       celula.font = { name: 'Lato' }
-      if ((numero - primeiraLinha) % 2 === 1) celula.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: MEDIO_CLARO } }
     })
   })
 }

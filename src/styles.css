@@ -22,8 +22,8 @@
   --gradiente-vermelho: linear-gradient(135deg, #a92a2e 0%, #d4121a 100%);
   --gradiente-premium: linear-gradient(135deg, #000000 0%, #001780 100%);
 
-  --fonte: 'EB Lato', 'Lato', Arial, sans-serif;
-  --fonte-destaque: 'Klavika', 'EB Lato', 'Lato', Arial, sans-serif;
+  --fonte: 'EB Lato', 'Lato', sans-serif;
+  --fonte-destaque: 'Klavika', 'EB Lato', 'Lato', sans-serif;
 
   --raio-etiqueta: 4px;
   --raio: 8px;
@@ -2323,4 +2323,10 @@ button.abas__item.ativo {
   .apresentacao {
     padding: 16px;
   }
+}
+
+/* Texto de exemplo dos campos em preto transparente (o padrão do navegador é cinza) */
+::placeholder {
+  color: rgba(0, 0, 0, 0.45);
+  opacity: 1;
 }

@@ -6,7 +6,10 @@ import {
 import { formatarTempo } from '../lib/tempo.js'
 
 Chart.register(ArcElement, BarController, BarElement, CategoryScale, DoughnutController, Legend, LinearScale, LineController, LineElement, PointElement, Tooltip)
-Chart.defaults.font.family = "'EB Lato', 'Lato', Arial, sans-serif"
+Chart.defaults.font.family = "'EB Lato', 'Lato', sans-serif"
+// Textos em preto e linhas em marinho transparente: nada do cinza padrão do Chart.js.
+Chart.defaults.color = '#000000'
+Chart.defaults.borderColor = 'rgba(0, 23, 128, 0.1)'
 Chart.defaults.font.size = 15
 
 // Só as cores da paleta, nesta ordem; depois, as mesmas com transparência.
