@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAcesso } from '../acesso/ProvedorAcesso.jsx'
 import { useAreas } from '../dados/areas.js'
@@ -19,7 +19,8 @@ export function useAreasVisiveis() {
   const atual = valida ? escolha : (opcoes[0]?.id ?? '')
   const ids = atual === TODAS ? opcoes.map((a) => a.id) : atual ? [atual] : []
   const nome = atual === TODAS ? 'Todas as áreas' : (opcoes.find((a) => a.id === atual)?.nome ?? '')
-  const nomeDaArea = (id) => (todas ?? []).find((a) => a.id === id)?.nome ?? id
+  // Função estável enquanto as áreas não mudam (o Painel refaz os gráficos quando ela muda).
+  const nomeDaArea = useCallback((id) => (todas ?? []).find((a) => a.id === id)?.nome ?? id, [todas])
   return { opcoes, atual, setAtual: setEscolha, ids, nome, todasAsAreas, nomeDaArea, carregando: !todas }
 }
 

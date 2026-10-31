@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { collection, deleteDoc, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore'
 import { db, DOMINIO_EMPRESA } from '../firebase.js'
 import { useConsulta } from '../hooks/useConsulta.js'
@@ -6,7 +7,8 @@ const porNome = (a, b) => String(a.nome).localeCompare(b.nome, 'pt-BR')
 
 export function useMembros() {
   const consulta = useConsulta('membros', () => collection(db, 'membros'))
-  return { ...consulta, dados: consulta.dados ? [...consulta.dados].sort(porNome) : null }
+  const dados = useMemo(() => (consulta.dados ? [...consulta.dados].sort(porNome) : null), [consulta.dados])
+  return { ...consulta, dados }
 }
 
 export function useSolicitacoes() {

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta } from '../hooks/useConsulta.js'
@@ -10,16 +11,19 @@ export const idDaPalavra = (area, palavra) => `${area}--${paraId(palavra)}`
 const ordenar = (lista, campo) => (lista ? [...lista].sort((a, b) => String(a[campo]).localeCompare(b[campo], 'pt-BR')) : null)
 
 // Filtra por área sem orderBy, para não precisar de índice composto; a ordem é feita aqui.
+// A lista ordenada só muda quando os dados mudam (lista nova a cada desenho faz telas redesenharem sem parar).
 export function useTipos(area) {
   const consulta = useConsulta(area && `tipos/${area}`, () => query(collection(db, 'tipos'), where('area', '==', area)))
-  return { ...consulta, dados: ordenar(consulta.dados, 'nome') }
+  const dados = useMemo(() => ordenar(consulta.dados, 'nome'), [consulta.dados])
+  return { ...consulta, dados }
 }
 
 export function usePalavras(area) {
   const consulta = useConsulta(area && `palavrasChave/${area}`, () =>
     query(collection(db, 'palavrasChave'), where('area', '==', area)),
   )
-  return { ...consulta, dados: ordenar(consulta.dados, 'palavra') }
+  const dados = useMemo(() => ordenar(consulta.dados, 'palavra'), [consulta.dados])
+  return { ...consulta, dados }
 }
 
 const palavrasDoTipo = (area, nomeTipo) =>

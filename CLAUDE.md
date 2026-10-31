@@ -478,3 +478,15 @@ Colunas nesta ordem:
 - Endereços com `#/` recarregam sem 404; `public/404.html` leva endereços sem `#` para a rota certa.
 - `src/lib/excel.test.js` garante que os arquivos exportados (mês, semana e tabela de referência)
   voltam iguais na importação.
+
+## Cuidado com telas que redesenham sem parar
+
+Em 31/10/2026 a aba Planilhas travava o navegador: `useMembros` devolvia uma lista nova a cada
+desenho, e um `useEffect` que dependia dela gravava estado, o que pedia outro desenho, sem fim.
+Regras desde então:
+
+- Hooks de dados (`useAreas`, `useMembros`, `useTipos`, `usePalavras`) devolvem listas
+  memorizadas com `useMemo`, que só mudam quando o Firestore manda dados novos.
+- Não gravar estado em `useEffect` a partir de valores calculados; calcular com `useMemo` e guardar
+  em estado só o que a pessoa escolheu na tela.
+- Para conferir, abrir as telas e procurar no console "Maximum update depth exceeded".

@@ -63,7 +63,7 @@ export default function Tipos() {
         </div>
       </div>
 
-      {!areas?.length && <p className="aviso">Cadastre as áreas antes dos tipos.</p>}
+      {areas && !areas.length && <p className="aviso">Cadastre as áreas antes dos tipos.</p>}
       {tipos.carregando && <CarregandoBloco />}
       {tipos.erro && <p className="aviso aviso--erro">{mensagemDeErro(tipos.erro)}</p>}
       {tipos.dados && !tipos.dados.length && (

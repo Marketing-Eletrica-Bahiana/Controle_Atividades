@@ -3,6 +3,7 @@ import { CircleCheck, Download, FileSpreadsheet, LoaderCircle, TriangleAlert, Up
 import { useAcesso } from '../../acesso/ProvedorAcesso.jsx'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import { useConfirmar } from '../../componentes/Confirmar.jsx'
+import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
 import EstadoVazio from '../../componentes/EstadoVazio.jsx'
 import SeletorArea, { useAreaEscolhida } from '../../componentes/SeletorArea.jsx'
 import { useAreas } from '../../dados/areas.js'
@@ -50,8 +51,8 @@ export default function Planilhas() {
   const [arquivo, setArquivo] = useState(null)
   const [papeis, setPapeis] = useState({})
   const [incluir, setIncluir] = useState({ tipos: true, palavras: true, demandas: true, listas: true })
-  const [pessoaPorValor, setPessoaPorValor] = useState({})
-  const [pessoaPadrao, setPessoaPadrao] = useState('')
+  const [escolhasPorValor, setEscolhasPorValor] = useState({})
+  const [padraoEscolhido, setPadraoEscolhido] = useState(null)
   const [substituir, setSubstituir] = useState(false)
   const [existentes, setExistentes] = useState({})
   const [progresso, setProgresso] = useState({ feitas: 0, total: 0 })
@@ -76,13 +77,15 @@ export default function Planilhas() {
     return [...contagem.entries()].map(([chave, dados]) => ({ chave, ...dados }))
   }, [leitura])
 
-  // Sugere a ligação da coluna Responsável com as pessoas da área sempre que a área ou o arquivo mudam.
-  useEffect(() => {
-    const sugestoes = {}
-    for (const { chave, valor } of valoresResponsavel) sugestoes[chave] = sugerirPessoa(valor, daArea)?.id ?? ''
-    setPessoaPorValor(sugestoes)
-    setPessoaPadrao(daArea.length === 1 ? daArea[0].id : '')
+  // Ligação sugerida da coluna Responsável com as pessoas da área. É calculada (não guardada em estado),
+  // e o que a pessoa escolhe na tela vale por cima da sugestão.
+  const sugestoes = useMemo(() => {
+    const porValor = {}
+    for (const { chave, valor } of valoresResponsavel) porValor[chave] = sugerirPessoa(valor, daArea)?.id ?? ''
+    return porValor
   }, [valoresResponsavel, daArea])
+  const pessoaPorValor = useMemo(() => ({ ...sugestoes, ...escolhasPorValor }), [sugestoes, escolhasPorValor])
+  const pessoaPadrao = padraoEscolhido ?? (daArea.length === 1 ? daArea[0].id : '')
 
   const grupos = useMemo(() => {
     if (!leitura || !incluir.demandas) return []
@@ -115,6 +118,8 @@ export default function Planilhas() {
       if (!primeira.abas.length) throw new Error('A planilha está vazia.')
       setArquivo({ nome: escolhido.name, ler: (p) => lerPlanilha(pasta, { papeis: p }) })
       setPapeis({})
+      setEscolhasPorValor({})
+      setPadraoEscolhido(null)
       setIncluir({ tipos: true, palavras: true, demandas: true, listas: true })
       setSubstituir(false)
       setEtapa('revisar')
@@ -132,7 +137,8 @@ export default function Planilhas() {
     setEtapa('escolher')
   }
 
-  if (!areas?.length) {
+  if (!areas) return <CarregandoBloco />
+  if (!areas.length) {
     return <EstadoVazio titulo="Cadastre as áreas primeiro" texto="A importação precisa saber de que área são as tabelas e demandas." />
   }
 
@@ -153,7 +159,7 @@ export default function Planilhas() {
           </p>
         </div>
         <div className="filtros">
-          <SeletorArea areas={areas} valor={area} aoMudar={(v) => (setArea(v), setExistentes({}))} />
+          <SeletorArea areas={areas} valor={area} aoMudar={(v) => (setArea(v), setExistentes({}), setEscolhasPorValor({}), setPadraoEscolhido(null))} />
           <button type="button" className="botao botao--secundario" onClick={baixarReferencia} disabled={!tiposAtuais}>
             <Download aria-hidden="true" />
             Baixar tabela de referência
@@ -439,7 +445,7 @@ export default function Planilhas() {
                         {linhas}
                       </td>
                       <td data-rotulo="Pessoa">
-                        <select value={pessoaPorValor[chave] ?? ''} onChange={(e) => setPessoaPorValor((a) => ({ ...a, [chave]: e.target.value }))} aria-label={`Pessoa para ${valor}`}>
+                        <select value={pessoaPorValor[chave] ?? ''} onChange={(e) => setEscolhasPorValor((a) => ({ ...a, [chave]: e.target.value }))} aria-label={`Pessoa para ${valor}`}>
                           {opcoesPessoa}
                         </select>
                       </td>
@@ -454,7 +460,7 @@ export default function Planilhas() {
                         {leitura.demandas.filter((l) => !l.responsavel).length}
                       </td>
                       <td data-rotulo="Pessoa">
-                        <select value={pessoaPadrao} onChange={(e) => setPessoaPadrao(e.target.value)} aria-label="Pessoa para linhas sem Responsável">
+                        <select value={pessoaPadrao} onChange={(e) => setPadraoEscolhido(e.target.value)} aria-label="Pessoa para linhas sem Responsável">
                           {opcoesPessoa}
                         </select>
                       </td>
@@ -466,7 +472,7 @@ export default function Planilhas() {
           ) : (
             <label className="campo campo--compacto">
               <span className="campo__rotulo">Responsável pelas demandas</span>
-              <select value={pessoaPadrao} onChange={(e) => setPessoaPadrao(e.target.value)}>
+              <select value={pessoaPadrao} onChange={(e) => setPadraoEscolhido(e.target.value)}>
                 {opcoesPessoa}
               </select>
             </label>

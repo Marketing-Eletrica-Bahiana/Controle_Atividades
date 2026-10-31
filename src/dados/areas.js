@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { collection, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta } from '../hooks/useConsulta.js'
@@ -13,7 +14,9 @@ const porOrdem = (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || String(a.nome).loc
 
 export function useAreas() {
   const consulta = useConsulta('areas', () => collection(db, 'areas'))
-  return { ...consulta, dados: consulta.dados ? [...consulta.dados].sort(porOrdem) : null }
+  // A lista ordenada só muda quando os dados mudam (lista nova a cada desenho travava a tela Planilhas).
+  const dados = useMemo(() => (consulta.dados ? [...consulta.dados].sort(porOrdem) : null), [consulta.dados])
+  return { ...consulta, dados }
 }
 
 export function criarAreasPadrao() {

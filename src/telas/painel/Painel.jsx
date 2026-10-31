@@ -47,7 +47,7 @@ export default function Painel() {
   const ultimo = periodo.fim > hoje ? periodo.fim : hoje
   const meses = mesesEntre(primeiro, ultimo)
   const consulta = useDemandasDosMeses(areas.ids, meses)
-  const demandas = consulta.dados ?? []
+  const demandas = useMemo(() => consulta.dados ?? [], [consulta.dados])
 
   const pessoas = useMemo(() => {
     const mapa = new Map(demandas.map((d) => [d.responsavelEmail, d.responsavelNome]))
