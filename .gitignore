@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.local
+.env
+.env.*
+.claude/
+
+# Chave de conta de serviço nunca vai para o repositório
+*serviceAccount*.json
+*service-account*.json
+*-firebase-adminsdk-*.json
