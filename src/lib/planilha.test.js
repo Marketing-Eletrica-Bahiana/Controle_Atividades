@@ -119,6 +119,46 @@ describe('planilha mensal antiga', () => {
   })
 })
 
+describe('datas com mais de um dia e linhas incompletas', () => {
+  const pasta = montarPasta({
+    'Julho 2026': {
+      linhas: [
+        ['Cronômetro de Atividades - Julho 2026'],
+        ['Tipo de Demanda', 'Data de Solicitação', 'Data de Entrega', 'Tempo Gasto', 'Nome da Demanda', 'Ajuste'],
+        ['Card', '01/07/2026', '08/07 e 09/07/2026', '00:30:00', 'Card de boas-vindas', '05/07'],
+        ['Card', '', '', '', 'Card sem tempo nem data', ''],
+        ['', '', '10/07/2026', '00:10:00', '', ''],
+        ['', '', '', '', '', ''],
+      ],
+    },
+    Gráficos: { linhas: [['Gráficos'], ['Demanda', 'Quantidade']] },
+  })
+
+  it('a última data é a entrega e as outras vão para o Ajuste, junto com a coluna Ajuste', () => {
+    const [primeira] = lerPlanilha(pasta).demandas
+    expect(primeira.dataEntrega).toBe('2026-07-09')
+    expect(primeira.datasAjuste).toEqual(['2026-07-05', '2026-07-08'])
+  })
+
+  it('só ignora a linha sem nome e sem tempo; tempo sem nome vira erro', () => {
+    const { demandas } = lerPlanilha(pasta)
+    expect(demandas).toHaveLength(3)
+    expect(demandas[1].avisos).toContain('Sem tempo gasto (fica 00:00:00)')
+    expect(demandas[2].erro).toBe('Sem nome da demanda')
+  })
+
+  it('mostra o que identificou e aceita correção do papel de cada aba', () => {
+    const identificada = lerPlanilha(pasta)
+    expect(identificada.abas.map((a) => [a.aba, a.papel, a.linhas])).toEqual([
+      ['Julho 2026', 'demandas', 3],
+      ['Gráficos', 'ignorar', 0],
+    ])
+    const corrigida = lerPlanilha(pasta, { papeis: { 'Julho 2026': 'ignorar', Gráficos: 'tipos' } })
+    expect(corrigida.demandas).toHaveLength(0)
+    expect(corrigida.abas[1].problema).toMatch(/Não achei/)
+  })
+})
+
 describe('tabelas de apoio', () => {
   const pasta = montarPasta({
     'Tipo de Atividade': {

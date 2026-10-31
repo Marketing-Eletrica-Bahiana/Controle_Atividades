@@ -1,0 +1,117 @@
+// Arquivos Excel gerados pelo sistema (ExcelJS, carregado só quando alguém baixa um arquivo).
+// Cabeçalho com fundo #001780, texto branco e fonte Lato. Datas em DD/MM/AAAA e tempos em HH:MM:SS,
+// gravados como texto para o arquivo voltar igual na importação.
+
+import { formatarAjustes, formatarData } from './datas.js'
+import { formatarTempo, horasParaSegundos } from './tempo.js'
+
+const MARINHO = 'FF001780'
+const MEDIO_CLARO = 'FFECF0FF' // #4069ff a 10% sobre branco
+
+export const COLUNAS_EXPORTACAO = [
+  { titulo: 'Tipo de Demanda', largura: 34, valor: (d) => d.tipo ?? '' },
+  { titulo: 'Data de Solicitação', largura: 16, valor: (d) => formatarData(d.dataSolicitacao) },
+  { titulo: 'Ajuste', largura: 16, valor: (d) => formatarAjustes(d.datasAjuste ?? []) },
+  { titulo: 'Data de Entrega', largura: 16, valor: (d) => formatarData(d.dataEntrega) },
+  { titulo: 'Tempo Gasto', largura: 12, valor: (d) => formatarTempo(d.tempoGastoSeg ?? 0) },
+  { titulo: 'Uso de IA', largura: 10, valor: (d) => d.usoIA ?? '' },
+  { titulo: 'Uso de Template', largura: 14, valor: (d) => d.usoTemplate ?? '' },
+  { titulo: 'Solicitante', largura: 16, valor: (d) => d.solicitante ?? '' },
+  { titulo: 'Público', largura: 18, valor: (d) => d.publico ?? '' },
+  { titulo: 'Nome da Demanda', largura: 48, valor: (d) => d.nome ?? '' },
+  { titulo: 'Nº', largura: 6, valor: (d) => d.numero ?? '' },
+  { titulo: 'Tempo mínimo estimado sem IA (h)', largura: 18, valor: (d) => formatarTempo(d.tempoMinSeg) },
+  { titulo: 'Tempo máximo estimado sem IA (h)', largura: 18, valor: (d) => formatarTempo(d.tempoMaxSeg) },
+  { titulo: 'Tempo economizado mín. com IA (h)', largura: 18, valor: (d) => formatarTempo(d.economizadoMinSeg) },
+  { titulo: 'Tempo economizado máx. com IA (h)', largura: 18, valor: (d) => formatarTempo(d.economizadoMaxSeg) },
+  { titulo: 'Prazo cumprido (dias)', largura: 12, valor: (d) => d.prazoDias ?? '' },
+  // Fora das 16 colunas do padrão, no fim: permite importar de volta um arquivo com várias pessoas.
+  { titulo: 'Responsável', largura: 20, valor: (d) => d.responsavelNome ?? '' },
+]
+
+async function novaPasta() {
+  const { default: ExcelJS } = await import('exceljs')
+  const pasta = new ExcelJS.Workbook()
+  pasta.creator = 'Controle de Atividades | Elétrica Bahiana'
+  return pasta
+}
+
+function estilizarCabecalho(linha) {
+  linha.height = 30
+  linha.eachCell((celula) => {
+    celula.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: MARINHO } }
+    celula.font = { name: 'Lato', bold: true, color: { argb: 'FFFFFFFF' } }
+    celula.alignment = { vertical: 'middle', wrapText: true }
+  })
+}
+
+function estilizarCorpo(aba, primeiraLinha) {
+  aba.eachRow((linha, numero) => {
+    if (numero < primeiraLinha) return
+    linha.eachCell({ includeEmpty: true }, (celula) => {
+      celula.font = { name: 'Lato' }
+      if ((numero - primeiraLinha) % 2 === 1) celula.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: MEDIO_CLARO } }
+    })
+  })
+}
+
+// Aba de demandas: título na linha 1 e cabeçalho na linha 2 (o mesmo formato que a importação lê).
+export function abaDeDemandas(pasta, nome, titulo, demandas, cabecalhoExtra = []) {
+  const aba = pasta.addWorksheet(nome.slice(0, 31))
+  aba.columns = COLUNAS_EXPORTACAO.map((c) => ({ width: c.largura }))
+  const linhaTitulo = aba.addRow([titulo])
+  linhaTitulo.font = { name: 'Lato', bold: true, size: 14, color: { argb: MARINHO } }
+  for (const extra of cabecalhoExtra) aba.addRow([extra]).font = { name: 'Lato', color: { argb: MARINHO } }
+  const cabecalho = aba.addRow(COLUNAS_EXPORTACAO.map((c) => c.titulo))
+  estilizarCabecalho(cabecalho)
+  const primeira = cabecalho.number + 1
+  for (const demanda of demandas) aba.addRow(COLUNAS_EXPORTACAO.map((c) => c.valor(demanda)))
+  estilizarCorpo(aba, primeira)
+  aba.views = [{ state: 'frozen', ySplit: cabecalho.number }]
+  return aba
+}
+
+export function abaSimples(pasta, nome, titulos, linhas, larguras = []) {
+  const aba = pasta.addWorksheet(nome.slice(0, 31))
+  aba.columns = titulos.map((_, i) => ({ width: larguras[i] ?? 20 }))
+  estilizarCabecalho(aba.addRow(titulos))
+  for (const linha of linhas) aba.addRow(linha)
+  estilizarCorpo(aba, 2)
+  aba.views = [{ state: 'frozen', ySplit: 1 }]
+  return aba
+}
+
+export async function baixarPasta(pasta, nomeDoArquivo) {
+  const dados = await pasta.xlsx.writeBuffer()
+  const blob = new Blob([dados], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = nomeDoArquivo
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+}
+
+// Tabela de referência da área: abas "Tipo de Atividade" e "Palavras-chave", no formato que volta na importação.
+export async function baixarTabelaDeReferencia(nomeDaArea, tipos, palavras) {
+  const pasta = await novaPasta()
+  abaSimples(
+    pasta,
+    'Tipo de Atividade',
+    ['Tipo de Atividade', 'Tempo mínimo (h)', 'Tempo máximo (h)', 'Prazo estimado (dias)', 'Público'],
+    tipos.map((t) => [t.nome, formatarTempo(horasParaSegundos(t.minH)), formatarTempo(horasParaSegundos(t.maxH)), t.prazoEstimadoDias ?? '', t.publico ?? '']),
+    [48, 18, 18, 20, 24],
+  )
+  abaSimples(pasta, 'Palavras-chave', ['Palavra-chave', 'Tipo de Atividade'], palavras.map((p) => [p.palavra, p.tipo]), [32, 48])
+  await baixarPasta(pasta, `Tabela_de_Referencia_${nomeParaArquivo(nomeDaArea)}.xlsx`)
+}
+
+export const nomeParaArquivo = (texto) =>
+  String(texto ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+
+export { novaPasta }

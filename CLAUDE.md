@@ -307,8 +307,31 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
 
 ## Importação de planilha
 
-Tela `#/cadastros/importar` (`src/lib/planilha.js` lê, `src/lib/importacao.js` monta,
-`src/dados/importacao.js` grava). As colunas são achadas pelo nome do cabeçalho:
+Tela Administração, aba Planilhas (`#/administracao/planilhas`). `src/lib/planilha.js` lê,
+`src/lib/importacao.js` monta e faz as prévias, `src/dados/importacao.js` grava. As colunas são
+achadas pelo nome do cabeçalho; coluna que falta fica vazia:
+
+- O papel de cada aba (Demandas do mês, Tipos de atividade, Palavras-chave, Listas, Ignorar) é
+  identificado sozinho e pode ser corrigido na tela antes de seguir.
+- Caixas de marcar: Tipos de atividade, Palavras-chave, Demandas e "Público e Solicitante novos".
+  Dá para atualizar só as palavras-chave sem mexer em mais nada.
+- Tipos e palavras-chave da planilha **substituem** a lista da área; a prévia mostra o que entra,
+  sai e muda.
+- Data de Entrega como "08/07 e 09/07/2026": a última é a entrega, as outras vão para o Ajuste.
+- Linha sem nome e sem tempo é ignorada; tempo sem nome vira erro listado.
+- Responsável só entre as pessoas ativas da área.
+- "Substituir histórico": apaga antes as demandas importadas da pessoa nos meses da planilha.
+  Demandas do cronômetro nunca saem; as importadas são numeradas depois delas. Sem a opção, mês
+  já importado fica de fora (aviso em vermelho). Confirmação antes de gravar.
+- "Baixar tabela de referência" gera o .xlsx com as abas Tipo de Atividade e Palavras-chave da área.
+- Arquivos gerados usam ExcelJS (`src/lib/excel.js`, cabeçalho #001780 com texto branco em Lato);
+  a leitura usa SheetJS. A exportação acrescenta a coluna Responsável no fim (depois das 16 do
+  padrão) para o arquivo com várias pessoas voltar na importação. `src/lib/excel.test.js` garante
+  que o arquivo exportado é lido de volta igual.
+- Aba Testar classificação: testa um nome e calcula o acerto em todas as demandas da área, com
+  atalho para criar a palavra-chave que faltou.
+
+Detalhes que valem desde a primeira versão:
 
 - Formatos aceitos: abas de mês da planilha antiga ("Julho 2026", com Nome da Demanda, Nº e
   Ajuste), abas "Relatório Designers - Mês" (nome da tarefa em Tipo de Demanda e o tipo em Tipo de
@@ -322,8 +345,7 @@ Tela `#/cadastros/importar` (`src/lib/planilha.js` lê, `src/lib/importacao.js` 
 - Nº renumerado de 1 em diante por pessoa e mês (segue o Nº da planilha quando todas as linhas
   têm Nº). Economia e prazo cumprido são recalculados; tempo e público em branco vêm da tabela de
   tipos.
-- Se a pessoa já tem demandas no mês: pular o mês, ou substituir (só quando todas as existentes
-  vieram de importação). Nunca duplica.
+- Nunca duplica: sem "Substituir histórico", mês já importado fica de fora.
 
 ## Listas padrão
 

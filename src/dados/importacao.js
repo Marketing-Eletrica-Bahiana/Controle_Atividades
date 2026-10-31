@@ -18,16 +18,21 @@ export async function demandasExistentes(area, email, mes) {
       where('mes', '==', mes),
     ),
   )
-  return snap.docs.map((d) => ({ id: d.id, importada: d.data().importada === true }))
+  return snap.docs.map((d) => ({ id: d.id, importada: d.data().importada === true, numero: d.data().numero }))
 }
 
 export const agoraFirestore = () => Timestamp.now()
 export const marcaDoServidor = () => serverTimestamp()
 
-// Grava tudo em lotes. Ordem: apaga as demandas substituídas, atualiza tabelas e listas, cria as demandas.
-export async function gravarImportacao({ area, apagar = [], tipos = [], palavras = [], listas, listasAtuais, demandas = [], aoAvancar }) {
+// Grava tudo em lotes. Ordem: apaga as demandas substituídas e os tipos e palavras que saíram,
+// grava tabelas e listas, cria as demandas.
+export async function gravarImportacao({
+  area, apagar = [], apagarTipos = [], apagarPalavras = [], tipos = [], palavras = [], listas, listasAtuais, demandas = [], aoAvancar,
+}) {
   const operacoes = [
     ...apagar.map((id) => (lote) => lote.delete(doc(db, 'demandas', id))),
+    ...apagarTipos.map((id) => (lote) => lote.delete(doc(db, 'tipos', id))),
+    ...apagarPalavras.map((id) => (lote) => lote.delete(doc(db, 'palavrasChave', id))),
     ...tipos.map((t) => (lote) =>
       lote.set(doc(db, 'tipos', idDoTipo(area, t.nome)), {
         area,

@@ -15,7 +15,7 @@ export const TELAS = [
   { caminho: '/demandas', rotulo: 'Demandas', Icone: ClipboardList, papeis: TODOS, fase: 4 },
   { caminho: '/semana', rotulo: 'Semana', Icone: CalendarDays, papeis: TODOS, fase: 5 },
   { caminho: '/painel', rotulo: 'Painel', Icone: ChartColumn, papeis: TODOS, fase: 5 },
-  { caminho: '/cadastros', rotulo: 'Cadastros', Icone: Settings, papeis: ['admin'], fase: 2 },
+  { caminho: '/administracao', rotulo: 'Administração', Icone: Settings, papeis: ['admin'], fase: 2 },
 ]
 
 export const papelValido = (papel) => Object.hasOwn(PAPEIS, papel)

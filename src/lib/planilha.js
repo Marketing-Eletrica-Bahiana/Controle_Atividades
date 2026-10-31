@@ -79,6 +79,16 @@ function dataDaCelula(cel, anoPadrao) {
   return lerData(texto(cel), anoPadrao) ?? undefined
 }
 
+// Célula de data que pode trazer mais de uma data, como "08/07 e 09/07/2026".
+// Devolve { datas: [...] } em ordem, ou { datas: null } quando é ilegível.
+function datasDaCelula(cel) {
+  const unica = dataDaCelula(cel)
+  if (unica !== undefined) return { datas: unica ? [unica] : [] }
+  const ano = Number(texto(cel).match(/\b(20\d{2})\b/)?.[1]) || undefined
+  const varias = lerAjustes(texto(cel), ano)
+  return { datas: varias?.length ? [...varias].sort() : null }
+}
+
 // Tempos em segundos. Célula com formato de hora vale como fração de dia; número sem formato de hora vale
 // como horas decimais quando "decimaisSaoHoras" (tabelas de tempo estimado). undefined quando é ilegível.
 function tempoDaCelula(cel, { decimaisSaoHoras }) {
@@ -130,24 +140,25 @@ function lerAbaDeDemandas(ws, nomeAba, { linha: linhaCabecalho, colunas, ultima 
     const tempoGastoSeg = tempoDaCelula(pegar(linha, 'tempoGasto'), { decimaisSaoHoras: false })
     const celEntrega = pegar(linha, 'dataEntrega')
     const celSolicitacao = pegar(linha, 'dataSolicitacao')
-    // Linha sem nome/tipo, ou sem tempo e sem datas, é linha vazia ou só de fórmulas.
-    if ((!tipo && !nomeInformado) || (tempoGastoSeg == null && vazia(celEntrega) && vazia(celSolicitacao))) continue
+    // Linha sem nome e sem tempo é linha vazia ou só de fórmulas: fica de fora.
+    if (!tipo && !nomeInformado && tempoGastoSeg == null) continue
 
     const avisos = []
-    let dataEntrega = dataDaCelula(celEntrega)
-    let dataSolicitacao = dataDaCelula(celSolicitacao)
-    if (dataEntrega === undefined) {
-      avisos.push(`Data de Entrega ilegível: "${texto(celEntrega)}"`)
-      dataEntrega = null
-    }
-    if (dataSolicitacao === undefined) {
-      avisos.push(`Data de Solicitação ilegível: "${texto(celSolicitacao)}"`)
-      dataSolicitacao = null
-    }
+    const ajustesDasDatas = []
+    // Entrega pode vir como "08/07 e 09/07/2026": a última é a entrega, as outras vão para o Ajuste.
+    const entregas = datasDaCelula(celEntrega)
+    let dataEntrega = entregas.datas?.at(-1) ?? null
+    if (!entregas.datas) avisos.push(`Data de Entrega ilegível: "${texto(celEntrega)}"`)
+    else ajustesDasDatas.push(...entregas.datas.slice(0, -1))
+    const solicitacoes = datasDaCelula(celSolicitacao)
+    const dataSolicitacao = solicitacoes.datas?.[0] ?? null
+    if (!solicitacoes.datas) avisos.push(`Data de Solicitação ilegível: "${texto(celSolicitacao)}"`)
+    else ajustesDasDatas.push(...solicitacoes.datas.slice(1))
     if (!dataEntrega && !dataSolicitacao) avisos.push('Sem data de solicitação e de entrega')
 
     let erro = null
-    if (tempoGastoSeg === undefined) erro = `Tempo gasto ilegível: "${texto(pegar(linha, 'tempoGasto'))}"`
+    if (!tipo && !nomeInformado) erro = 'Sem nome da demanda'
+    else if (tempoGastoSeg === undefined) erro = `Tempo gasto ilegível: "${texto(pegar(linha, 'tempoGasto'))}"`
     else if (tempoGastoSeg == null) avisos.push('Sem tempo gasto (fica 00:00:00)')
 
     const tempoMinSeg = tempoDaCelula(pegar(linha, 'tempoMin'), { decimaisSaoHoras: true })
@@ -171,6 +182,7 @@ function lerAbaDeDemandas(ws, nomeAba, { linha: linhaCabecalho, colunas, ultima 
       dataEntrega,
       ajusteTexto: texto(pegar(linha, 'ajuste')),
       celAjuste: pegar(linha, 'ajuste'),
+      ajustesDasDatas,
       tempoGastoSeg: tempoGastoSeg ?? 0,
       tempoMinSeg: tempoMinSeg ?? null,
       tempoMaxSeg: tempoMaxSeg ?? null,
@@ -188,12 +200,12 @@ function lerAbaDeDemandas(ws, nomeAba, { linha: linhaCabecalho, colunas, ultima 
   const mesAba = mesDaAba(nomeAba, linhas.flatMap((l) => [l.dataEntrega, l.dataSolicitacao]))
   const anoAba = mesAba ? Number(mesAba.slice(0, 4)) : null
 
-  return linhas.map(({ celAjuste, ajusteTexto, ...l }) => {
+  return linhas.map(({ celAjuste, ajusteTexto, ajustesDasDatas, ...l }) => {
     const anoDaLinha = Number((l.dataEntrega ?? l.dataSolicitacao ?? '').slice(0, 4)) || anoAba
-    let ajustes = []
+    let ajustes = [...ajustesDasDatas]
     if (!vazia(celAjuste)) {
       const lidos = celAjuste.t === 'n' ? [dataDaCelula(celAjuste)] : lerAjustes(ajusteTexto, anoDaLinha)
-      if (lidos && lidos.every(Boolean)) ajustes = lidos
+      if (lidos && lidos.every(Boolean)) ajustes.push(...lidos)
       else l.avisos.push(`Ajuste ilegível: "${ajusteTexto}"`)
     }
     // Ajuste guarda só datas que não são a solicitação nem a entrega, sem repetir.
@@ -250,8 +262,46 @@ function lerListas(ws, { linha: linhaCabecalho, colunas, ultima }) {
   return listas
 }
 
-export function lerPlanilha(pasta) {
+export const PAPEIS_DE_ABA = {
+  demandas: 'Demandas do mês',
+  tipos: 'Tipos de atividade',
+  palavras: 'Palavras-chave',
+  listas: 'Listas',
+  ignorar: 'Ignorar',
+}
+
+// O que cada papel precisa achar no cabeçalho.
+const CABECALHOS = {
+  demandas: () => [COLUNAS_DEMANDA, ['tempoGasto']],
+  tipos: () => [COLUNAS_TIPO, ['nome', 'min', 'max']],
+  palavras: () => [COLUNAS_PALAVRA, ['palavra', 'tipo']],
+}
+
+const PROBLEMAS = {
+  demandas: 'Não achei a coluna Tempo gasto nas primeiras linhas.',
+  tipos: 'Não achei as colunas Tipo de Atividade, Tempo mínimo e Tempo máximo.',
+  palavras: 'Não achei as colunas Palavra-chave e Tipo de Atividade.',
+  listas: 'Não achei as colunas Público ou Setor solicitante.',
+}
+
+function cabecalhoDaLista(ws) {
+  const cab = acharCabecalho(ws, COLUNAS_LISTA, [])
+  return cab && (cab.colunas.publicos != null || cab.colunas.solicitantes != null) ? cab : null
+}
+
+// Papel que o sistema reconhece sozinho (gráficos, painéis e instruções ficam como "ignorar").
+function identificarAba(ws, nomeAba) {
+  if (acharCabecalho(ws, COLUNAS_DEMANDA, ['dataEntrega', 'tempoGasto'])) return 'demandas'
+  if (acharCabecalho(ws, COLUNAS_TIPO, ['nome', 'min', 'max'])) return 'tipos'
+  if (acharCabecalho(ws, COLUNAS_PALAVRA, ['palavra', 'tipo'])) return 'palavras'
+  if (normalizar(nomeAba).includes('lista') && cabecalhoDaLista(ws)) return 'listas'
+  return 'ignorar'
+}
+
+// "papeis" corrige o que foi identificado: { 'Nome da aba': 'demandas' | 'tipos' | 'palavras' | 'listas' | 'ignorar' }.
+export function lerPlanilha(pasta, { papeis = {} } = {}) {
   const resultado = {
+    abas: [],
     demandas: [],
     abasDeDemandas: [],
     tipos: [],
@@ -264,33 +314,40 @@ export function lerPlanilha(pasta) {
   for (const nomeAba of pasta.SheetNames) {
     const ws = pasta.Sheets[nomeAba]
     if (!ws || !ws['!ref']) continue
+    const identificado = identificarAba(ws, nomeAba)
+    const papel = papeis[nomeAba] ?? identificado
+    const aba = { aba: nomeAba, identificado, papel, linhas: 0, problema: '' }
+    resultado.abas.push(aba)
 
-    const cabDemandas = acharCabecalho(ws, COLUNAS_DEMANDA, ['dataEntrega', 'tempoGasto'])
-    if (cabDemandas) {
-      const linhas = lerAbaDeDemandas(ws, nomeAba, cabDemandas)
+    if (papel === 'ignorar') {
+      resultado.abasIgnoradas.push(nomeAba)
+      continue
+    }
+    const cab = papel === 'listas' ? cabecalhoDaLista(ws) : acharCabecalho(ws, ...CABECALHOS[papel]())
+    if (!cab) {
+      aba.problema = PROBLEMAS[papel]
+      continue
+    }
+    if (papel === 'demandas') {
+      const linhas = lerAbaDeDemandas(ws, nomeAba, cab)
       resultado.demandas.push(...linhas)
       resultado.abasDeDemandas.push({ aba: nomeAba, linhas: linhas.length })
-      if (cabDemandas.colunas.responsavel != null) resultado.temResponsavel = true
-      continue
-    }
-    const cabTipos = acharCabecalho(ws, COLUNAS_TIPO, ['nome', 'min', 'max'])
-    if (cabTipos) {
-      resultado.tipos.push(...lerTipos(ws, cabTipos))
-      continue
-    }
-    const cabPalavras = acharCabecalho(ws, COLUNAS_PALAVRA, ['palavra', 'tipo'])
-    if (cabPalavras) {
-      resultado.palavras.push(...lerPalavras(ws, cabPalavras))
-      continue
-    }
-    const cabListas = normalizar(nomeAba).includes('lista') && acharCabecalho(ws, COLUNAS_LISTA, [])
-    if (cabListas && (cabListas.colunas.publicos != null || cabListas.colunas.solicitantes != null)) {
-      const listas = lerListas(ws, cabListas)
+      if (cab.colunas.responsavel != null) resultado.temResponsavel = true
+      aba.linhas = linhas.length
+    } else if (papel === 'tipos') {
+      const tipos = lerTipos(ws, cab)
+      resultado.tipos.push(...tipos)
+      aba.linhas = tipos.length
+    } else if (papel === 'palavras') {
+      const palavras = lerPalavras(ws, cab)
+      resultado.palavras.push(...palavras)
+      aba.linhas = palavras.length
+    } else if (papel === 'listas') {
+      const listas = lerListas(ws, cab)
       resultado.listas.publicos.push(...listas.publicos.filter((v) => !resultado.listas.publicos.includes(v)))
       resultado.listas.solicitantes.push(...listas.solicitantes.filter((v) => !resultado.listas.solicitantes.includes(v)))
-      continue
+      aba.linhas = listas.publicos.length + listas.solicitantes.length
     }
-    resultado.abasIgnoradas.push(nomeAba)
   }
 
   return resultado

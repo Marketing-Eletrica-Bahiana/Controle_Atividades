@@ -73,3 +73,44 @@ describe('importação', () => {
     expect(demanda.publico).toBe('')
   })
 })
+
+describe('prévia das tabelas e dos meses', async () => {
+  const { diferencaPalavras, diferencaTipos, planejarMes } = await import('./importacao.js')
+
+  it('tipos: mostra o que entra, sai e muda', () => {
+    const atuais = [
+      { id: 'a', nome: 'Card', minH: 0.5, maxH: 1, publico: 'Interno', prazoEstimadoDias: 1 },
+      { id: 'b', nome: 'Vídeo', minH: 1, maxH: 2, publico: 'Externo', prazoEstimadoDias: 2 },
+      { id: 'c', nome: 'Antigo', minH: 1, maxH: 1, publico: '', prazoEstimadoDias: null },
+    ]
+    const planilha = [
+      { nome: 'Card', minSeg: 1800, maxSeg: 3600, publico: 'Interno', prazoEstimadoDias: 1 },
+      { nome: 'video', minSeg: 1800, maxSeg: 7200, publico: 'Externo', prazoEstimadoDias: 2 },
+      { nome: 'Novo', minSeg: 600, maxSeg: 600, publico: '', prazoEstimadoDias: null },
+    ]
+    const diferenca = diferencaTipos(atuais, planilha)
+    expect(diferenca.entram.map((t) => t.nome)).toEqual(['Novo'])
+    expect(diferenca.saem.map((t) => t.id)).toEqual(['c'])
+    expect(diferenca.mudam).toEqual([
+      { nome: 'video', mudancas: ['nome passa de "Vídeo" para "video"', 'tempo mínimo passa de 01:00:00 para 00:30:00'] },
+    ])
+    expect(diferenca.iguais).toBe(1)
+  })
+
+  it('palavras-chave: entra, sai e muda de tipo', () => {
+    const diferenca = diferencaPalavras(
+      [{ id: '1', palavra: 'reels', tipo: 'Redes' }, { id: '2', palavra: 'card', tipo: 'Card' }],
+      [{ palavra: 'Reels', tipo: 'Vídeo' }, { palavra: 'story', tipo: 'Redes' }],
+    )
+    expect(diferenca.entram.map((p) => p.palavra)).toEqual(['story'])
+    expect(diferenca.saem.map((p) => p.id)).toEqual(['2'])
+    expect(diferenca.mudam).toEqual([{ nome: 'Reels', mudancas: ['tipo passa de "Redes" para "Vídeo"'] }])
+  })
+
+  it('mês já importado é pulado, a menos que seja para substituir; cronômetro nunca sai', () => {
+    const existentes = [{ id: 'i1', importada: true, numero: 1 }, { id: 'c1', importada: false, numero: 4 }]
+    expect(planejarMes(10, existentes, false)).toMatchObject({ pular: true, entram: 0, saem: [] })
+    expect(planejarMes(10, existentes, true)).toMatchObject({ pular: false, entram: 10, saem: ['i1'], primeiroNumero: 5 })
+    expect(planejarMes(3, [], false)).toMatchObject({ pular: false, entram: 3, saem: [], primeiroNumero: 1 })
+  })
+})

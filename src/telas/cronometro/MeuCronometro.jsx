@@ -105,7 +105,7 @@ export default function MeuCronometro() {
     return (
       <EstadoVazio
         titulo="Você ainda não está em nenhuma área"
-        texto="Peça para a administração incluir você em uma área em Cadastros, Pessoas. Aí é só voltar aqui e começar!"
+        texto="Peça para a administração incluir você em uma área em Administração, Pessoas. Aí é só voltar aqui e começar!"
       />
     )
   }

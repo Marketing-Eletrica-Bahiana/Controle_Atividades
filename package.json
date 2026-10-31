@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "firebase": "^13.1.0",
     "lucide-react": "^1.66.0",
     "react": "^19.3.1",

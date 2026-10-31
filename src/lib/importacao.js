@@ -1,7 +1,7 @@
 // Montagem das demandas importadas, sem gravar nada (a gravação fica em dados/importacao.js).
 
 import { diasEntre } from './datas.js'
-import { horasParaSegundos, tempoEconomizado } from './tempo.js'
+import { formatarTempo, horasParaSegundos, tempoEconomizado } from './tempo.js'
 import { normalizar, primeiroNome } from './texto.js'
 
 // Liga o valor da coluna Responsável a uma pessoa: nome completo, primeiro nome ou e-mail.
@@ -81,4 +81,76 @@ export function montarDemanda(linha, { area, pessoa, tiposPorNome, arquivo, quem
     criadoEm: marcaDoServidor,
     atualizadoEm: marcaDoServidor,
   }
+}
+
+// ---------- Prévia das tabelas: a da planilha substitui a da área ----------
+
+const textoDoPrazo = (dias) => (dias == null ? 'sem prazo' : `${dias} ${dias === 1 ? 'dia' : 'dias'}`)
+
+// Tipos: o que entra, sai e muda (comparando pelo nome, sem diferenciar maiúsculas e acentos).
+export function diferencaTipos(atuais = [], daPlanilha = []) {
+  const porNome = new Map(atuais.map((t) => [normalizar(t.nome), t]))
+  const vistos = new Set()
+  const entram = []
+  const mudam = []
+  let iguais = 0
+  for (const novo of daPlanilha) {
+    const chave = normalizar(novo.nome)
+    if (vistos.has(chave)) continue
+    vistos.add(chave)
+    const atual = porNome.get(chave)
+    if (!atual) {
+      entram.push(novo)
+      continue
+    }
+    const mudancas = []
+    const minAtual = horasParaSegundos(atual.minH)
+    const maxAtual = horasParaSegundos(atual.maxH)
+    if (atual.nome !== novo.nome) mudancas.push(`nome passa de "${atual.nome}" para "${novo.nome}"`)
+    if (minAtual !== novo.minSeg) mudancas.push(`tempo mínimo passa de ${formatarTempo(minAtual)} para ${formatarTempo(novo.minSeg)}`)
+    if (maxAtual !== novo.maxSeg) mudancas.push(`tempo máximo passa de ${formatarTempo(maxAtual)} para ${formatarTempo(novo.maxSeg)}`)
+    if ((atual.publico ?? '') !== (novo.publico ?? '')) mudancas.push(`público passa de "${atual.publico || 'nenhum'}" para "${novo.publico || 'nenhum'}"`)
+    if ((atual.prazoEstimadoDias ?? null) !== (novo.prazoEstimadoDias ?? null)) {
+      mudancas.push(`prazo passa de ${textoDoPrazo(atual.prazoEstimadoDias)} para ${textoDoPrazo(novo.prazoEstimadoDias)}`)
+    }
+    if (mudancas.length) mudam.push({ nome: novo.nome, mudancas })
+    else iguais++
+  }
+  const saem = atuais.filter((t) => !vistos.has(normalizar(t.nome)))
+  return { entram, saem, mudam, iguais }
+}
+
+// Palavras-chave: o que entra, sai e muda de tipo.
+export function diferencaPalavras(atuais = [], daPlanilha = []) {
+  const porPalavra = new Map(atuais.map((p) => [normalizar(p.palavra), p]))
+  const vistas = new Set()
+  const entram = []
+  const mudam = []
+  let iguais = 0
+  for (const nova of daPlanilha) {
+    const chave = normalizar(nova.palavra)
+    if (!chave || vistas.has(chave)) continue
+    vistas.add(chave)
+    const atual = porPalavra.get(chave)
+    if (!atual) entram.push(nova)
+    else if (atual.tipo !== nova.tipo) mudam.push({ nome: nova.palavra, mudancas: [`tipo passa de "${atual.tipo}" para "${nova.tipo}"`] })
+    else iguais++
+  }
+  const saem = atuais.filter((p) => !vistas.has(normalizar(p.palavra)))
+  return { entram, saem, mudam, iguais }
+}
+
+// ---------- Prévia de cada mês ----------
+
+// existentes: demandas que a pessoa já tem no mês ({ id, importada, numero }).
+// Sem "Substituir histórico", mês já importado é pulado para não duplicar. Com ele, saem as importadas
+// e entram as novas. Demandas do cronômetro nunca saem: as importadas são numeradas depois delas.
+export function planejarMes(quantidade, existentes = [], substituir = false) {
+  const importadas = existentes.filter((d) => d.importada)
+  const doCronometro = existentes.filter((d) => !d.importada)
+  const primeiroNumero = Math.max(0, ...doCronometro.map((d) => Number(d.numero) || 0)) + 1
+  if (importadas.length && !substituir) {
+    return { pular: true, entram: 0, saem: [], primeiroNumero, jaImportadas: importadas.length, doCronometro: doCronometro.length }
+  }
+  return { pular: false, entram: quantidade, saem: importadas.map((d) => d.id), primeiroNumero, jaImportadas: importadas.length, doCronometro: doCronometro.length }
 }
