@@ -15,6 +15,7 @@ const TELAS_PRONTAS = {
   '/cronometro': lazy(() => import('./telas/cronometro/MeuCronometro.jsx')),
   '/demandas': lazy(() => import('./telas/demandas/Demandas.jsx')),
   '/semana': lazy(() => import('./telas/semana/Semana.jsx')),
+  '/painel': lazy(() => import('./telas/painel/Painel.jsx')),
   '/administracao': lazy(() => import('./telas/cadastros/Cadastros.jsx')),
 }
 

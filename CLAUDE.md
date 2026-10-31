@@ -37,7 +37,10 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
    sessões (importada) conta na data de entrega. "Tempo economizado com IA" soma as demandas com
    IA concluídas no período. Exportar Excel: aba Resumo + uma aba por pessoa
    (`Controle_Atividades_[Área]_Semana_DD-MM_a_DD-MM.xlsx`).
-6. Tela Painel: indicadores, gráficos Chart.js e modo apresentação.
+6. (Feita) Tela Painel (`#/painel`): área, período (semana, mês, intervalo) e pessoa; indicadores;
+   gráficos Chart.js (`src/componentes/Grafico.jsx`) só com as cores da paleta na ordem pedida
+   (no fundo escuro do modo apresentação o branco entra no lugar do marinho); evolução mês a mês
+   desde julho de 2026; modo apresentação em tela cheia com o gradiente premium.
 7. Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
    importar de volta.
 

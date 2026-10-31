@@ -2209,3 +2209,118 @@ button.abas__item.ativo {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Painel: fundo branco, letras grandes, legível em projetor */
+
+.app:has(.pagina--painel) {
+  background: var(--branco);
+}
+
+.pagina--painel {
+  font-size: 1.0625rem;
+}
+
+.pagina--painel .titulo-pagina {
+  font-size: 2rem;
+}
+
+.graficos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.grafico {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 24px;
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra-cartao);
+  border-top: 3px solid var(--marinho);
+}
+
+.grafico figcaption {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--marinho);
+}
+
+.grafico__area {
+  position: relative;
+}
+
+.grafico__vazio {
+  color: var(--texto-suave);
+}
+
+/* Modo apresentação: tela cheia, gradiente premium, tudo em branco */
+.apresentacao {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 48px;
+  overflow-y: auto;
+  background: var(--gradiente-premium);
+  color: var(--branco);
+}
+
+.apresentacao__topo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.apresentacao__titulo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.apresentacao__titulo strong {
+  font-family: var(--fonte-destaque);
+  font-size: 2rem;
+}
+
+.apresentacao__titulo span {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.apresentacao__conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.apresentacao .grafico {
+  background: rgba(255, 255, 255, 0.06);
+  border-top-color: var(--brilhante);
+  box-shadow: none;
+}
+
+.apresentacao .grafico figcaption,
+.apresentacao .grafico__vazio {
+  color: var(--branco);
+}
+
+.apresentacao__rodape {
+  margin-top: auto;
+  padding-top: 16px;
+  font-size: 1.25rem;
+}
+
+@media (max-width: 960px) {
+  .graficos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .apresentacao {
+    padding: 16px;
+  }
+}
