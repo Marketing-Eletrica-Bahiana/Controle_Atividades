@@ -397,3 +397,25 @@ export async function juntarDemandas(principal, repetida, quem) {
   await lote.commit()
   esquecerHistorico(principal.area)
 }
+
+// Demandas de um mês em várias áreas (uma consulta por área, como as regras exigem).
+export function useDemandasDoMes(areas, mes) {
+  const lista = [...(areas ?? [])].sort()
+  return useConsultas(mes && lista.length && `mes/${mes}/${lista.join(',')}`, () =>
+    lista.map((area) => query(colecao(), where('area', '==', area), where('mes', '==', mes))),
+  )
+}
+
+// Demandas de vários meses em várias áreas (Semana e Painel).
+export function useDemandasDosMeses(areas, meses) {
+  const lista = [...(areas ?? [])].sort()
+  const mesesOrdenados = [...new Set(meses ?? [])].sort()
+  return useConsultas(mesesOrdenados.length && lista.length && `meses/${mesesOrdenados.join(',')}/${lista.join(',')}`, () =>
+    lista.flatMap((area) =>
+      // "in" aceita até 30 valores; períodos longos são quebrados em partes.
+      Array.from({ length: Math.ceil(mesesOrdenados.length / 30) }, (_, i) =>
+        query(colecao(), where('area', '==', area), where('mes', 'in', mesesOrdenados.slice(i * 30, i * 30 + 30))),
+      ),
+    ),
+  )
+}

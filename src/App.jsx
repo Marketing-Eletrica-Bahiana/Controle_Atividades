@@ -13,6 +13,7 @@ import TelaProvisoria from './telas/TelaProvisoria.jsx'
 // Telas já construídas, carregadas sob demanda. As demais mostram a tela provisória até a sua fase.
 const TELAS_PRONTAS = {
   '/cronometro': lazy(() => import('./telas/cronometro/MeuCronometro.jsx')),
+  '/demandas': lazy(() => import('./telas/demandas/Demandas.jsx')),
   '/administracao': lazy(() => import('./telas/cadastros/Cadastros.jsx')),
 }
 

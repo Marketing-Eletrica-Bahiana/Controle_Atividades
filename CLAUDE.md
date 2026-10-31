@@ -23,13 +23,15 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
 1. (Feita) Base: projeto Vite + React, marca e fontes em `public/`, estilos da identidade, login
    com Google (domínio, membro ativo e pedido de acesso), rotas com menu por papel e publicação
    automática no GitHub Pages.
-2. (Feita) Cadastros do admin (tela `#/cadastros`: pessoas e pedidos de acesso, áreas, tipos,
+2. (Feita) Administração (tela `#/administracao`: pessoas e pedidos de acesso, áreas, tipos,
    palavras-chave, listas) e importação de planilha (ver "Importação de planilha").
 3. (Feita) Tela Meu Cronômetro (`#/cronometro`, admin e equipe): abas por área, cartão do
    cronômetro, nova demanda com classificação e regras, retomar, pausar, concluir, corrigir
    início, tempo manual, lista de hoje com Editar e Reabrir.
-4. Tela Demandas: filtros, ordenação, detalhes com histórico, editar, reabrir, juntar, excluir,
-   renumerar e "Exportar mês".
+4. (Feita) Tela Demandas (`#/demandas`): filtros, ordenação, detalhes com histórico, editar,
+   reabrir, juntar, excluir (só admin), renumerar e "Exportar mês"
+   (`Controle_Atividades_[Área]_Mes_MM-AAAA.xlsx`, "Todas" quando forem todas as áreas). Sem
+   Uso de IA, Template ou Solicitante aparece em vermelho. Permissões em `src/lib/papeis.js`.
 5. Tela Semana: segunda a sábado, cartões de totais, demandas por dia, exportação por pessoa.
 6. Tela Painel: indicadores, gráficos Chart.js e modo apresentação.
 7. Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e

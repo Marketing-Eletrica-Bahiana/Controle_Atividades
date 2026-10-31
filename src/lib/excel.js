@@ -115,3 +115,15 @@ export const nomeParaArquivo = (texto) =>
     .replace(/^_|_$/g, '')
 
 export { novaPasta }
+
+// "Exportar mês": uma aba "Outubro 2026" no formato do CLAUDE.md, ordenada por responsável e Nº.
+export async function exportarMes(nomeDaArea, mes, demandas, nomeNoArquivo = nomeDaArea) {
+  const { formatarMes } = await import('./datas.js')
+  const pasta = await novaPasta()
+  const ordenadas = [...demandas].sort(
+    (a, b) => String(a.responsavelNome).localeCompare(b.responsavelNome, 'pt-BR') || (a.numero ?? 0) - (b.numero ?? 0),
+  )
+  abaDeDemandas(pasta, formatarMes(mes), `Controle de Atividades | ${nomeDaArea} | ${formatarMes(mes)}`, ordenadas)
+  const [ano, numero] = mes.split('-')
+  await baixarPasta(pasta, `Controle_Atividades_${nomeParaArquivo(nomeNoArquivo)}_Mes_${numero}-${ano}.xlsx`)
+}

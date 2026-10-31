@@ -1904,3 +1904,222 @@ button.abas__item.ativo {
   font-size: 0.875rem;
   white-space: nowrap;
 }
+
+/* Tela Demandas (e partes usadas por Semana e Painel) */
+
+.seletor-periodo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--marinho);
+}
+
+.seletor-periodo strong {
+  min-width: 140px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.campo--filtro {
+  min-width: 160px;
+  flex: 1;
+}
+
+.barra-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--medio-20);
+}
+
+.tabela-rolagem {
+  overflow-x: auto;
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-cartao);
+  background: var(--branco);
+}
+
+.tabela--demandas th,
+.tabela--demandas td {
+  white-space: nowrap;
+}
+
+.tabela--demandas .coluna-nome {
+  min-width: 280px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+.cabecalho-ordenavel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cabecalho-ordenavel svg {
+  width: 14px;
+  height: 14px;
+}
+
+.nome-demanda--botao {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nome-demanda--botao:hover {
+  text-decoration: underline;
+}
+
+.nome-demanda--grande {
+  font-size: 1.25rem;
+  -webkit-line-clamp: 3;
+}
+
+.aviso-falta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: var(--vermelho);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.aviso-falta svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.tabela .linha-alerta td:first-child {
+  box-shadow: inset 4px 0 0 var(--vermelho);
+}
+
+.tabela__selecao {
+  width: 1%;
+}
+
+.tabela__selecao input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brilhante);
+}
+
+.detalhes-demanda {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detalhes-demanda__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ficha--grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 24px;
+}
+
+.historico {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.historico li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--brilhante);
+  background: var(--medio-5);
+  border-radius: var(--raio-etiqueta);
+  font-size: 0.9375rem;
+}
+
+.historico__quando {
+  color: var(--medio);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .tabela-rolagem {
+    overflow-x: visible;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .tabela--demandas th,
+  .tabela--demandas td {
+    white-space: normal;
+  }
+
+  .tabela--demandas .coluna-nome {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .tabela .linha-alerta {
+    border-left-color: var(--vermelho);
+  }
+
+  .tabela__selecao {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  .tabela__selecao:empty {
+    display: none;
+  }
+
+  .tabela--com-titulo td.tabela__titulo {
+    padding-right: 40px;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Cartão com o Nome da Demanda como título, no topo */
+  .tabela--com-titulo tr {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tabela--com-titulo td.tabela__titulo {
+    order: -1;
+  }
+
+  .tabela td.tabela__selecao {
+    width: auto;
+    padding: 0;
+  }
+}

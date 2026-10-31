@@ -21,3 +21,12 @@ export const TELAS = [
 export const papelValido = (papel) => Object.hasOwn(PAPEIS, papel)
 
 export const telasDoPapel = (papel) => TELAS.filter((tela) => tela.papeis.includes(papel))
+
+// Admin, gestão e diretoria veem todas as áreas; equipe vê só as próprias.
+export const veTodasAsAreas = (papel) => ['admin', 'gestor', 'diretoria'].includes(papel)
+
+// Equipe edita e reabre só as próprias demandas; admin, de todos; gestão e diretoria só leem.
+export const podeEditar = (membro, demanda) =>
+  membro.papel === 'admin' || (membro.papel === 'equipe' && demanda?.responsavelEmail === membro.email)
+
+export const podeExcluir = (membro) => membro.papel === 'admin'
