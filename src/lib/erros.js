@@ -12,6 +12,8 @@ const MENSAGENS = {
 
 export function mensagemDeErro(erro) {
   if (MENSAGENS[erro?.code]) return MENSAGENS[erro.code]
+  // Erros criados pelo próprio sistema já vêm com a mensagem em português.
+  if (!erro?.code && erro?.message) return erro.message
   if (erro?.code) return `Algo deu errado (${erro.code}). Tente de novo em instantes.`
   return 'Algo deu errado. Tente de novo em instantes.'
 }

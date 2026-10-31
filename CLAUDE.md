@@ -20,11 +20,11 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
 
 ## Fases
 
-1. Base: projeto Vite + React, marca e fontes em `public/`, estilos da identidade, login com
-   Google (domínio, membro ativo e pedido de acesso), rotas com menu por papel e publicação
+1. (Feita) Base: projeto Vite + React, marca e fontes em `public/`, estilos da identidade, login
+   com Google (domínio, membro ativo e pedido de acesso), rotas com menu por papel e publicação
    automática no GitHub Pages.
-2. Cadastros do admin (áreas, tipos, palavras-chave, listas, membros e pedidos de acesso) e
-   importação da planilha `Cronometro_Atividades_Ivie_New_Version.xlsx`.
+2. (Feita) Cadastros do admin (tela `#/cadastros`: pessoas e pedidos de acesso, áreas, tipos,
+   palavras-chave, listas) e importação de planilha (ver "Importação de planilha").
 3. Cronômetro e registro de demandas, com classificação automática e regras de negócio.
 4. Tela Demandas: lista, edição, reabertura, histórico e exportação Excel.
 5. Semana e Painel, com gráficos.
@@ -37,7 +37,12 @@ A ordem das fases 2 a 6 é uma proposta e pode mudar a cada aprovação.
 - React + Vite (JavaScript, arquivos `.jsx`).
 - Firebase: Authentication com Google e Firestore.
 - Chart.js para gráficos.
-- SheetJS (xlsx) para importar e exportar Excel.
+- SheetJS (xlsx) para importar e exportar Excel, versão 0.20.3 instalada do site oficial
+  (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`); o pacote `xlsx` do npm está parado
+  numa versão antiga. Carregado só quando a tela de importação precisa.
+- Testes com Vitest (`npm test`), para as funções puras de `src/lib/`.
+- Organização: `src/lib/` (funções puras e testes), `src/dados/` (leitura e gravação no
+  Firestore), `src/hooks/`, `src/componentes/`, `src/telas/`.
 - Ícones Lucide (`lucide-react`).
 - Rotas com HashRouter (endereços com `#/`), para não dar erro 404 ao recarregar.
 - Base do Vite: `"/Controle_Atividades/"`, com maiúsculas e minúsculas exatamente assim. Imagens
@@ -217,8 +222,8 @@ Já cadastrada no Firestore. Não cadastrar de novo. Os e-mails ficam só no Fir
 | Gleidiane | Auxiliar de Marketing | equipe | marketing |
 | Adelaide | Gerente de Marketing | admin | gerencia |
 
-O histórico da planilha `Cronometro_Atividades_Ivie_New_Version.xlsx` pertence ao Ivie, área
-designs.
+O histórico da área designs vem da planilha `relatorio_designers_atualizado.xlsx`, que tem as
+demandas do Ivie e da Taís juntas; a coluna Responsável diz de quem é cada linha.
 
 ## Papéis
 
@@ -253,6 +258,41 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   - `historico`: lista de `{quem, quando, acao, campo, antes, depois}`
   - `importada` (boolean), `arquivoOrigem`, `criadoEm`, `atualizadoEm`
 - `cronometros/{email}`: `demandaId`, `area`, `inicio` (serverTimestamp), `rodando`.
+
+Convenções de gravação (definidas na Fase 2):
+
+- Datas (`dataSolicitacao`, `datasAjuste`, `dataEntrega`) são texto `"AAAA-MM-DD"`, sem hora e
+  sem fuso; `null` quando não informadas. "Hoje" sempre no fuso America/Bahia (`src/lib/datas.js`).
+- Tempos em segundos inteiros (`...Seg`). Em `tipos`, `minH` e `maxH` ficam em horas decimais.
+- `tipos` também guarda `prazoEstimadoDias` (número ou `null`), pedido para mostrar "Dentro do
+  prazo?" nas próximas fases.
+- IDs previsíveis: `tipos/{area}--{nome-sem-acento}` e `palavrasChave/{area}--{palavra}`, para
+  reimportar sem duplicar. Áreas novas usam o nome sem acento como ID.
+- `usoIA` e `usoTemplate` podem ficar `""` quando a planilha antiga não informava.
+- `historico[].quando` é um Timestamp do momento (o `serverTimestamp` não funciona dentro de
+  listas).
+- Consultas por área usam só `where` (sem `orderBy`), para não exigir índice composto; a ordem é
+  feita no navegador.
+
+## Importação de planilha
+
+Tela `#/cadastros/importar` (`src/lib/planilha.js` lê, `src/lib/importacao.js` monta,
+`src/dados/importacao.js` grava). As colunas são achadas pelo nome do cabeçalho:
+
+- Formatos aceitos: abas de mês da planilha antiga ("Julho 2026", com Nome da Demanda, Nº e
+  Ajuste), abas "Relatório Designers - Mês" (nome da tarefa em Tipo de Demanda e o tipo em Tipo de
+  Atividade) e a futura exportação do sistema. Abas Tipo de Atividade, Palavras-chave e Listas
+  também são lidas.
+- Coluna **Responsável** (nome, primeiro nome ou e-mail) liga cada linha a uma pessoa; a prévia
+  mostra a ligação para conferir. Sem a coluna, escolhe-se uma pessoa para a planilha toda.
+  A planilha `relatorio_designers_atualizado.xlsx` mistura Ivie e Taís sem dizer quem fez cada
+  linha: a coluna Responsável precisa ser preenchida antes de importar.
+- Mês da demanda: o da aba quando a aba diz o mês; senão, o da data.
+- Nº renumerado de 1 em diante por pessoa e mês (segue o Nº da planilha quando todas as linhas
+  têm Nº). Economia e prazo cumprido são recalculados; tempo e público em branco vêm da tabela de
+  tipos.
+- Se a pessoa já tem demandas no mês: pular o mês, ou substituir (só quando todas as existentes
+  vieram de importação). Nunca duplica.
 
 ## Listas padrão
 
@@ -348,10 +388,17 @@ Colunas nesta ordem:
   cookies de terceiros (Safari no iPhone, por exemplo), porque o site está no GitHub Pages e o
   login no domínio do Firebase. O popup costuma funcionar no celular quando aberto pelo toque no
   botão.
+- Para ver telas internas sem login, dá para subir o Vite com uma configuração de demonstração
+  fora do repositório (em `.claude/`, que é ignorada), usando `resolve.alias` para trocar
+  `acesso/ProvedorAcesso.jsx`, `hooks/useConsulta.js` e `dados/importacao.js` por versões com
+  dados de mentira. Nunca gravar no Firestore real a partir dessa demonstração.
 
 ## Pendências
 
 - Arquivos da Klavika: colocar em `public/fontes/` quando chegarem (nomes acima).
-- Planilha `Cronometro_Atividades_Ivie_New_Version.xlsx`: chega na Fase 2.
+- Regras do Firestore: o texto publicado ainda não foi conferido aqui. A Fase 2 grava, como
+  admin, em `areas`, `membros`, `solicitacoes` (apaga ao liberar ou recusar), `tipos`,
+  `palavrasChave`, `config/listas` e `demandas`.
+- Coluna Responsável na `relatorio_designers_atualizado.xlsx` antes da importação real.
 - Nomes trocados no par de logos azuis: se a marca corrigir os arquivos, ajustar a tabela de logos
   e `src/lib/marca.js`.
