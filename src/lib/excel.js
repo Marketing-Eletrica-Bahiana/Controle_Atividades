@@ -2,7 +2,7 @@
 // Cabeçalho com fundo #001780, texto branco e fonte Lato. Datas em DD/MM/AAAA e tempos em HH:MM:SS,
 // gravados como texto para o arquivo voltar igual na importação.
 
-import { formatarAjustes, formatarData } from './datas.js'
+import { formatarAjustes, formatarData, formatarMes } from './datas.js'
 import { formatarTempo, horasParaSegundos } from './tempo.js'
 
 const MARINHO = 'FF001780'
@@ -117,13 +117,56 @@ export const nomeParaArquivo = (texto) =>
 export { novaPasta }
 
 // "Exportar mês": uma aba "Outubro 2026" no formato do CLAUDE.md, ordenada por responsável e Nº.
-export async function exportarMes(nomeDaArea, mes, demandas, nomeNoArquivo = nomeDaArea) {
-  const { formatarMes } = await import('./datas.js')
+export async function montarMes(nomeDaArea, mes, demandas) {
   const pasta = await novaPasta()
   const ordenadas = [...demandas].sort(
     (a, b) => String(a.responsavelNome).localeCompare(b.responsavelNome, 'pt-BR') || (a.numero ?? 0) - (b.numero ?? 0),
   )
   abaDeDemandas(pasta, formatarMes(mes), `Controle de Atividades | ${nomeDaArea} | ${formatarMes(mes)}`, ordenadas)
+  return pasta
+}
+
+export async function exportarMes(nomeDaArea, mes, demandas, nomeNoArquivo = nomeDaArea) {
+  const pasta = await montarMes(nomeDaArea, mes, demandas)
   const [ano, numero] = mes.split('-')
   await baixarPasta(pasta, `Controle_Atividades_${nomeParaArquivo(nomeNoArquivo)}_Mes_${numero}-${ano}.xlsx`)
+}
+
+// "Exportar Excel" da Semana: uma aba por pessoa (nome, cargo e área no topo) e uma aba "Resumo".
+export async function exportarSemana(dados) {
+  const pasta = await montarSemana(dados)
+  const curta = (dia) => `${dia.slice(8, 10)}-${dia.slice(5, 7)}`
+  await baixarPasta(pasta, `Controle_Atividades_${nomeParaArquivo(dados.nomeNoArquivo)}_Semana_${curta(dados.segunda)}_a_${curta(dados.sabado)}.xlsx`)
+}
+
+export async function montarSemana({ nomeDaArea, segunda, sabado, pessoas }) {
+  const pasta = await novaPasta()
+  const periodo = `${formatarData(segunda)} a ${formatarData(sabado)}`
+  abaSimples(
+    pasta,
+    'Resumo',
+    ['Pessoa', 'Cargo', 'Área', 'Demandas', 'Horas na semana', 'Tempo economizado mín. com IA', 'Tempo economizado máx. com IA', '% com IA'],
+    [
+      ...pessoas.map((p) => [p.nome, p.cargo, p.areas, p.resumo.demandas, formatarTempo(p.resumo.totalSeg), formatarTempo(p.resumo.economizadoMinSeg), formatarTempo(p.resumo.economizadoMaxSeg), `${p.resumo.porcentagemIA}%`]),
+      [
+        'Total',
+        '',
+        nomeDaArea,
+        pessoas.reduce((s, p) => s + p.resumo.demandas, 0),
+        formatarTempo(pessoas.reduce((s, p) => s + p.resumo.totalSeg, 0)),
+        formatarTempo(pessoas.reduce((s, p) => s + p.resumo.economizadoMinSeg, 0)),
+        formatarTempo(pessoas.reduce((s, p) => s + p.resumo.economizadoMaxSeg, 0)),
+        '',
+      ],
+    ],
+    [28, 24, 24, 12, 16, 22, 22, 10],
+  )
+  const usados = new Set(['Resumo'])
+  for (const p of pessoas) {
+    let nome = p.nome.slice(0, 31)
+    for (let i = 2; usados.has(nome); i++) nome = `${p.nome.slice(0, 27)} ${i}`
+    usados.add(nome)
+    abaDeDemandas(pasta, nome, `Controle de Atividades | Semana de ${periodo}`, p.demandas, [`${p.nome} | ${p.cargo || 'Cargo não informado'} | ${p.areas}`])
+  }
+  return pasta
 }

@@ -32,7 +32,11 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
    reabrir, juntar, excluir (só admin), renumerar e "Exportar mês"
    (`Controle_Atividades_[Área]_Mes_MM-AAAA.xlsx`, "Todas" quando forem todas as áreas). Sem
    Uso de IA, Template ou Solicitante aparece em vermelho. Permissões em `src/lib/papeis.js`.
-5. Tela Semana: segunda a sábado, cartões de totais, demandas por dia, exportação por pessoa.
+5. (Feita) Tela Semana (`#/semana`): segunda a sábado (domingo só se tiver trabalho), pessoa ou
+   equipe toda, cartões de totais, demandas por dia. Tempo do dia vem das sessões; demanda sem
+   sessões (importada) conta na data de entrega. "Tempo economizado com IA" soma as demandas com
+   IA concluídas no período. Exportar Excel: aba Resumo + uma aba por pessoa
+   (`Controle_Atividades_[Área]_Semana_DD-MM_a_DD-MM.xlsx`).
 6. Tela Painel: indicadores, gráficos Chart.js e modo apresentação.
 7. Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
    importar de volta.

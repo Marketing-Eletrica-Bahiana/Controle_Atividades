@@ -2123,3 +2123,89 @@ button.abas__item.ativo {
     padding: 0;
   }
 }
+
+/* Cartões de indicadores (Semana e Painel) */
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.indicador {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 24px;
+  overflow: hidden;
+  border-radius: var(--raio);
+  background: var(--gradiente-principal);
+  color: var(--branco);
+  box-shadow: var(--sombra-cartao);
+  transition: transform var(--transicao);
+}
+
+.indicador:hover {
+  transform: translateY(-4px);
+}
+
+.indicador::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  bottom: 12px;
+  width: 48px;
+  height: 2px;
+  background: var(--branco);
+  opacity: 0.6;
+}
+
+.indicador__rotulo {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.indicador__valor {
+  font-family: var(--fonte-destaque);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicador__detalhe {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.indicadores--grandes .indicador__valor {
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+}
+
+.dia-da-semana .bloco__titulo {
+  color: var(--marinho);
+}
+
+.dia-da-semana__total {
+  color: var(--marinho);
+}
+
+.dia-da-semana__total strong {
+  margin-left: 8px;
+  font-family: var(--fonte-destaque);
+  font-size: 1.25rem;
+}
+
+@media (max-width: 960px) {
+  .indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .indicadores {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
