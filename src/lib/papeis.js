@@ -11,7 +11,7 @@ const TODOS = Object.keys(PAPEIS)
 
 // "fase" é a fase do projeto em que a tela ganha conteúdo de verdade.
 export const TELAS = [
-  { caminho: '/cronometro', rotulo: 'Cronômetro', Icone: Timer, papeis: ['admin', 'equipe'], fase: 3 },
+  { caminho: '/cronometro', rotulo: 'Meu Cronômetro', Icone: Timer, papeis: ['admin', 'equipe'], fase: 3 },
   { caminho: '/demandas', rotulo: 'Demandas', Icone: ClipboardList, papeis: TODOS, fase: 4 },
   { caminho: '/semana', rotulo: 'Semana', Icone: CalendarDays, papeis: TODOS, fase: 5 },
   { caminho: '/painel', rotulo: 'Painel', Icone: ChartColumn, papeis: TODOS, fase: 5 },

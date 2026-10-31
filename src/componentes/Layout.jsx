@@ -1,10 +1,15 @@
-import { LogOut } from 'lucide-react'
+import { LogOut, Timer } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { useAcesso } from '../acesso/ProvedorAcesso.jsx'
+import { useCronometro } from '../dados/demandas.js'
+import { useAgora } from '../hooks/useAgora.js'
 import { PAPEIS } from '../lib/papeis.js'
+import { formatarTempo } from '../lib/tempo.js'
 import { primeiroNome } from '../lib/texto.js'
 import Assinatura from './Assinatura.jsx'
 import Logo from './Logo.jsx'
+
+const USAM_CRONOMETRO = ['admin', 'equipe']
 
 export default function Layout({ telas, children }) {
   const { membro, sair } = useAcesso()
@@ -17,6 +22,7 @@ export default function Layout({ telas, children }) {
           <Logo formato="icone" cor="branco" altura={32} className="so-estreito" />
           <span className="cabecalho__titulo">Controle de Atividades</span>
           <div className="cabecalho__pessoa">
+            {USAM_CRONOMETRO.includes(membro.papel) && <CronometroNoCabecalho email={membro.email} />}
             <span className="cabecalho__nome">{primeiroNome(membro.nome)}</span>
             <span className="etiqueta etiqueta--escura">{PAPEIS[membro.papel].rotulo}</span>
             <button type="button" className="botao botao--claro" onClick={sair} aria-label="Sair">
@@ -39,5 +45,19 @@ export default function Layout({ telas, children }) {
         <Assinatura />
       </footer>
     </div>
+  )
+}
+
+// Enquanto o cronômetro da pessoa roda, o tempo da sessão aparece no topo de qualquer tela.
+function CronometroNoCabecalho({ email }) {
+  const { dados } = useCronometro(email)
+  const inicio = dados?.rodando ? dados.inicio?.toDate?.() : null
+  const agora = useAgora(Boolean(inicio))
+  if (!inicio) return null
+  return (
+    <NavLink to="/cronometro" className="pilula-cronometro" title="Cronômetro rodando. Abrir Meu Cronômetro">
+      <Timer aria-hidden="true" />
+      <span className="numero">{formatarTempo(Math.max(0, Math.floor((agora - inicio.getTime()) / 1000)))}</span>
+    </NavLink>
   )
 }

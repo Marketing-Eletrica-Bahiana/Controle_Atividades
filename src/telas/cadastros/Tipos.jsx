@@ -12,7 +12,7 @@ import { contarPalavrasDoTipo, excluirTipo, idDoTipo, salvarTipo, useTipos } fro
 import { mensagemDeErro } from '../../lib/erros.js'
 import { formatarTempo, horasParaSegundos, lerTempo, segundosParaHoras } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
-import { ErroCampo } from './FormPessoa.jsx'
+import { ErroCampo } from '../../componentes/Campos.jsx'
 
 export default function Tipos() {
   const { dados: areas } = useAreas()

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CircleAlert } from 'lucide-react'
+import { ErroCampo } from '../../componentes/Campos.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { validarEmail } from '../../dados/membros.js'
 import { DOMINIO_EMPRESA } from '../../firebase.js'
@@ -113,14 +113,5 @@ function Formulario({ edicao, areas, ehVoce, aoSalvar, aoFechar }) {
         </button>
       </div>
     </form>
-  )
-}
-
-export function ErroCampo({ texto }) {
-  return (
-    <span className="campo__erro" role="alert">
-      <CircleAlert aria-hidden="true" />
-      {texto}
-    </span>
   )
 }

@@ -7,7 +7,7 @@ import EstadoVazio from '../../componentes/EstadoVazio.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { AREAS_PADRAO, atualizarArea, criarArea, criarAreasPadrao, trocarOrdem, useAreas } from '../../dados/areas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
-import { ErroCampo } from './FormPessoa.jsx'
+import { ErroCampo } from '../../componentes/Campos.jsx'
 
 // Áreas nunca são apagadas, só desativadas.
 export default function Areas() {

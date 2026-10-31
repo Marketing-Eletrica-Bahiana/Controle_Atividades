@@ -10,7 +10,7 @@ import { useAreas } from '../../dados/areas.js'
 import { excluirPalavra, idDaPalavra, salvarPalavra, usePalavras, useTipos } from '../../dados/tipos.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import { normalizar } from '../../lib/texto.js'
-import { ErroCampo } from './FormPessoa.jsx'
+import { ErroCampo } from '../../componentes/Campos.jsx'
 
 export default function Palavras() {
   const { dados: areas } = useAreas()

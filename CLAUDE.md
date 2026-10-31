@@ -25,12 +25,19 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
    automática no GitHub Pages.
 2. (Feita) Cadastros do admin (tela `#/cadastros`: pessoas e pedidos de acesso, áreas, tipos,
    palavras-chave, listas) e importação de planilha (ver "Importação de planilha").
-3. Cronômetro e registro de demandas, com classificação automática e regras de negócio.
-4. Tela Demandas: lista, edição, reabertura, histórico e exportação Excel.
-5. Semana e Painel, com gráficos.
-6. Acabamento: celular, revisão visual e testes finais.
+3. (Feita) Tela Meu Cronômetro (`#/cronometro`, admin e equipe): abas por área, cartão do
+   cronômetro, nova demanda com classificação e regras, retomar, pausar, concluir, corrigir
+   início, tempo manual, lista de hoje com Editar e Reabrir.
+4. Tela Demandas: filtros, ordenação, detalhes com histórico, editar, reabrir, juntar, excluir,
+   renumerar e "Exportar mês".
+5. Tela Semana: segunda a sábado, cartões de totais, demandas por dia, exportação por pessoa.
+6. Tela Painel: indicadores, gráficos Chart.js e modo apresentação.
+7. Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
+   importar de volta.
 
-A ordem das fases 2 a 6 é uma proposta e pode mudar a cada aprovação.
+Em 31/10/2026 a pessoa autorizou fazer as fases 3 a 7 em sequência, com commit e publicação
+ao fim de cada uma, e completar o que faltou da Fase 2 (roteiro completo dela: aba "Planilhas",
+"Baixar tabela de referência" e "Testar classificação").
 
 ## Tecnologia
 
@@ -273,6 +280,30 @@ Convenções de gravação (definidas na Fase 2):
   listas).
 - Consultas por área usam só `where` (sem `orderBy`), para não exigir índice composto; a ordem é
   feita no navegador.
+
+## Cronômetro (definido na Fase 3)
+
+Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cronometro/`.
+
+- `cronometros/{email}` parado fica `{ rodando: false, demandaId: null, area: null, inicio: null }`.
+  O tempo na tela é sempre "agora menos `inicio`", então continua certo ao fechar a aba ou trocar
+  de computador.
+- Um cronômetro por pessoa: iniciar ou retomar outra demanda pergunta antes e pausa a atual na
+  mesma transação.
+- `sessoes`: `{ inicio, fim, seg }` (Timestamp); tempo manual acrescenta `manual: true`, às 08:00
+  da data escolhida, e a data entra em `datasAjuste`.
+- Mês e Nº: a demanda pertence ao mês em que foi criada. Se a Data de Entrega for editada para
+  outro mês, ela vai para o fim desse mês e o mês antigo é renumerado.
+- Concluir grava a entrega de hoje; os outros dias com sessão, a entrega anterior (se foi reaberta)
+  e os ajustes já existentes vão para `datasAjuste`, sem solicitação e entrega, sem repetir.
+  Faltando Uso de IA, Template ou Solicitante, uma janela pede antes de concluir.
+- Reabrir: concluída volta para "pausada" e aparece na busca do formulário para retomar.
+- `historico[].acao`: `criacao`, `conclusao`, `reabertura`, `edicao`, `edicao_tempo`,
+  `tempo_manual`, `juncao`, `importacao`. `antes` e `depois` já vêm formatados para leitura
+  (DD/MM/AAAA, HH:MM:SS).
+- Classificação (`src/lib/classificacao.js`): o histórico ignora demandas cujo nome é só o tipo
+  (planilhas antigas). Nos dados reais de designs acertou 59% (histórico antes das palavras-chave,
+  como pede a regra); o resto vem de nomes parecidos com tipos diferentes na planilha.
 
 ## Importação de planilha
 

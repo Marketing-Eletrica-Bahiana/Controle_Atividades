@@ -1388,3 +1388,447 @@ p {
     justify-content: center;
   }
 }
+
+/* Meu Cronômetro, campo de data e campos de demanda */
+
+.grade-tres {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.acoes--fim {
+  justify-content: flex-end;
+}
+
+.campo-data {
+  position: relative;
+}
+
+.campo-data__linha {
+  display: flex;
+  gap: 8px;
+}
+
+.campo-data__linha input {
+  flex: 1;
+}
+
+.campo-data__botao {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-color: var(--medio);
+}
+
+.calendario {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 288px;
+  margin-top: 4px;
+  padding: 16px;
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra-janela);
+}
+
+.calendario__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--marinho);
+}
+
+.calendario__grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.calendario__semana {
+  padding: 4px 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--medio);
+}
+
+.calendario__dia {
+  height: 32px;
+  border: 0;
+  border-radius: var(--raio-etiqueta);
+  background: transparent;
+  color: var(--preto);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.calendario__dia:hover {
+  background: var(--medio-10);
+}
+
+.calendario__dia.hoje {
+  box-shadow: inset 0 0 0 1px var(--brilhante);
+  font-weight: 700;
+}
+
+.calendario__dia.escolhido {
+  background: var(--brilhante);
+  color: var(--branco);
+  font-weight: 700;
+}
+
+.calendario__hoje {
+  align-self: flex-end;
+  min-height: 32px;
+  padding: 4px 12px;
+}
+
+.sim-nao {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--medio);
+  border-radius: var(--raio);
+  overflow: hidden;
+}
+
+.sim-nao__opcao {
+  min-width: 64px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  background: var(--branco);
+  color: var(--marinho);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--transicao);
+}
+
+.sim-nao__opcao + .sim-nao__opcao {
+  border-left: 1px solid var(--medio);
+}
+
+.sim-nao__opcao:hover {
+  background: var(--medio-10);
+}
+
+.sim-nao__opcao.escolhido {
+  background: var(--brilhante);
+  color: var(--branco);
+}
+
+.campo-tipo--faltando select {
+  border-color: var(--vermelho);
+  color: var(--vermelho);
+  font-weight: 700;
+  box-shadow: 0 0 0 3px var(--vermelho-10);
+}
+
+.alternativas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.etiqueta-clicavel {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--raio-etiqueta);
+  background: var(--medio-10);
+  color: var(--marinho);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--transicao), transform var(--transicao);
+}
+
+.etiqueta-clicavel:hover {
+  background: var(--medio-20);
+  transform: translateY(-1px);
+}
+
+.sugestoes-retomar {
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--medio-20);
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra-cartao);
+}
+
+.sugestoes-retomar button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--raio-etiqueta);
+  background: transparent;
+  color: var(--preto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sugestoes-retomar button:hover {
+  background: var(--medio-10);
+}
+
+.sugestoes-retomar svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--brilhante);
+}
+
+.sugestoes-retomar span:nth-child(2) {
+  flex: 1;
+}
+
+.etiqueta-situacao {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: var(--raio-etiqueta);
+  color: var(--branco);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.situacao--andamento {
+  background: var(--brilhante);
+}
+
+.situacao--pausada {
+  background: var(--medio);
+}
+
+.situacao--concluida {
+  background: var(--marinho);
+}
+
+.nome-demanda {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: var(--marinho);
+  font-weight: 700;
+}
+
+.tabela .linha-rodando td:first-child {
+  box-shadow: inset 4px 0 0 var(--brilhante);
+}
+
+.cartao-cronometro {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 32px;
+  overflow: hidden;
+  border-radius: var(--raio-janela);
+  background: var(--gradiente-principal);
+  color: var(--branco);
+  box-shadow: var(--sombra-janela);
+}
+
+.cartao-cronometro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--pattern) right center / auto 100% no-repeat;
+  opacity: 0.15;
+}
+
+.cartao-cronometro__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cartao-cronometro__rotulo {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cartao-cronometro__tempo {
+  font-family: var(--fonte-destaque);
+  font-weight: 700;
+  font-size: clamp(3rem, 10vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cartao-cronometro__nome {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.cartao-cronometro__detalhe {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.linha-circuito--viva {
+  width: min(280px, 100%);
+  height: 3px;
+  animation: pulsar 1.6s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(0, 55, 255, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(0, 55, 255, 1);
+  }
+}
+
+.cartao-cronometro__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.cartao-cronometro__total {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cartao-cronometro__total strong {
+  margin-left: 8px;
+  color: var(--branco);
+  font-family: var(--fonte-destaque);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cartao-cronometro__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.botao--pausar {
+  background: var(--medio);
+  color: var(--branco);
+}
+
+.botao--concluir {
+  background: var(--marinho);
+  color: var(--branco);
+  border-color: var(--branco-40);
+}
+
+.botao-claro-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--branco);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.botao-claro-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pilula-cronometro {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--raio-pilula);
+  background: var(--brilhante);
+  color: var(--branco);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--brilho-circuito);
+}
+
+.pilula-cronometro svg {
+  width: 16px;
+  height: 16px;
+}
+
+.numero {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .grade-tres {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cartao-cronometro {
+    padding: 24px 16px;
+  }
+
+  .cartao-cronometro__acoes,
+  .cartao-cronometro__acoes .botao {
+    width: 100%;
+  }
+
+  .tabela--com-titulo td.tabela__titulo {
+    padding-top: 8px;
+    font-size: 1.0625rem;
+  }
+
+  .calendario {
+    width: min(288px, calc(100vw - 48px));
+  }
+
+  .acoes--fim .botao {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linha-circuito--viva {
+    animation: none;
+  }
+}
+
+/* Abas feitas com botão (áreas do Meu Cronômetro) */
+button.abas__item {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.abas__item.ativo {
+  border-bottom-color: var(--brilhante);
+}
