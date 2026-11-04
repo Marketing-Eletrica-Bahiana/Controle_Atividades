@@ -7,12 +7,14 @@ import { useConfirmar } from '../../componentes/Confirmar.jsx'
 import EstadoVazio from '../../componentes/EstadoVazio.jsx'
 import JanelaEditarDemanda from '../../componentes/JanelaEditarDemanda.jsx'
 import { useAreas } from '../../dados/areas.js'
+import { criarCartaoDaDemanda, useColunas } from '../../dados/cartoes.js'
 import {
   adicionarTempoManual, concluir, corrigirInicio, criarDemandaManual, criarEIniciar, pausar, reabrir, retomar, useCronometro, useMinhasDemandas,
 } from '../../dados/demandas.js'
 import { useAgora } from '../../hooks/useAgora.js'
 import { formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
+import { COLUNAS_PADRAO } from '../../lib/quadro.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
 import FormDemanda from './FormDemanda.jsx'
 import { JanelaConcluir, JanelaCorrigirInicio, JanelaTempoManual } from './JanelasDoCronometro.jsx'
@@ -24,9 +26,10 @@ const diaDaSessao = (sessao) => (sessao.inicio?.toDate ? hojeISO(sessao.inicio.t
 export default function MeuCronometro() {
   const { membro } = useAcesso()
   const pessoa = useMemo(() => ({ email: membro.email, nome: membro.nome }), [membro.email, membro.nome])
-  const { executar } = useAvisos()
+  const { avisar, executar } = useAvisos()
   const [janelaConfirmar, confirmar] = useConfirmar()
   const { dados: todasAsAreas } = useAreas()
+  const colunas = useColunas()
 
   const minhasAreas = (membro.areas ?? [])
     .map((id) => todasAsAreas?.find((a) => a.id === id) ?? { id, nome: id, ativa: true })
@@ -76,9 +79,22 @@ export default function MeuCronometro() {
     })
   }
 
+  // O cartão vem depois da demanda: se ele falhar, o tempo continua valendo e a pessoa é avisada.
+  async function criarCartaoDe(demandaId, dados, concluidaEm = null) {
+    if (!dados.noQuadro) return
+    try {
+      await criarCartaoDaDemanda(demandaId, dados, pessoa, colunas.dados ?? COLUNAS_PADRAO, { concluidaEm })
+    } catch (erro) {
+      avisar(`A demanda foi criada, mas o cartão do Quadro não: ${mensagemDeErro(erro)}`, 'erro')
+    }
+  }
+
   async function iniciarNova(dados) {
     if (!(await podeTrocar(dados.nome))) return false
-    return agir(() => criarEIniciar(dados, pessoa), `Cronômetro rodando: ${dados.nome}`)
+    return agir(async () => {
+      const id = await criarEIniciar(dados, pessoa)
+      await criarCartaoDe(id, dados)
+    }, `Cronômetro rodando: ${dados.nome}`)
   }
 
   async function retomarDemanda(demanda) {
@@ -98,7 +114,10 @@ export default function MeuCronometro() {
     const mensagem = foraDaLista
       ? `${dados.nome} registrada. Veja em Demandas, ${formatarMes(mesDe(lancamento.data))}.`
       : `${dados.nome} registrada. Mandou bem!`
-    return agir(() => criarDemandaManual(dados, lancamento, pessoa), mensagem)
+    return agir(async () => {
+      const id = await criarDemandaManual(dados, lancamento, pessoa)
+      await criarCartaoDe(id, dados, lancamento.concluida ? lancamento.data : null)
+    }, mensagem)
   }
 
   async function reabrirDemanda(demanda) {

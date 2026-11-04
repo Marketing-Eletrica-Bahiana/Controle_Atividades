@@ -5,6 +5,7 @@ import { useListas } from '../../dados/listas.js'
 import { usePalavras, useTipos } from '../../dados/tipos.js'
 import { classificar, prepararHistorico, textoDaOrigem } from '../../lib/classificacao.js'
 import { hojeISO, mesDe } from '../../lib/datas.js'
+import { vaiParaOQuadro } from '../../lib/quadro.js'
 import { regraAutomatica } from '../../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../../lib/tempo.js'
 
@@ -12,15 +13,17 @@ const VAZIO = { nome: '', tipo: '', publico: '', solicitante: '', usoIA: '', uso
 
 // Campos de uma demanda nova, usados no formulário do cronômetro e no lançamento manual.
 // Classifica o tipo enquanto o nome é digitado. Campos mexidos à mão param de mudar sozinhos.
-export function useCamposDaDemanda(area, pessoa) {
+export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   const { dados: tipos } = useTipos(area)
   const { dados: palavras } = usePalavras(area)
   const { dados: listas } = useListas()
   const historicoBruto = useHistoricoDaArea(area)
   const historico = useMemo(() => prepararHistorico(historicoBruto ?? []), [historicoBruto])
 
-  const [dados, setDados] = useState(VAZIO)
+  const [dados, setDados] = useState({ ...VAZIO, ...inicial })
   const [manual, setManual] = useState({})
+  // Sem escolha da pessoa, o público decide se a demanda ganha cartão no Quadro.
+  const [noQuadroEscolhido, setNoQuadro] = useState(null)
 
   const classificacao = useMemo(
     () => classificar(dados.nome, { historico, palavras: palavras ?? [], tipos: tipos ?? [], email: pessoa.email, mesAtual: mesDe(hojeISO()) }),
@@ -34,8 +37,11 @@ export function useCamposDaDemanda(area, pessoa) {
   const solicitante = valor('solicitante')
   const usoIA = valor('usoIA')
   const usoTemplate = valor('usoTemplate')
+  const noQuadro = noQuadroEscolhido ?? vaiParaOQuadro(publico)
 
   return {
+    noQuadro,
+    setNoQuadro,
     tipos,
     listas,
     classificacao,
@@ -61,6 +67,7 @@ export function useCamposDaDemanda(area, pessoa) {
     limpar: () => {
       setDados(VAZIO)
       setManual({})
+      setNoQuadro(null)
     },
     paraGravar: (dataSolicitacao) => ({
       area,
@@ -72,6 +79,7 @@ export function useCamposDaDemanda(area, pessoa) {
       usoIA,
       usoTemplate,
       dataSolicitacao,
+      noQuadro,
     }),
   }
 }
@@ -111,6 +119,15 @@ export function CampoTipo({ campos, erro }) {
         </span>
       )}
     </div>
+  )
+}
+
+export function CampoNoQuadro({ campos }) {
+  return (
+    <label className="opcao">
+      <input type="checkbox" checked={campos.noQuadro} onChange={(e) => campos.setNoQuadro(e.target.checked)} />
+      Criar cartão no Quadro
+    </label>
   )
 }
 

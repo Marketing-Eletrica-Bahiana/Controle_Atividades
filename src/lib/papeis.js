@@ -1,4 +1,4 @@
-import { CalendarDays, ChartColumn, ClipboardList, Settings, Timer } from 'lucide-react'
+import { CalendarDays, ChartColumn, ClipboardList, Settings, SquareKanban, Timer } from 'lucide-react'
 
 export const PAPEIS = {
   admin: { rotulo: 'Administração', telaInicial: '/cronometro' },
@@ -11,6 +11,7 @@ const TODOS = Object.keys(PAPEIS)
 
 export const TELAS = [
   { caminho: '/cronometro', rotulo: 'Meu Cronômetro', Icone: Timer, papeis: ['admin', 'equipe'] },
+  { caminho: '/quadro', rotulo: 'Quadro', Icone: SquareKanban, papeis: TODOS },
   { caminho: '/demandas', rotulo: 'Demandas', Icone: ClipboardList, papeis: TODOS },
   { caminho: '/semana', rotulo: 'Semana', Icone: CalendarDays, papeis: TODOS },
   { caminho: '/painel', rotulo: 'Painel', Icone: ChartColumn, papeis: TODOS },
@@ -29,3 +30,8 @@ export const podeEditar = (membro, demanda) =>
   membro.papel === 'admin' || (membro.papel === 'equipe' && demanda?.responsavelEmail === membro.email)
 
 export const podeExcluir = (membro) => membro.papel === 'admin'
+
+// Quadro: admin e equipe criam, editam e movem qualquer cartão; gestão e diretoria só leem; excluir é só do admin.
+export const podeMexerNoQuadro = (membro) => ['admin', 'equipe'].includes(membro.papel)
+
+export const podeExcluirCartao = (membro) => membro.papel === 'admin'

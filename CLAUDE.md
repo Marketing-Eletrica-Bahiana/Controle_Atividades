@@ -44,6 +44,12 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
 7. (Feita) Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
    importar de volta.
 
+8. (Feita) Tela Quadro (`#/quadro`): quadro no estilo Trello ligado ao cronômetro (ver "Quadro de demandas").
+9. (A fazer) Calendário de postagens externas (Instagram e LinkedIn). A demanda de postagem externa
+   entra sozinha no calendário, na data da postagem.
+10. (A fazer) Importação do Trello por arquivo JSON, na Administração, com prévia. Pode ser repetida:
+   o Trello continua em uso e nada sincroniza sozinho, porque o site não tem servidor.
+
 Em 31/10/2026 a pessoa autorizou fazer as fases 3 a 7 em sequência, com commit e publicação
 ao fim de cada uma, e completar o que faltou da Fase 2 (roteiro completo dela: aba "Planilhas",
 "Baixar tabela de referência" e "Testar classificação").
@@ -274,6 +280,13 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   - `historico`: lista de `{quem, quando, acao, campo, antes, depois}`
   - `importada` (boolean), `arquivoOrigem`, `criadoEm`, `atualizadoEm`
   - `manual` (`true` só nas demandas criadas pelo lançamento manual)
+  - `cartaoId` (cartão do Quadro ligado a ela, ou `null`)
+- `cartoes/{id}`: `titulo`, `descricao`, `coluna`, `ordem`, `etiquetas` (lista), `responsaveis` (lista de
+  e-mails), `prazo`, `entregue` (boolean), `entregueEm`, `mesEntrega` (ex.: `"2026-10"`), `vinculos` (lista
+  de `{demandaId, area, email, nome}`), `comentarios` (lista de `{email, nome, quando, texto}`), `historico`,
+  `criadoPor`, `criadoEm`, `atualizadoEm`.
+- `config/quadro`: `colunas` (lista de `{id, nome}`). Sem esse documento, valem as colunas padrão de
+  `src/lib/quadro.js`.
 - `cronometros/{email}`: `demandaId`, `area`, `inicio` (serverTimestamp), `rodando`.
 
 Convenções de gravação (definidas na Fase 2):
@@ -319,6 +332,30 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
 - Classificação (`src/lib/classificacao.js`): o histórico ignora demandas cujo nome é só o tipo
   (planilhas antigas). Nos dados reais de designs acertou 59% (histórico antes das palavras-chave,
   como pede a regra); o resto vem de nomes parecidos com tipos diferentes na planilha.
+
+## Quadro de demandas (Fase 8)
+
+Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/telas/quadro/`.
+
+- O cartão é separado da demanda: existe antes de alguém ligar o cronômetro e reúne o tempo de várias
+  pessoas. Cada pessoa tem a própria demanda ligada ao cartão (`vinculos` e `cartaoId`). Assim, Nº,
+  Semana, Painel e exportações continuam contando só o trabalho real, por pessoa.
+- Colunas iguais às do Trello. As listas "Prontos e entregues" de cada mês viram uma coluna só,
+  Entregues, filtrada por mês. O admin edita as colunas em Administração, aba Quadro. Entregues não pode
+  ser removida, e coluna com cartão precisa ser esvaziada antes.
+- Iniciar pelo cartão: a primeira vez de cada pessoa abre uma janela com área, tipo e demais campos, e
+  cria a demanda dela. Depois o botão só retoma ou pausa. Vale a regra de um cronômetro por pessoa.
+- Cartão em Entregues não conclui demanda sozinho, nem demanda concluída move cartão (ainda pode faltar
+  aprovação). Ao entregar, quem moveu é perguntado se quer concluir a própria demanda.
+- Demanda nova no cronômetro ou no lançamento manual ganha cartão, salvo se a pessoa desmarcar. O padrão
+  vem do Público: Externo, Interno, Endomarketing e CAE marcam a opção; rotina fica só no cronômetro. O
+  cartão é gravado depois da demanda: se falhar, o tempo continua valendo e a pessoa é avisada.
+- Permissões: admin e equipe criam, editam e movem qualquer cartão; só o admin exclui; gestão e diretoria
+  só leem. Excluir o cartão não apaga as demandas.
+- Etiquetas só com as cores da paleta (`.etiqueta-cartao--*` em `src/styles.css`).
+- No celular, arrastar não funciona: mude de coluna pelo campo Coluna da janela do cartão.
+- Anexos ainda não entram no quadro: o projeto está no plano gratuito (Spark) do Firebase. Arquivos seguem
+  na pasta da rede, com o caminho escrito na descrição ou nos comentários.
 
 ## Importação de planilha
 
@@ -464,11 +501,14 @@ Colunas nesta ordem:
 ## Pendências
 
 - Arquivos da Klavika: colocar em `public/fontes/` quando chegarem (nomes acima).
-- Regras do Firestore: o texto publicado ainda não foi conferido aqui. `firestore.rules` tem as
-  regras que o app espera (papel por papel, Fase 7); comparar com as publicadas no console antes de
-  trocar. Resumo do que o app grava, como
+- Regras do Firestore: conferidas no console em 04/11/2026. As publicadas não são iguais a
+  `firestore.rules`: usam outros nomes de função (`membro()` no lugar de `ativo()`, `verTudo()`,
+  `meuEmail()`) e nelas só o admin apaga demandas, enquanto o arquivo também deixa a equipe apagar as
+  próprias. Não colar o arquivo inteiro no console sem comparar antes. Resumo do que o app grava, como
   admin, em `areas`, `membros`, `solicitacoes` (apaga ao liberar ou recusar), `tipos`,
-  `palavrasChave`, `config/listas` e `demandas`.
+  `palavrasChave`, `config/listas`, `config/quadro`, `demandas` e `cartoes`. As regras não são publicadas
+  pelo GitHub Actions: coleção nova precisa estar publicada no console **antes** de o código ir para o ar.
+  `cartoes` foi publicada à mão em 04/11/2026.
 - Coluna Responsável na `relatorio_designers_atualizado.xlsx` antes da importação real.
 - Nomes trocados no par de logos azuis: se a marca corrigir os arquivos, ajustar a tabela de logos
   e `src/lib/marca.js`.

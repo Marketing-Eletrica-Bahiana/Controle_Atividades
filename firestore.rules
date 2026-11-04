@@ -1,7 +1,7 @@
 rules_version = '2';
 
-// Regras que o app espera (Fase 7). Conferir com as publicadas no console do Firebase antes de
-// publicar estas: Firestore Database > Regras. Papéis: admin, equipe, gestor, diretoria.
+// Regras que o app espera. As publicadas no console do Firebase têm outros nomes de função: ver
+// "Pendências" no CLAUDE.md antes de copiar daqui. Papéis: admin, equipe, gestor, diretoria.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -70,6 +70,13 @@ service cloud.firestore {
             && request.resource.data.responsavelEmail == email()
             && minhaArea(request.resource.data.area));
       allow delete: if admin() || (equipe() && resource.data.responsavelEmail == email());
+    }
+
+    // Quadro: quem tem acesso lê; admin e equipe criam e editam qualquer cartão; só o admin exclui.
+    match /cartoes/{id} {
+      allow read: if ativo();
+      allow create, update: if admin() || equipe();
+      allow delete: if admin();
     }
 
     // Cronômetro: cada pessoa lê e grava só o próprio. Ninguém vê o de outra pessoa.

@@ -14,7 +14,7 @@ const ACOES = {
   importacao: 'Importou da planilha',
 }
 
-const dataHora = (ts) => {
+export const dataHora = (ts) => {
   const data = ts?.toDate?.() ?? (ts instanceof Date ? ts : null)
   if (!data) return ''
   return new Intl.DateTimeFormat('pt-BR', {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  collection, doc, getDocs, query, runTransaction, serverTimestamp, setDoc, Timestamp, where, writeBatch,
+  arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, setDoc, Timestamp, where, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
@@ -12,7 +12,7 @@ import { formatarTempo, horasParaSegundos } from '../lib/tempo.js'
 import { normalizar } from '../lib/texto.js'
 
 const colecao = () => collection(db, 'demandas')
-const refDemanda = (id) => doc(db, 'demandas', id)
+export const refDemanda = (id) => doc(db, 'demandas', id)
 export const refCronometro = (email) => doc(db, 'cronometros', email)
 export const ABERTAS = ['em_andamento', 'pausada']
 
@@ -48,6 +48,19 @@ export function useMinhasDemandas(areas, email, mes) {
       query(colecao(), where('area', '==', area), where('responsavelEmail', '==', email), where('status', 'in', ABERTAS)),
     ]),
   )
+}
+
+// Tempo de cada pessoa em um cartão, só nas áreas que a pessoa que está vendo pode ler.
+export function useDemandasDoCartao(cartaoId, areas) {
+  const lista = [...new Set(areas ?? [])].sort()
+  return useConsultas(cartaoId && lista.length && `cartao/${cartaoId}/${lista.join(',')}`, () =>
+    lista.map((area) => query(colecao(), where('area', '==', area), where('cartaoId', '==', cartaoId))),
+  )
+}
+
+export async function situacaoDaDemanda(id) {
+  const demanda = await getDoc(refDemanda(id))
+  return demanda.exists() ? demanda.data().status : null
 }
 
 export function useDemandasDaArea(area, mes) {
@@ -135,6 +148,7 @@ const camposDaNovaDemanda = (dados, pessoa) => ({
   tempoMaxSeg: horasParaSegundos(dados.tipoDaTabela?.maxH),
   responsavelEmail: pessoa.email,
   responsavelNome: pessoa.nome,
+  cartaoId: dados.cartaoId ?? null,
   importada: false,
   arquivoOrigem: '',
   criadoEm: serverTimestamp(),
@@ -164,6 +178,12 @@ export async function criarEIniciar(dados, pessoa) {
       historico: [registro(pessoa.email, 'criacao')],
     })
     t.set(refCronometro(pessoa.email), { demandaId: ref.id, area: dados.area, inicio: serverTimestamp(), rodando: true })
+    if (dados.cartaoId) {
+      t.update(doc(db, 'cartoes', dados.cartaoId), {
+        vinculos: arrayUnion({ demandaId: ref.id, area: dados.area, email: pessoa.email, nome: pessoa.nome }),
+        atualizadoEm: serverTimestamp(),
+      })
+    }
   })
   esquecerHistorico(dados.area)
   return ref.id

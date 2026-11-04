@@ -6,7 +6,7 @@ import { useListas } from '../../dados/listas.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { lerTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
-import { CamposDaClassificacao, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
+import { CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
 const BotoesDaJanela = ({ aoFechar, ocupado, rotulo }) => (
   <div className="janela-modal__acoes">
@@ -175,6 +175,7 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
           Essa demanda já foi concluída
         </label>
       )}
+      {nova && <CampoNoQuadro campos={campos} />}
       <p className="texto-suave texto-pequeno">
         {nova && nomeDaArea && `Área ${nomeDaArea}. `}
         {texto}
