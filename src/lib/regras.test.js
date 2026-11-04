@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, regraAutomatica } from './regras.js'
+import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, regraAutomatica, situacaoDaDemandaManual } from './regras.js'
 
 describe('regras automáticas', () => {
   it('Trello, Reunião de Setor e Claude preenchem IA, Template e Solicitante', () => {
@@ -31,6 +31,30 @@ describe('cálculos', () => {
   it('próximo Nº do mês', () => {
     expect(proximoNumero([])).toBe(1)
     expect(proximoNumero([{ numero: 3 }, { numero: 7 }, { numero: 5 }])).toBe(8)
+  })
+})
+
+describe('demanda lançada à mão', () => {
+  it('concluída: a data vira a entrega e a demanda fica no mês dela', () => {
+    expect(situacaoDaDemandaManual({ dataSolicitacao: '2026-10-28', data: '2026-10-30', concluida: true })).toEqual({
+      mes: '2026-10',
+      status: 'concluida',
+      dataEntrega: '2026-10-30',
+      datasAjuste: [],
+    })
+  })
+
+  it('em aberto: fica pausada, sem entrega, e a data vai para o Ajuste', () => {
+    expect(situacaoDaDemandaManual({ dataSolicitacao: '2026-10-28', data: '2026-11-03', concluida: false })).toEqual({
+      mes: '2026-11',
+      status: 'pausada',
+      dataEntrega: null,
+      datasAjuste: ['2026-11-03'],
+    })
+  })
+
+  it('em aberto com o trabalho no dia da solicitação: nada vai para o Ajuste', () => {
+    expect(situacaoDaDemandaManual({ dataSolicitacao: '2026-11-03', data: '2026-11-03', concluida: false }).datasAjuste).toEqual([])
   })
 })
 

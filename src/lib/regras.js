@@ -1,6 +1,6 @@
 // Regras de negócio das demandas, sem acesso ao Firestore.
 
-import { diasEntre, hojeISO } from './datas.js'
+import { diasEntre, hojeISO, mesDe } from './datas.js'
 import { tempoEconomizado } from './tempo.js'
 import { normalizar } from './texto.js'
 
@@ -59,6 +59,17 @@ export function datasAoConcluir({ dataSolicitacao, datasAjuste = [], dataEntrega
   anteriores.delete(dataSolicitacao)
   anteriores.delete(hoje)
   return { dataEntrega: hoje, datasAjuste: [...anteriores].filter((d) => d < hoje).sort() }
+}
+
+// Demanda lançada à mão: pertence ao mês da data informada. Concluída, essa data é a entrega; em aberto,
+// fica pausada e a data vai para o Ajuste (menos quando é a própria solicitação).
+export function situacaoDaDemandaManual({ dataSolicitacao, data, concluida }) {
+  return {
+    mes: mesDe(data),
+    status: concluida ? 'concluida' : 'pausada',
+    dataEntrega: concluida ? data : null,
+    datasAjuste: concluida || data === dataSolicitacao ? [] : [data],
+  }
 }
 
 // Próximo Nº da pessoa no mês e na área.

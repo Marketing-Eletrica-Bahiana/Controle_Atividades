@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import {
-  collection, doc, getDocs, query, runTransaction, serverTimestamp, Timestamp, where, writeBatch,
+  collection, doc, getDocs, query, runTransaction, serverTimestamp, setDoc, Timestamp, where, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarAjustes, formatarData, hojeISO, mesDe } from '../lib/datas.js'
-import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero } from '../lib/regras.js'
+import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, situacaoDaDemandaManual } from '../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../lib/tempo.js'
 import { normalizar } from '../lib/texto.js'
 
@@ -121,6 +121,26 @@ async function numeroNoMes(area, email, mes) {
   return proximoNumero(snap.docs.map((d) => d.data()))
 }
 
+// Campos comuns a toda demanda criada no app, com o cronômetro ou lançada à mão.
+const camposDaNovaDemanda = (dados, pessoa) => ({
+  area: dados.area,
+  tipo: dados.tipo,
+  dataSolicitacao: dados.dataSolicitacao,
+  usoIA: dados.usoIA,
+  usoTemplate: dados.usoTemplate,
+  solicitante: dados.solicitante,
+  publico: dados.publico,
+  nome: dados.nome.trim(),
+  tempoMinSeg: horasParaSegundos(dados.tipoDaTabela?.minH),
+  tempoMaxSeg: horasParaSegundos(dados.tipoDaTabela?.maxH),
+  responsavelEmail: pessoa.email,
+  responsavelNome: pessoa.nome,
+  importada: false,
+  arquivoOrigem: '',
+  criadoEm: serverTimestamp(),
+  atualizadoEm: serverTimestamp(),
+})
+
 // Cria a demanda e já liga o cronômetro. Se havia outro rodando, ele é pausado na mesma gravação.
 export async function criarEIniciar(dados, pessoa) {
   const hoje = hojeISO()
@@ -130,36 +150,54 @@ export async function criarEIniciar(dados, pessoa) {
   await runTransaction(db, async (t) => {
     const rodando = await lerRodando(t, pessoa.email)
     if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, Date.now(), { status: 'pausada' })
-    const tempoMinSeg = horasParaSegundos(dados.tipoDaTabela?.minH)
-    const tempoMaxSeg = horasParaSegundos(dados.tipoDaTabela?.maxH)
+    const novos = camposDaNovaDemanda(dados, pessoa)
     t.set(ref, {
-      area: dados.area,
+      ...novos,
       numero,
       mes,
-      tipo: dados.tipo,
-      dataSolicitacao: dados.dataSolicitacao,
       datasAjuste: [],
       dataEntrega: null,
       tempoGastoSeg: 0,
-      usoIA: dados.usoIA,
-      usoTemplate: dados.usoTemplate,
-      solicitante: dados.solicitante,
-      publico: dados.publico,
-      nome: dados.nome.trim(),
-      tempoMinSeg,
-      tempoMaxSeg,
-      ...camposCalculados({ tempoMinSeg, tempoMaxSeg, tempoGastoSeg: 0 }),
-      responsavelEmail: pessoa.email,
-      responsavelNome: pessoa.nome,
+      ...camposCalculados({ ...novos, tempoGastoSeg: 0 }),
       status: 'em_andamento',
       sessoes: [],
       historico: [registro(pessoa.email, 'criacao')],
-      importada: false,
-      arquivoOrigem: '',
-      criadoEm: serverTimestamp(),
-      atualizadoEm: serverTimestamp(),
     })
     t.set(refCronometro(pessoa.email), { demandaId: ref.id, area: dados.area, inicio: serverTimestamp(), rodando: true })
+  })
+  esquecerHistorico(dados.area)
+  return ref.id
+}
+
+// Sessão de tempo feito sem cronômetro, às 08:00 da data escolhida.
+const sessaoManual = (data, segundos) => {
+  const inicio = Timestamp.fromDate(new Date(`${data}T08:00:00-03:00`))
+  return { inicio, fim: Timestamp.fromMillis(inicio.toMillis() + segundos * 1000), seg: segundos, manual: true }
+}
+
+const registroTempoManual = (quem, antesSeg, depoisSeg, segundos, data) =>
+  registro(quem, 'tempo_manual', 'tempoGastoSeg', formatarTempo(antesSeg), `${formatarTempo(depoisSeg)} (+${formatarTempo(segundos)} em ${formatarData(data)})`)
+
+// Demanda feita fora do cronômetro: já nasce com o tempo, numa sessão manual na data informada.
+// Não mexe no cronômetro que estiver rodando.
+export async function criarDemandaManual(dados, { data, segundos, concluida }, pessoa) {
+  const situacao = situacaoDaDemandaManual({ dataSolicitacao: dados.dataSolicitacao, data, concluida })
+  const numero = await numeroNoMes(dados.area, pessoa.email, situacao.mes)
+  const novos = camposDaNovaDemanda(dados, pessoa)
+  const ref = doc(colecao())
+  await setDoc(ref, {
+    ...novos,
+    ...situacao,
+    numero,
+    tempoGastoSeg: segundos,
+    ...camposCalculados({ ...novos, ...situacao, tempoGastoSeg: segundos }),
+    manual: true,
+    sessoes: [sessaoManual(data, segundos)],
+    historico: [
+      registro(pessoa.email, 'criacao'),
+      registroTempoManual(pessoa.email, 0, segundos, segundos, data),
+      ...(concluida ? [registro(pessoa.email, 'conclusao', 'status', '', 'Concluída')] : []),
+    ],
   })
   esquecerHistorico(dados.area)
   return ref.id
@@ -250,21 +288,16 @@ export function adicionarTempoManual(demandaId, { data, segundos }, quem) {
   return runTransaction(db, async (t) => {
     const alvo = await t.get(refDemanda(demandaId))
     const atual = alvo.data()
-    const inicio = Timestamp.fromDate(new Date(`${data}T08:00:00-03:00`))
-    const sessao = { inicio, fim: Timestamp.fromMillis(inicio.toMillis() + segundos * 1000), seg: segundos, manual: true }
     const tempoGastoSeg = (atual.tempoGastoSeg ?? 0) + segundos
     const ajustes = new Set(atual.datasAjuste ?? [])
     if (data !== atual.dataSolicitacao && data !== atual.dataEntrega) ajustes.add(data)
     const novos = { ...atual, tempoGastoSeg, datasAjuste: [...ajustes].sort() }
     t.update(alvo.ref, {
-      sessoes: [...(atual.sessoes ?? []), sessao],
+      sessoes: [...(atual.sessoes ?? []), sessaoManual(data, segundos)],
       tempoGastoSeg,
       datasAjuste: novos.datasAjuste,
       ...camposCalculados(novos),
-      historico: [
-        ...(atual.historico ?? []),
-        registro(quem, 'tempo_manual', 'tempoGastoSeg', formatarTempo(atual.tempoGastoSeg), `${formatarTempo(tempoGastoSeg)} (+${formatarTempo(segundos)} em ${formatarData(data)})`),
-      ],
+      historico: [...(atual.historico ?? []), registroTempoManual(quem, atual.tempoGastoSeg, tempoGastoSeg, segundos, data)],
       atualizadoEm: serverTimestamp(),
     })
   })

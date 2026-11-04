@@ -8,10 +8,10 @@ import EstadoVazio from '../../componentes/EstadoVazio.jsx'
 import JanelaEditarDemanda from '../../componentes/JanelaEditarDemanda.jsx'
 import { useAreas } from '../../dados/areas.js'
 import {
-  adicionarTempoManual, concluir, corrigirInicio, criarEIniciar, pausar, reabrir, retomar, useCronometro, useMinhasDemandas,
+  adicionarTempoManual, concluir, corrigirInicio, criarDemandaManual, criarEIniciar, pausar, reabrir, retomar, useCronometro, useMinhasDemandas,
 } from '../../dados/demandas.js'
 import { useAgora } from '../../hooks/useAgora.js'
-import { hojeISO, mesDe } from '../../lib/datas.js'
+import { formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
 import FormDemanda from './FormDemanda.jsx'
@@ -90,6 +90,15 @@ export default function MeuCronometro() {
   function pedirConclusao(demanda) {
     if (!demanda.usoIA || !demanda.usoTemplate || !demanda.solicitante) setConcluindo(demanda)
     else agir(() => concluir(demanda.id, pessoa), `${demanda.nome} concluída. Mandou bem!`)
+  }
+
+  // Concluída em outro dia não entra na lista de hoje, então o aviso diz onde encontrar.
+  function registrarManual(dados, lancamento) {
+    const foraDaLista = lancamento.concluida && lancamento.data !== hoje
+    const mensagem = foraDaLista
+      ? `${dados.nome} registrada. Veja em Demandas, ${formatarMes(mesDe(lancamento.data))}.`
+      : `${dados.nome} registrada. Mandou bem!`
+    return agir(() => criarDemandaManual(dados, lancamento, pessoa), mensagem)
   }
 
   async function reabrirDemanda(demanda) {
@@ -175,7 +184,12 @@ export default function MeuCronometro() {
       />
       <JanelaTempoManual
         aberta={tempoManual}
+        area={area}
+        nomeDaArea={minhasAreas.length > 1 ? nomeDaArea(area) : ''}
+        pessoa={pessoa}
         demandas={[...daArea].filter((d) => d.id !== rodandoId).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))}
+        abertas={abertas}
+        aoCriar={registrarManual}
         aoSalvar={(id, dados) => agir(() => adicionarTempoManual(id, dados, membro.email), 'Tempo adicionado.')}
         aoFechar={() => setTempoManual(false)}
       />

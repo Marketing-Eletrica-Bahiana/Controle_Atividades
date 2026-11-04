@@ -278,6 +278,17 @@ p {
   color: var(--vermelho);
 }
 
+/* Aviso com botão: no celular, o botão desce para baixo do texto. */
+.aviso--com-acao {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aviso--com-acao > span {
+  flex: 1 1 240px;
+}
+
 .acoes {
   display: flex;
   flex-wrap: wrap;
@@ -1788,6 +1799,16 @@ p {
 @media (max-width: 760px) {
   .grade-tres {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .abas--janela {
+    gap: 0;
+  }
+
+  .abas--janela .abas__item {
+    flex: 1;
+    justify-content: center;
+    padding-inline: 8px;
   }
 
   .cartao-cronometro {

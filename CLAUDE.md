@@ -273,6 +273,7 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   - `sessoes`: lista de `{inicio, fim, seg}`
   - `historico`: lista de `{quem, quando, acao, campo, antes, depois}`
   - `importada` (boolean), `arquivoOrigem`, `criadoEm`, `atualizadoEm`
+  - `manual` (`true` só nas demandas criadas pelo lançamento manual)
 - `cronometros/{email}`: `demandaId`, `area`, `inicio` (serverTimestamp), `rodando`.
 
 Convenções de gravação (definidas na Fase 2):
@@ -303,6 +304,11 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
   da data escolhida, e a data entra em `datasAjuste`.
 - Mês e Nº: a demanda pertence ao mês em que foi criada. Se a Data de Entrega for editada para
   outro mês, ela vai para o fim desse mês e o mês antigo é renumerado.
+- Lançamento manual (janela "Adicionar tempo manual", opção "Nova demanda"): para o período de
+  adaptação, cria a demanda já com o tempo, sem ligar nem pausar o cronômetro. Ela pertence ao mês da
+  data informada, não ao mês de hoje. Concluída, a data vira a Data de Entrega; em aberto, fica
+  pausada e a data vai para o Ajuste. Conta como demanda do cronômetro (`importada: false`), então
+  "Substituir histórico" não a apaga.
 - Concluir grava a entrega de hoje; os outros dias com sessão, a entrega anterior (se foi reaberta)
   e os ajustes já existentes vão para `datasAjuste`, sem solicitação e entrega, sem repetir.
   Faltando Uso de IA, Template ou Solicitante, uma janela pede antes de concluir.

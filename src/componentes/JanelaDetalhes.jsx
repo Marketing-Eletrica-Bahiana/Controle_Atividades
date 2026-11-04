@@ -41,7 +41,7 @@ export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => emai
         ['Tempo estimado sem IA', `${formatarTempo(demanda.tempoMinSeg)} a ${formatarTempo(demanda.tempoMaxSeg)}`],
         ['Tempo economizado com IA', `${formatarTempo(demanda.economizadoMinSeg)} a ${formatarTempo(demanda.economizadoMaxSeg)}`],
         ['Prazo cumprido (dias)', demanda.prazoDias ?? ''],
-        ['Origem', demanda.importada ? `Importada de ${demanda.arquivoOrigem}` : 'Cronômetro'],
+        ['Origem', demanda.importada ? `Importada de ${demanda.arquivoOrigem}` : demanda.manual ? 'Lançamento manual' : 'Cronômetro'],
       ]
     : []
   const historico = [...(demanda?.historico ?? [])].reverse()
