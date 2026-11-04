@@ -1,10 +1,12 @@
 import { useId, useMemo, useState } from 'react'
 import { CampoLista, ErroCampo, SimNao } from '../../componentes/Campos.jsx'
+import CamposDaPostagem from '../../componentes/CamposDaPostagem.jsx'
 import { useHistoricoDaArea } from '../../dados/demandas.js'
 import { useListas } from '../../dados/listas.js'
 import { usePalavras, useTipos } from '../../dados/tipos.js'
 import { classificar, prepararHistorico, textoDaOrigem } from '../../lib/classificacao.js'
 import { hojeISO, mesDe } from '../../lib/datas.js'
+import { formatoDoNome, POSTAGEM_VAZIA, publicoDePostagem } from '../../lib/postagens.js'
 import { vaiParaOQuadro } from '../../lib/quadro.js'
 import { regraAutomatica } from '../../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../../lib/tempo.js'
@@ -24,6 +26,9 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   const [manual, setManual] = useState({})
   // Sem escolha da pessoa, o público decide se a demanda ganha cartão no Quadro.
   const [noQuadroEscolhido, setNoQuadro] = useState(null)
+  // Com o público Externo, a demanda já vem marcada como postagem e entra no calendário.
+  const [ehPostEscolhido, setEhPost] = useState(null)
+  const [dadosDaPostagem, setPostagem] = useState(POSTAGEM_VAZIA)
 
   const classificacao = useMemo(
     () => classificar(dados.nome, { historico, palavras: palavras ?? [], tipos: tipos ?? [], email: pessoa.email, mesAtual: mesDe(hojeISO()) }),
@@ -37,11 +42,18 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   const solicitante = valor('solicitante')
   const usoIA = valor('usoIA')
   const usoTemplate = valor('usoTemplate')
-  const noQuadro = noQuadroEscolhido ?? vaiParaOQuadro(publico)
+  const ehPost = ehPostEscolhido ?? publicoDePostagem(publico)
+  // A postagem mora no cartão: sendo postagem, o cartão é criado de qualquer jeito.
+  const noQuadro = ehPost || (noQuadroEscolhido ?? vaiParaOQuadro(publico))
+  const postagem = { ...dadosDaPostagem, formato: dadosDaPostagem.formato || formatoDoNome(dados.nome) }
 
   return {
     noQuadro,
     setNoQuadro,
+    ehPost,
+    setEhPost,
+    postagem,
+    setPostagem,
     tipos,
     listas,
     classificacao,
@@ -68,6 +80,8 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
       setDados(VAZIO)
       setManual({})
       setNoQuadro(null)
+      setEhPost(null)
+      setPostagem(POSTAGEM_VAZIA)
     },
     paraGravar: (dataSolicitacao) => ({
       area,
@@ -80,6 +94,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
       usoTemplate,
       dataSolicitacao,
       noQuadro,
+      postagem: ehPost ? postagem : null,
     }),
   }
 }
@@ -125,9 +140,26 @@ export function CampoTipo({ campos, erro }) {
 export function CampoNoQuadro({ campos }) {
   return (
     <label className="opcao">
-      <input type="checkbox" checked={campos.noQuadro} onChange={(e) => campos.setNoQuadro(e.target.checked)} />
+      <input type="checkbox" checked={campos.noQuadro} disabled={campos.ehPost} onChange={(e) => campos.setNoQuadro(e.target.checked)} />
       Criar cartão no Quadro
     </label>
+  )
+}
+
+export function CampoDaPostagem({ campos }) {
+  return (
+    <>
+      <label className="opcao">
+        <input type="checkbox" checked={campos.ehPost} onChange={(e) => campos.setEhPost(e.target.checked)} />
+        É postagem em rede social
+      </label>
+      {campos.ehPost && (
+        <>
+          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} />
+          <p className="campo__ajuda">Com a data, a postagem já entra no calendário. Sem data, ela fica na lista Sem data, na tela Postagens.</p>
+        </>
+      )}
+    </>
   )
 }
 

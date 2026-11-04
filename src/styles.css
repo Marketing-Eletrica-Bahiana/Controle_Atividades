@@ -2736,3 +2736,253 @@ button.abas__item.ativo {
     flex-basis: 100%;
   }
 }
+
+/* Calendário de postagens */
+
+.pagina--postagens .indicadores {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.conteudo:has(.pagina--postagens) {
+  max-width: none;
+}
+
+.campos-postagem {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendario-postagens {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--medio-20);
+  border-radius: var(--raio);
+  background: var(--medio-20);
+}
+
+.calendario-postagens__semana {
+  padding: 8px;
+  background: var(--marinho);
+  color: var(--branco);
+  font-weight: 700;
+  text-align: center;
+}
+
+.dia-postagem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 136px;
+  padding: 8px;
+  background: var(--branco);
+  transition: box-shadow var(--transicao);
+}
+
+.dia-postagem--fora {
+  background-image: linear-gradient(var(--medio-5), var(--medio-5));
+}
+
+.dia-postagem--hoje {
+  background-image: linear-gradient(var(--medio-10), var(--medio-10));
+}
+
+.dia-postagem--alvo {
+  box-shadow: inset 0 0 0 2px var(--brilhante);
+}
+
+.dia-postagem__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+}
+
+.dia-postagem__numero {
+  color: var(--marinho);
+  font-weight: 700;
+}
+
+.dia-postagem--hoje .dia-postagem__numero {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brilhante);
+  color: var(--branco);
+}
+
+.dia-postagem__data {
+  display: none;
+  color: var(--marinho);
+  font-weight: 700;
+}
+
+.dia-postagem__topo .botao-icone {
+  width: 28px;
+  height: 28px;
+  opacity: 0;
+}
+
+.dia-postagem:hover .dia-postagem__topo .botao-icone,
+.dia-postagem__topo .botao-icone:focus-visible {
+  opacity: 1;
+}
+
+.dia-postagem__lista,
+.postagens-sem-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.postagens-sem-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.postagem {
+  --cor-situacao: var(--medio);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px 8px;
+  border-left: 4px solid var(--cor-situacao);
+  border-radius: var(--raio-etiqueta);
+  background: var(--medio-10);
+  transition: opacity var(--transicao), transform var(--transicao);
+}
+
+.postagem[draggable='true'] {
+  cursor: grab;
+}
+
+.postagem:hover {
+  transform: translateY(-1px);
+}
+
+.postagem--arrastando {
+  opacity: 0.5;
+}
+
+.postagem--producao {
+  --cor-situacao: var(--medio);
+}
+
+.postagem--programada {
+  --cor-situacao: var(--brilhante);
+}
+
+.postagem--postada {
+  --cor-situacao: var(--marinho);
+}
+
+.postagem--atrasada {
+  --cor-situacao: var(--vermelho);
+}
+
+.postagem--atrasada.postagem {
+  background: var(--vermelho-10);
+}
+
+.postagem__titulo {
+  display: -webkit-box;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--marinho);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.postagem__detalhes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--texto-suave);
+  font-size: 0.6875rem;
+}
+
+.postagem__rede {
+  padding: 0 4px;
+  border-radius: var(--raio-etiqueta);
+  background: var(--marinho);
+  color: var(--branco);
+  font-weight: 700;
+}
+
+.calendario-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.calendario-legenda__item {
+  padding-left: 8px;
+  border-left: 4px solid var(--cor-situacao);
+}
+
+@media (max-width: 760px) {
+  .pagina--postagens .indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* No celular, o calendário vira uma agenda só com os dias que têm postagem. */
+  .calendario-postagens {
+    grid-template-columns: minmax(0, 1fr);
+    border: 0;
+    background: transparent;
+    gap: 8px;
+  }
+
+  .calendario-postagens__semana,
+  .dia-postagem--fora,
+  .dia-postagem--sem-itens {
+    display: none;
+  }
+
+  .dia-postagem {
+    min-height: 0;
+    border: 1px solid var(--medio-20);
+    border-radius: var(--raio);
+  }
+
+  .dia-postagem--sem-itens.dia-postagem--hoje {
+    display: flex;
+  }
+
+  .dia-postagem__numero {
+    display: none;
+  }
+
+  .dia-postagem--hoje .dia-postagem__numero {
+    display: none;
+  }
+
+  .dia-postagem__data {
+    display: inline;
+  }
+
+  .dia-postagem__topo .botao-icone {
+    opacity: 1;
+  }
+}

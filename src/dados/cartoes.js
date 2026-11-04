@@ -4,7 +4,8 @@
 import { arrayUnion, collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
-import { hojeISO } from '../lib/datas.js'
+import { formatarData, hojeISO } from '../lib/datas.js'
+import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensIguais, resumoDaPostagem } from '../lib/postagens.js'
 import { camposDeEntrega, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDoPublico } from '../lib/quadro.js'
 import { refDemanda, registro } from './demandas.js'
 
@@ -22,6 +23,14 @@ export function useCartoesDoQuadro(mesEntrega) {
   ])
 }
 
+// O calendário precisa das postagens do mês e do que está em andamento (as que ainda não têm data).
+export function useCartoesDoCalendario(mes) {
+  return useConsultas(mes && `calendario/${mes}`, () => [
+    query(colecao(), where('postagemMes', '==', mes)),
+    query(colecao(), where('entregue', '==', false)),
+  ])
+}
+
 export function useColunas() {
   const consulta = useConsulta('config/quadro', refColunas)
   return { ...consulta, dados: consulta.carregando ? null : (consulta.dados?.colunas ?? COLUNAS_PADRAO) }
@@ -36,7 +45,10 @@ export async function contarCartoesNaColuna(coluna) {
 
 // ---------- Criação ----------
 
-function novoCartao({ titulo, coluna, etiquetas = [], responsaveis = [], prazo = null, descricao = '', vinculos = [], entregueEm = null }, pessoa) {
+function novoCartao(
+  { titulo, coluna, etiquetas = [], responsaveis = [], prazo = null, descricao = '', vinculos = [], entregueEm = null, postagem = postagemPadrao(etiquetas) },
+  pessoa,
+) {
   return {
     titulo: titulo.trim(),
     descricao,
@@ -45,6 +57,7 @@ function novoCartao({ titulo, coluna, etiquetas = [], responsaveis = [], prazo =
     etiquetas,
     responsaveis,
     prazo,
+    ...camposDaPostagem(postagem),
     ...camposDeEntrega(coluna, entregueEm ?? hojeISO()),
     vinculos,
     comentarios: [],
@@ -71,6 +84,7 @@ export async function criarCartaoDaDemanda(demandaId, dados, pessoa, colunas, { 
         etiquetas: etiqueta ? [etiqueta] : [],
         responsaveis: [pessoa.email],
         entregueEm: concluidaEm,
+        postagem: dados.postagem ?? null,
         vinculos: [{ demandaId, area: dados.area, email: pessoa.email, nome: pessoa.nome }],
       },
       pessoa,
@@ -125,9 +139,24 @@ export async function salvarCartao(cartao, novos, quem, nomeDaColuna, mostrarVal
     Object.assign(alteracoes, campos)
     registros.push(linha)
   }
+  const postagemAntes = cartao.postagem ?? (ehPostagem(cartao) ? POSTAGEM_VAZIA : null)
+  if (!postagensIguais(novos.postagem, postagemAntes)) {
+    Object.assign(alteracoes, camposDaPostagem(novos.postagem))
+    registros.push(registro(quem, 'edicao', 'Postagem', resumoDaPostagem(postagemAntes), resumoDaPostagem(novos.postagem)))
+  }
   if (!registros.length) return false
   await updateDoc(refCartao(cartao.id), { ...alteracoes, historico: arrayUnion(...registros), atualizadoEm: serverTimestamp() })
   return true
+}
+
+// Arrastar no calendário muda só a data da postagem.
+export function moverPostagem(cartao, data, quem) {
+  const antes = cartao.postagem ?? POSTAGEM_VAZIA
+  return updateDoc(refCartao(cartao.id), {
+    ...camposDaPostagem(mudarPostagem(antes, 'data', data)),
+    historico: arrayUnion(registro(quem, 'edicao', 'Data da postagem', formatarData(antes.data), formatarData(data))),
+    atualizadoEm: serverTimestamp(),
+  })
 }
 
 export function comentar(cartao, texto, pessoa) {

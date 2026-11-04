@@ -12,7 +12,7 @@ import {
   adicionarTempoManual, concluir, corrigirInicio, criarDemandaManual, criarEIniciar, pausar, reabrir, retomar, useCronometro, useMinhasDemandas,
 } from '../../dados/demandas.js'
 import { useAgora } from '../../hooks/useAgora.js'
-import { formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
+import { formatarData, formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import { COLUNAS_PADRAO } from '../../lib/quadro.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
@@ -89,12 +89,14 @@ export default function MeuCronometro() {
     }
   }
 
+  const noCalendario = (dados) => (dados.postagem?.data ? ` No calendário em ${formatarData(dados.postagem.data)}.` : '')
+
   async function iniciarNova(dados) {
     if (!(await podeTrocar(dados.nome))) return false
     return agir(async () => {
       const id = await criarEIniciar(dados, pessoa)
       await criarCartaoDe(id, dados)
-    }, `Cronômetro rodando: ${dados.nome}`)
+    }, `Cronômetro rodando: ${dados.nome}.${noCalendario(dados)}`)
   }
 
   async function retomarDemanda(demanda) {
@@ -117,7 +119,7 @@ export default function MeuCronometro() {
     return agir(async () => {
       const id = await criarDemandaManual(dados, lancamento, pessoa)
       await criarCartaoDe(id, dados, lancamento.concluida ? lancamento.data : null)
-    }, mensagem)
+    }, `${mensagem}${noCalendario(dados)}`)
   }
 
   async function reabrirDemanda(demanda) {

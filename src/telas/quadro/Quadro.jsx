@@ -1,102 +1,35 @@
 import { useMemo, useState } from 'react'
-import { CalendarClock, MessageSquare, Pause, Play, Plus, SquareKanban, Timer, X } from 'lucide-react'
-import { useAcesso } from '../../acesso/ProvedorAcesso.jsx'
+import { CalendarClock, Megaphone, MessageSquare, Pause, Play, Plus, SquareKanban, Timer, X } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
-import { useConfirmar } from '../../componentes/Confirmar.jsx'
 import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
-import { useAreas } from '../../dados/areas.js'
-import { criarCartao, moverCartao, useCartoesDoQuadro, useColunas } from '../../dados/cartoes.js'
-import { concluir, criarEIniciar, pausar, retomar, situacaoDaDemanda, useCronometro } from '../../dados/demandas.js'
-import { useMembros } from '../../dados/membros.js'
+import { criarCartao, moverCartao, useCartoesDoQuadro } from '../../dados/cartoes.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
-import { podeExcluirCartao, podeMexerNoQuadro } from '../../lib/papeis.js'
 import {
   agruparPorColuna, cartaoAtrasado, classeDaEtiqueta, COLUNA_ENTREGUES, etiquetaDaColuna, ETIQUETAS, filtrarCartoes, iniciais, ordemParaSoltar,
 } from '../../lib/quadro.js'
-import JanelaCartao from './JanelaCartao.jsx'
-import JanelaIniciarCartao from './JanelaIniciarCartao.jsx'
+import { useAcoesDoCartao } from './useAcoesDoCartao.jsx'
 
 const SEM_CARTOES = []
 
 export default function Quadro() {
-  const { membro } = useAcesso()
-  const pessoa = useMemo(() => ({ email: membro.email, nome: membro.nome }), [membro.email, membro.nome])
   const { executar } = useAvisos()
-  const [janelaConfirmar, confirmar] = useConfirmar()
-  const podeMexer = podeMexerNoQuadro(membro)
-
   const [mes, setMes] = useMesEscolhido()
-  const colunas = useColunas()
   const consulta = useCartoesDoQuadro(mes)
-  const { dados: membros } = useMembros()
-  const { dados: todasAsAreas } = useAreas()
-  const cronometro = useCronometro(podeMexer ? membro.email : null)
+  const cartoes = consulta.dados ?? SEM_CARTOES
+  const acoes = useAcoesDoCartao(cartoes)
+  const { membro, pessoa, podeMexer, podeUsarCronometro, colunas, membros, nomeDaColuna, nomeDaPessoa } = acoes
 
   const [filtros, setFiltros] = useState({ busca: '', etiqueta: '', pessoa: '' })
-  const [abertoId, setAbertoId] = useState(null)
-  const [iniciando, setIniciando] = useState(null)
   const [arrastandoId, setArrastandoId] = useState(null)
   const [alvo, setAlvo] = useState(null)
 
-  const cartoes = consulta.dados ?? SEM_CARTOES
   const listaDeColunas = colunas.dados ?? SEM_CARTOES
   const grupos = useMemo(() => agruparPorColuna(filtrarCartoes(cartoes, filtros), listaDeColunas), [cartoes, filtros, listaDeColunas])
-  const nomeDaColuna = (id) => listaDeColunas.find((c) => c.id === id)?.nome ?? id
-  const nomeDaPessoa = (email) => membros?.find((m) => m.id === email)?.nome ?? email
-  const aberto = cartoes.find((c) => c.id === abertoId)
   const hoje = hojeISO()
-
-  const minhasAreas = (membro.areas ?? [])
-    .map((id) => todasAsAreas?.find((a) => a.id === id) ?? { id, nome: id, ativa: true })
-    .filter((a) => a.ativa !== false)
-  const rodandoId = cronometro.dados?.rodando ? cronometro.dados.demandaId : null
-  const estaRodando = (cartao) => Boolean(rodandoId) && (cartao.vinculos ?? []).some((v) => v.demandaId === rodandoId)
-  const minhaDemanda = (cartao) => (cartao.vinculos ?? []).find((v) => v.email === membro.email)
   const filtrando = Boolean(filtros.busca || filtros.etiqueta || filtros.pessoa)
   const mudarFiltro = (campo, valor) => setFiltros((atual) => ({ ...atual, [campo]: valor }))
-
-  async function podeTrocar(nomeNovo) {
-    if (!rodandoId) return true
-    return confirmar({
-      titulo: 'Pausar o cronômetro atual?',
-      texto: `O cronômetro que está rodando será pausado para começar "${nomeNovo}".`,
-      botao: 'Pausar e começar',
-    })
-  }
-
-  async function usarCronometro(cartao) {
-    if (estaRodando(cartao)) {
-      executar(() => pausar(pessoa), 'Cronômetro pausado.')
-      return
-    }
-    const minha = minhaDemanda(cartao)
-    if (!minha) {
-      setIniciando(cartao)
-      return
-    }
-    if (await podeTrocar(cartao.titulo)) executar(() => retomar(minha.demandaId, pessoa), `Cronômetro rodando: ${cartao.titulo}`)
-  }
-
-  async function iniciarDoCartao(cartao, dados) {
-    if (!(await podeTrocar(dados.nome))) return false
-    return executar(() => criarEIniciar({ ...dados, cartaoId: cartao.id }, pessoa), `Cronômetro rodando: ${dados.nome}`)
-  }
-
-  // O cartão entregue não conclui a demanda sozinho: quem está arrastando decide sobre a própria demanda.
-  async function oferecerConcluir(cartao) {
-    const minha = minhaDemanda(cartao)
-    if (!minha) return
-    const situacao = await situacaoDaDemanda(minha.demandaId).catch(() => null)
-    if (!situacao || situacao === 'concluida') return
-    const sim = await confirmar({
-      titulo: 'Concluir sua demanda também?',
-      texto: `"${cartao.titulo}" foi para Entregues, e a sua demanda dela ainda está aberta no cronômetro.`,
-      botao: 'Concluir',
-    })
-    if (sim) executar(() => concluir(minha.demandaId, pessoa), `${cartao.titulo} concluída. Mandou bem!`)
-  }
 
   async function soltar(colunaId, antesDe) {
     const cartao = cartoes.find((c) => c.id === arrastandoId)
@@ -105,7 +38,7 @@ export default function Quadro() {
     if (!cartao || antesDe === cartao.id) return
     const ordem = ordemParaSoltar(grupos.get(colunaId) ?? [], cartao.id, antesDe)
     const deuCerto = await executar(() => moverCartao(cartao, colunaId, ordem, membro.email, nomeDaColuna))
-    if (deuCerto && colunaId === COLUNA_ENTREGUES && !cartao.entregue) oferecerConcluir(cartao)
+    if (deuCerto && colunaId === COLUNA_ENTREGUES && !cartao.entregue) acoes.oferecerConcluir(cartao)
   }
 
   if (colunas.carregando || consulta.carregando) return <CarregandoBloco />
@@ -194,13 +127,13 @@ export default function Quadro() {
                     hoje={hoje}
                     nomeDaPessoa={nomeDaPessoa}
                     podeMexer={podeMexer}
-                    podeUsarCronometro={podeMexer && minhasAreas.length > 0}
-                    rodando={estaRodando(cartao)}
-                    temDemanda={Boolean(minhaDemanda(cartao))}
+                    podeUsarCronometro={podeUsarCronometro}
+                    rodando={acoes.estaRodando(cartao)}
+                    temDemanda={acoes.temDemanda(cartao)}
                     arrastando={arrastandoId === cartao.id}
                     soltarAqui={alvo?.antesDe === cartao.id}
-                    aoAbrir={() => setAbertoId(cartao.id)}
-                    aoCronometro={() => usarCronometro(cartao)}
+                    aoAbrir={() => acoes.abrir(cartao.id)}
+                    aoCronometro={() => acoes.usarCronometro(cartao)}
                     aoArrastar={() => setArrastandoId(cartao.id)}
                     aoSoltarArraste={() => {
                       setArrastandoId(null)
@@ -223,35 +156,7 @@ export default function Quadro() {
         })}
       </div>
 
-      <JanelaCartao
-        cartao={aberto}
-        colunas={listaDeColunas}
-        membros={membros ?? []}
-        membro={membro}
-        pessoa={pessoa}
-        podeMexer={podeMexer}
-        podeApagar={podeExcluirCartao(membro)}
-        podeUsarCronometro={podeMexer && minhasAreas.length > 0}
-        rodando={aberto ? estaRodando(aberto) : false}
-        temDemanda={aberto ? Boolean(minhaDemanda(aberto)) : false}
-        nomeDaColuna={nomeDaColuna}
-        nomeDaPessoa={nomeDaPessoa}
-        confirmar={confirmar}
-        aoCronometro={(cartao) => {
-          setAbertoId(null)
-          usarCronometro(cartao)
-        }}
-        aoEntregar={oferecerConcluir}
-        aoFechar={() => setAbertoId(null)}
-      />
-      <JanelaIniciarCartao
-        cartao={iniciando}
-        pessoa={pessoa}
-        areas={minhasAreas}
-        aoIniciar={iniciarDoCartao}
-        aoFechar={() => setIniciando(null)}
-      />
-      {janelaConfirmar}
+      {acoes.janelas}
     </section>
   )
 }
@@ -303,6 +208,12 @@ function CartaoDoQuadro({
             <span className={`cartao-quadro__dado numero ${cartaoAtrasado(cartao, hoje) ? 'cartao-quadro__dado--atrasado' : ''}`} title="Prazo">
               <CalendarClock aria-hidden="true" />
               {formatarData(cartao.prazo)}
+            </span>
+          )}
+          {cartao.postagem?.data && (
+            <span className="cartao-quadro__dado numero" title="Data da postagem">
+              <Megaphone aria-hidden="true" />
+              {formatarData(cartao.postagem.data)}
             </span>
           )}
           {comentarios > 0 && (

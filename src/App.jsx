@@ -13,6 +13,7 @@ import SemAcesso from './telas/SemAcesso.jsx'
 const TELAS = {
   '/cronometro': lazy(() => import('./telas/cronometro/MeuCronometro.jsx')),
   '/quadro': lazy(() => import('./telas/quadro/Quadro.jsx')),
+  '/postagens': lazy(() => import('./telas/postagens/Postagens.jsx')),
   '/demandas': lazy(() => import('./telas/demandas/Demandas.jsx')),
   '/semana': lazy(() => import('./telas/semana/Semana.jsx')),
   '/painel': lazy(() => import('./telas/painel/Painel.jsx')),

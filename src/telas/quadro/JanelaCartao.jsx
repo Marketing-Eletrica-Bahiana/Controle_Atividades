@@ -3,6 +3,7 @@ import { Pause, Play, Send, Trash2 } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
+import CamposDaPostagem from '../../componentes/CamposDaPostagem.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { dataHora } from '../../componentes/JanelaDetalhes.jsx'
 import { EtiquetaSituacao } from '../../componentes/Seletores.jsx'
@@ -10,6 +11,7 @@ import { comentar, excluirCartao, salvarCartao } from '../../dados/cartoes.js'
 import { useDemandasDoCartao } from '../../dados/demandas.js'
 import { formatarData } from '../../lib/datas.js'
 import { veTodasAsAreas } from '../../lib/papeis.js'
+import { ehPostagem, POSTAGEM_VAZIA, postagemPadrao } from '../../lib/postagens.js'
 import { COLUNA_ENTREGUES, ETIQUETAS } from '../../lib/quadro.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
@@ -45,11 +47,19 @@ function Conteudo({
     responsaveis: cartao.responsaveis ?? [],
     prazo: cartao.prazo ?? null,
   })
+  const [ehPost, setEhPost] = useState(ehPostagem(cartao))
+  const [postagem, setPostagem] = useState({ ...POSTAGEM_VAZIA, ...cartao.postagem })
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const mudar = (campo, valor) => setDados((atual) => ({ ...atual, [campo]: valor }))
   const alternar = (campo, valor) =>
     setDados((atual) => ({ ...atual, [campo]: atual[campo].includes(valor) ? atual[campo].filter((v) => v !== valor) : [...atual[campo], valor] }))
+
+  // Marcar Comunicação Externa já abre os campos da postagem; a pessoa desmarca se não for postagem.
+  function alternarEtiqueta(etiqueta) {
+    if (!dados.etiquetas.includes(etiqueta) && postagemPadrao([etiqueta])) setEhPost(true)
+    alternar('etiquetas', etiqueta)
+  }
 
   const pessoasDaLista = membros.filter((m) => m.ativo !== false || dados.responsaveis.includes(m.id))
 
@@ -63,7 +73,8 @@ function Conteudo({
     setOcupado(true)
     let mudou = false
     const deuCerto = await executar(async () => {
-      mudou = await salvarCartao(cartao, { ...dados, titulo: dados.titulo.trim() }, membro.email, nomeDaColuna, mostrarValor)
+      const novos = { ...dados, titulo: dados.titulo.trim(), postagem: ehPost ? postagem : null }
+      mudou = await salvarCartao(cartao, novos, membro.email, nomeDaColuna, mostrarValor)
     })
     setOcupado(false)
     if (!deuCerto) return
@@ -110,7 +121,7 @@ function Conteudo({
             <div className="janela-cartao__opcoes">
               {ETIQUETAS.map((etiqueta) => (
                 <label key={etiqueta} className="opcao">
-                  <input type="checkbox" checked={dados.etiquetas.includes(etiqueta)} onChange={() => alternar('etiquetas', etiqueta)} />
+                  <input type="checkbox" checked={dados.etiquetas.includes(etiqueta)} onChange={() => alternarEtiqueta(etiqueta)} />
                   {etiqueta}
                 </label>
               ))}
@@ -127,6 +138,11 @@ function Conteudo({
               ))}
             </div>
           </fieldset>
+          <label className="opcao">
+            <input type="checkbox" checked={ehPost} onChange={(e) => setEhPost(e.target.checked)} />
+            É postagem em rede social
+          </label>
+          {ehPost && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} />}
           <label className="campo">
             <span className="campo__rotulo">Descrição</span>
             <textarea rows={5} value={dados.descricao} onChange={(e) => mudar('descricao', e.target.value)} />

@@ -6,7 +6,7 @@ import { hojeISO } from '../../lib/datas.js'
 import { SITUACOES } from '../../lib/regras.js'
 import { formatarTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
-import { CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
+import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
 // Formulário de nova demanda. Busca nas demandas abertas da pessoa (para retomar em vez de duplicar)
 // e classifica o tipo enquanto o nome é digitado.
@@ -82,6 +82,7 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
         <CamposDaClassificacao campos={campos}>
           <CampoData rotulo="Data de Solicitação" valor={dataSolicitacao} aoMudar={setDataSolicitacao} erro={erros.dataSolicitacao} obrigatorio />
         </CamposDaClassificacao>
+        <CampoDaPostagem campos={campos} />
         <CampoNoQuadro campos={campos} />
 
         <div className="acoes acoes--fim">

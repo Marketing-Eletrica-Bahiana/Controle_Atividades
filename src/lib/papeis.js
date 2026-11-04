@@ -1,4 +1,4 @@
-import { CalendarDays, ChartColumn, ClipboardList, Settings, SquareKanban, Timer } from 'lucide-react'
+import { CalendarCheck, CalendarDays, ChartColumn, ClipboardList, Settings, SquareKanban, Timer } from 'lucide-react'
 
 export const PAPEIS = {
   admin: { rotulo: 'Administração', telaInicial: '/cronometro' },
@@ -12,6 +12,7 @@ const TODOS = Object.keys(PAPEIS)
 export const TELAS = [
   { caminho: '/cronometro', rotulo: 'Meu Cronômetro', Icone: Timer, papeis: ['admin', 'equipe'] },
   { caminho: '/quadro', rotulo: 'Quadro', Icone: SquareKanban, papeis: TODOS },
+  { caminho: '/postagens', rotulo: 'Postagens', Icone: CalendarCheck, papeis: TODOS },
   { caminho: '/demandas', rotulo: 'Demandas', Icone: ClipboardList, papeis: TODOS },
   { caminho: '/semana', rotulo: 'Semana', Icone: CalendarDays, papeis: TODOS },
   { caminho: '/painel', rotulo: 'Painel', Icone: ChartColumn, papeis: TODOS },

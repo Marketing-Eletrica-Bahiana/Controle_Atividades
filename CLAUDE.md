@@ -45,8 +45,8 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
    importar de volta.
 
 8. (Feita) Tela Quadro (`#/quadro`): quadro no estilo Trello ligado ao cronômetro (ver "Quadro de demandas").
-9. (A fazer) Calendário de postagens externas (Instagram e LinkedIn). A demanda de postagem externa
-   entra sozinha no calendário, na data da postagem.
+9. (Feita) Tela Postagens (`#/postagens`): calendário de postagens externas, em que a demanda de
+   postagem entra sozinha, na data da postagem (ver "Calendário de postagens").
 10. (A fazer) Importação do Trello por arquivo JSON, na Administração, com prévia. Pode ser repetida:
    o Trello continua em uso e nada sincroniza sozinho, porque o site não tem servidor.
 
@@ -284,7 +284,9 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
 - `cartoes/{id}`: `titulo`, `descricao`, `coluna`, `ordem`, `etiquetas` (lista), `responsaveis` (lista de
   e-mails), `prazo`, `entregue` (boolean), `entregueEm`, `mesEntrega` (ex.: `"2026-10"`), `vinculos` (lista
   de `{demandaId, area, email, nome}`), `comentarios` (lista de `{email, nome, quando, texto}`), `historico`,
-  `criadoPor`, `criadoEm`, `atualizadoEm`.
+  `criadoPor`, `criadoEm`, `atualizadoEm`, `postagem` (`{data, redes, formato}`, e `estimada` e
+  `redeAConfirmar` quando vierem da importação; `null` quando não é postagem) e `postagemMes`
+  (ex.: `"2026-11"`, para o calendário consultar).
 - `config/quadro`: `colunas` (lista de `{id, nome}`). Sem esse documento, valem as colunas padrão de
   `src/lib/quadro.js`.
 - `cronometros/{email}`: `demandaId`, `area`, `inicio` (serverTimestamp), `rodando`.
@@ -356,6 +358,25 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
 - No celular, arrastar não funciona: mude de coluna pelo campo Coluna da janela do cartão.
 - Anexos ainda não entram no quadro: o projeto está no plano gratuito (Spark) do Firebase. Arquivos seguem
   na pasta da rede, com o caminho escrito na descrição ou nos comentários.
+
+## Calendário de postagens (Fase 9)
+
+Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/componentes/CamposDaPostagem.jsx`.
+
+- A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
+- Só postagens externas em Instagram, LinkedIn e LinkedIn do CAE. A data de postagem é diferente do prazo do
+  cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
+- A postagem entra sozinha no calendário por quatro caminhos: botão Nova postagem ou "+" no dia; cartão
+  (qualquer cartão com a opção "É postagem em rede social"); Meu Cronômetro; lançamento manual. Nos dois
+  últimos, o público Externo ou Interno e Externo já marca a opção, e sendo postagem o cartão é sempre criado.
+- Sem data, a postagem em andamento fica na lista "Sem data", abaixo do calendário. Cartão gravado antes
+  desta fase, sem o campo, conta como postagem se tiver a etiqueta Comunicação Externa.
+- Arrastar no calendário muda a data e fica no histórico do cartão. No celular, o calendário vira agenda só
+  com os dias que têm postagem (e hoje), e a data muda pela janela do cartão.
+- A situação não é preenchida, vem da coluna e da data: em produção; atrasada (data passada e sem estar
+  pronta); programada (em Legendado - Programado ou Entregues, com data futura); postada (nessas colunas,
+  com data de hoje ou passada). Por isso, depende do ID `legendado-programado` da coluna.
+- O site só registra e organiza: não publica nem confere nada no Instagram ou no LinkedIn.
 
 ## Importação de planilha
 
