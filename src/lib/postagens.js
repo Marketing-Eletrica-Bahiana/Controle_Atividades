@@ -8,6 +8,7 @@ import { normalizar } from './texto.js'
 
 const ETIQUETA_EXTERNA = 'Comunicação Externa'
 export const COLUNA_PROGRAMADO = 'legendado-programado'
+const COLUNA_IDEIAS = 'ideias'
 
 export const REDES = ['Instagram', 'LinkedIn', 'LinkedIn do CAE']
 const SIGLAS = { Instagram: 'IG', LinkedIn: 'LI', 'LinkedIn do CAE': 'LI CAE' }
@@ -64,6 +65,7 @@ const FORMATOS_NO_NOME = [
   ['card', 'Card'],
   ['cards', 'Card'],
   ['video', 'Vídeo'],
+  ['vivo', 'Ao vivo'],
 ]
 
 export function formatoDoNome(nome) {
@@ -117,7 +119,9 @@ export const postagensDoMes = (cartoes, mes, rede = '') =>
     (c) => ehPostagem(c) && mesDe(c.postagem?.data) === mes && (!rede || (c.postagem.redes ?? []).includes(rede)),
   )
 
-export const postagensSemData = (cartoes) => cartoes.filter((c) => ehPostagem(c) && !c.entregue && !c.postagem?.data)
+// Ideia ainda não é trabalho a agendar: não entra na lista de postagens sem data.
+export const postagensSemData = (cartoes) =>
+  cartoes.filter((c) => ehPostagem(c) && !c.entregue && !c.postagem?.data && c.coluna !== COLUNA_IDEIAS)
 
 export function resumoDoMes(cartoes, hoje) {
   const resumo = { total: cartoes.length, producao: 0, programada: 0, postada: 0, atrasada: 0 }

@@ -47,8 +47,10 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
 8. (Feita) Tela Quadro (`#/quadro`): quadro no estilo Trello ligado ao cronômetro (ver "Quadro de demandas").
 9. (Feita) Tela Postagens (`#/postagens`): calendário de postagens externas, em que a demanda de
    postagem entra sozinha, na data da postagem (ver "Calendário de postagens").
-10. (A fazer) Importação do Trello por arquivo JSON, na Administração, com prévia. Pode ser repetida:
-   o Trello continua em uso e nada sincroniza sozinho, porque o site não tem servidor.
+10. (Feita) Importação do Trello por arquivo JSON, em Administração, aba Trello (ver "Importação do Trello").
+
+Em 04/11/2026 a pessoa aprovou as fases 8 e 9 uma a uma e autorizou publicar a fase 10, a última planejada.
+Mudanças novas voltam a pedir aprovação antes de publicar.
 
 Em 31/10/2026 a pessoa autorizou fazer as fases 3 a 7 em sequência, com commit e publicação
 ao fim de cada uma, e completar o que faltou da Fase 2 (roteiro completo dela: aba "Planilhas",
@@ -286,7 +288,8 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   de `{demandaId, area, email, nome}`), `comentarios` (lista de `{email, nome, quando, texto}`), `historico`,
   `criadoPor`, `criadoEm`, `atualizadoEm`, `postagem` (`{data, redes, formato}`, e `estimada` e
   `redeAConfirmar` quando vierem da importação; `null` quando não é postagem) e `postagemMes`
-  (ex.: `"2026-11"`, para o calendário consultar).
+  (ex.: `"2026-11"`, para o calendário consultar). Só nos importados: `origem: "trello"` e `trello`
+  (`{id, url, ultimaAtividade, importadoEm}`). O ID desses documentos é `trello-{id do cartão}`.
 - `config/quadro`: `colunas` (lista de `{id, nome}`). Sem esse documento, valem as colunas padrão de
   `src/lib/quadro.js`.
 - `cronometros/{email}`: `demandaId`, `area`, `inicio` (serverTimestamp), `rodando`.
@@ -377,6 +380,33 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
   pronta); programada (em Legendado - Programado ou Entregues, com data futura); postada (nessas colunas,
   com data de hoje ou passada). Por isso, depende do ID `legendado-programado` da coluna.
 - O site só registra e organiza: não publica nem confere nada no Instagram ou no LinkedIn.
+
+## Importação do Trello (Fase 10)
+
+Código em `src/lib/trello.js` (leitura pura), `src/dados/importacaoTrello.js` e
+`src/telas/cadastros/ImportarTrello.jsx`. Os cartões reais nunca entram no repositório: o admin escolhe o
+arquivo na tela. O teste usa dados de exemplo.
+
+- Por decisão da pessoa, o Trello continua em uso. Como o site não tem servidor, nada sincroniza sozinho: a
+  importação é por arquivo e pode ser repetida.
+- O arquivo vem do link da própria tela, que pede só os comentários. A exportação padrão do Trello traz só as
+  1000 ações mais recentes de todos os tipos e perderia comentários. Limite de 1000 comentários por arquivo.
+- Repetir não duplica. Cartão sem atividade nova no Trello fica igual; com atividade nova é atualizado, mantendo
+  o tempo e os comentários feitos no site. Se também mudou no site depois da importação (`atualizadoEm` depois
+  de `trello.importadoEm`), fica a versão do site, a não ser que o admin marque a troca na prévia.
+- Cartão arquivado ou excluído no Trello não entra, e o que já foi importado não é apagado.
+- Listas "Mês - Prontos e entregues" viram Entregues, no mês da lista. O nome não tem ano: vale o último
+  daquele mês até a atividade do cartão, com um mês de folga (cartão de janeiro mexido em dezembro é do
+  janeiro seguinte). O Trello não guarda o dia da entrega: usa o prazo ou a atividade, se forem daquele mês.
+- Lista que não existe como coluna vira coluna nova. Membros são ligados às pessoas pelo nome, com correção
+  na prévia. Anexos ficam no Trello: o cartão tem o link "Ver anexos e imagens no Trello".
+- Postagem: quem tem o modelo "Postagem nas Redes Sociais" tem data exata, salvo comentário de reprogramação
+  (fica estimada). O modelo com outra rede, como YouTube, fica fora do calendário. Cartão com a etiqueta
+  Comunicação Externa e sem o modelo usa, nesta ordem: comentário, campo "Postagem:", linha da descrição que
+  fale em postar, prazo e entrega, sempre como `estimada`. Sem rede citada, fica `redeAConfirmar`. O prazo não
+  serve como data exata. Sem ano escrito, a data vem depois da criação do cartão, com 45 dias de folga.
+- Conferência no quadro real em 04/11/2026: 581 cartões, 47 arquivados, 194 postagens (55 exatas, 135
+  estimadas, 4 sem data, 58 com rede a confirmar), e as entregas por mês iguais às listas do Trello.
 
 ## Importação de planilha
 

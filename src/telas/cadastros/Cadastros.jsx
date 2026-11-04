@@ -1,7 +1,8 @@
-import { FileSpreadsheet, FlaskConical, Layers, ListChecks, Settings, Shapes, SquareKanban, Tags, Users } from 'lucide-react'
+import { FileSpreadsheet, FlaskConical, Import, Layers, ListChecks, Settings, Shapes, SquareKanban, Tags, Users } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes } from 'react-router'
 import Areas from './Areas.jsx'
 import ColunasQuadro from './ColunasQuadro.jsx'
+import ImportarTrello from './ImportarTrello.jsx'
 import Listas from './Listas.jsx'
 import Palavras from './Palavras.jsx'
 import Pessoas from './Pessoas.jsx'
@@ -18,6 +19,7 @@ const ABAS = [
   { caminho: 'testar-classificacao', rotulo: 'Testar classificação', Icone: FlaskConical, Tela: TestarClassificacao },
   { caminho: 'listas', rotulo: 'Listas', Icone: ListChecks, Tela: Listas },
   { caminho: 'quadro', rotulo: 'Quadro', Icone: SquareKanban, Tela: ColunasQuadro },
+  { caminho: 'trello', rotulo: 'Trello', Icone: Import, Tela: ImportarTrello },
 ]
 
 // Tela Administração: só o papel admin chega aqui (o menu e as rotas já filtram pelo papel).

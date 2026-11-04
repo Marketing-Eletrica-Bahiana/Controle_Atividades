@@ -2986,3 +2986,49 @@ button.abas__item.ativo {
     opacity: 1;
   }
 }
+
+/* Importação do Trello */
+
+.etiqueta-cartao {
+  background: var(--marinho);
+}
+
+.passos-importacao {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+
+.passos-importacao li + li {
+  margin-top: 8px;
+}
+
+.passos-importacao a,
+.janela-cartao__trello {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--brilhante);
+  font-weight: 700;
+}
+
+.passos-importacao a svg,
+.janela-cartao__trello svg {
+  width: 16px;
+  height: 16px;
+}
+
+.passos-importacao kbd {
+  padding: 0 4px;
+  border: 1px solid var(--medio);
+  border-radius: var(--raio-etiqueta);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.lista-compacta {
+  max-height: 240px;
+  margin: 0;
+  padding-left: 24px;
+  overflow-y: auto;
+}

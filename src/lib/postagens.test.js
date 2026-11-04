@@ -134,6 +134,7 @@ describe('calendário', () => {
       { id: '4', postagem: null, etiquetas: ['Comunicação Externa'] },
       { id: '5', etiquetas: ['Comunicação Externa'] },
       { id: '6', postagem: { data: null, redes: [] }, entregue: true },
+      { id: '7', postagem: { data: null, redes: [] }, coluna: 'ideias' },
     ]
     expect(postagensDoMes(cartoes, '2026-11').map((c) => c.id)).toEqual(['1', '2'])
     expect(postagensDoMes(cartoes, '2026-11', 'LinkedIn').map((c) => c.id)).toEqual(['2'])

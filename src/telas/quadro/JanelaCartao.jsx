@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pause, Play, Send, Trash2 } from 'lucide-react'
+import { ExternalLink, Pause, Play, Send, Trash2 } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
@@ -19,6 +19,7 @@ const ACOES = {
   criacao: 'criou o cartão',
   movimento: 'moveu o cartão',
   edicao: 'editou',
+  importacao: 'importou do Trello',
 }
 
 const mostrarValor = (valor, campo) => {
@@ -165,6 +166,13 @@ function Conteudo({
           )}
         </div>
       </form>
+
+      {cartao.trello?.url && (
+        <a className="janela-cartao__trello" href={cartao.trello.url} target="_blank" rel="noreferrer">
+          <ExternalLink aria-hidden="true" />
+          Ver anexos e imagens no Trello
+        </a>
+      )}
 
       <TempoDoCartao
         cartao={cartao}
