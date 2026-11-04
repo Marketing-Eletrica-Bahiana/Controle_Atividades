@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   agruparPorColuna, camposDeEntrega, cartaoAtrasado, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDaColuna, etiquetaDoPublico,
-  filtrarCartoes, iniciais, ordemEntre, ordemParaSoltar, publicoDaEtiqueta, vaiParaOQuadro,
+  filtrarCartoes, iniciais, ordemEntre, ordemParaSoltar, publicoDaEtiqueta, vaiParaOQuadro, vinculosSemDemanda,
 } from './quadro.js'
 
 const colunas = [
@@ -100,6 +100,23 @@ describe('público e etiquetas', () => {
     expect(colunaDaEtiqueta('Endomarketing', [{ id: COLUNA_ENTREGUES, nome: 'Entregues' }, { id: 'b', nome: 'Ajustar' }])).toBe('b')
     expect(etiquetaDaColuna('comunicacao externa')).toBe('Comunicação Externa')
     expect(etiquetaDaColuna('Ajustar')).toBeNull()
+  })
+})
+
+describe('vínculos com demandas', () => {
+  const a = { demandaId: 'a', email: 'um@x' }
+  const b = { demandaId: 'b', email: 'dois@x' }
+
+  it('tira a demanda apagada e mantém as outras', () => {
+    expect(vinculosSemDemanda([a, b], 'a')).toEqual([b])
+    expect(vinculosSemDemanda([a], 'sumiu')).toEqual([a])
+    expect(vinculosSemDemanda(undefined, 'a')).toEqual([])
+  })
+
+  it('ao juntar, a demanda que ficou entra no lugar, sem repetir', () => {
+    const nova = { demandaId: 'c', email: 'um@x' }
+    expect(vinculosSemDemanda([a, b], 'a', nova)).toEqual([b, nova])
+    expect(vinculosSemDemanda([a, b], 'a', b)).toEqual([b])
   })
 })
 

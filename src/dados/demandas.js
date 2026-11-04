@@ -7,6 +7,7 @@ import {
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarAjustes, formatarData, hojeISO, mesDe } from '../lib/datas.js'
+import { vinculosSemDemanda } from '../lib/quadro.js'
 import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, situacaoDaDemandaManual } from '../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../lib/tempo.js'
 import { normalizar } from '../lib/texto.js'
@@ -404,9 +405,19 @@ export async function editarDemanda(demanda, novos, quem, tiposDaArea = []) {
   return true
 }
 
+// O cartão não pode ficar apontando para uma demanda apagada: o botão do cronômetro nele daria erro.
+async function tirarDoCartaoNoLote(lote, cartaoId, demandaId, novoVinculo = null) {
+  if (!cartaoId) return
+  const ref = doc(db, 'cartoes', cartaoId)
+  const cartao = await getDoc(ref)
+  if (!cartao.exists()) return
+  lote.update(ref, { vinculos: vinculosSemDemanda(cartao.data().vinculos, demandaId, novoVinculo), atualizadoEm: serverTimestamp() })
+}
+
 // Só admin: apaga a demanda e renumera o mês.
 export async function excluirDemanda(demanda) {
   const lote = writeBatch(db)
+  await tirarDoCartaoNoLote(lote, demanda.cartaoId, demanda.id)
   lote.delete(refDemanda(demanda.id))
   await renumerarNoLote(lote, demanda.area, demanda.responsavelEmail, demanda.mes, { ignorar: [demanda.id] })
   await lote.commit()
@@ -434,7 +445,11 @@ export async function juntarDemandas(principal, repetida, quem) {
     ...[...(principal.historico ?? []), ...(repetida.historico ?? [])].sort((a, b) => (a.quando?.toMillis?.() ?? 0) - (b.quando?.toMillis?.() ?? 0)),
     registro(quem, 'juncao', 'Demanda', `${repetida.nome} (Nº ${repetida.numero}, ${formatarTempo(repetida.tempoGastoSeg)})`, `${principal.nome} (${formatarTempo(tempoGastoSeg)})`),
   ]
+  // A que fica herda o cartão da que sai, se ainda não tiver um; com outro cartão, cada um segue o seu.
+  const herdaCartao = Boolean(repetida.cartaoId) && (!principal.cartaoId || principal.cartaoId === repetida.cartaoId)
+  const vinculoDaPrincipal = { demandaId: principal.id, area: principal.area, email: principal.responsavelEmail, nome: principal.responsavelNome }
   const lote = writeBatch(db)
+  await tirarDoCartaoNoLote(lote, repetida.cartaoId, repetida.id, herdaCartao ? vinculoDaPrincipal : null)
   lote.update(refDemanda(principal.id), {
     tempoGastoSeg,
     dataEntrega,
@@ -442,6 +457,7 @@ export async function juntarDemandas(principal, repetida, quem) {
     datasAjuste: novos.datasAjuste,
     sessoes: [...(principal.sessoes ?? []), ...(repetida.sessoes ?? [])],
     ...camposCalculados(novos),
+    ...(herdaCartao ? { cartaoId: repetida.cartaoId } : {}),
     historico,
     atualizadoEm: serverTimestamp(),
   })

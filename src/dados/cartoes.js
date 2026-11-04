@@ -6,7 +6,7 @@ import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarData, hojeISO } from '../lib/datas.js'
 import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensIguais, resumoDaPostagem } from '../lib/postagens.js'
-import { camposDeEntrega, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDoPublico } from '../lib/quadro.js'
+import { camposDeEntrega, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDoPublico, vinculosSemDemanda } from '../lib/quadro.js'
 import { refDemanda, registro } from './demandas.js'
 
 const colecao = () => collection(db, 'cartoes')
@@ -165,6 +165,10 @@ export function comentar(cartao, texto, pessoa) {
     atualizadoEm: serverTimestamp(),
   })
 }
+
+// Limpa a ligação com uma demanda que não existe mais, para a pessoa poder ligar o cronômetro de novo.
+export const esquecerDemanda = (cartao, demandaId) =>
+  updateDoc(refCartao(cartao.id), { vinculos: vinculosSemDemanda(cartao.vinculos, demandaId), atualizadoEm: serverTimestamp() })
 
 // Só admin. As demandas ligadas continuam existindo, com o tempo registrado.
 export const excluirCartao = (cartao) => deleteDoc(refCartao(cartao.id))

@@ -72,5 +72,15 @@ export function situacaoDaDemandaManual({ dataSolicitacao, data, concluida }) {
   }
 }
 
+// Por que duas demandas não podem ser juntadas agora; vazio quando podem. Demanda em andamento está com o
+// cronômetro ligado: apagá-la deixaria o cronômetro apontando para o nada.
+export function motivoParaNaoJuntar(demandas) {
+  if (demandas.length !== 2) return 'Marque duas demandas repetidas da mesma pessoa.'
+  const [a, b] = demandas
+  if (a.responsavelEmail !== b.responsavelEmail || a.area !== b.area) return 'As duas demandas precisam ser da mesma pessoa e da mesma área.'
+  if (demandas.some((d) => d.status === 'em_andamento')) return 'Pause o cronômetro antes de juntar.'
+  return ''
+}
+
 // Próximo Nº da pessoa no mês e na área.
 export const proximoNumero = (demandasDoMes) => Math.max(0, ...demandasDoMes.map((d) => Number(d.numero) || 0)) + 1

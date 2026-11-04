@@ -359,6 +359,9 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
   só leem. Excluir o cartão não apaga as demandas.
 - Etiquetas só com as cores da paleta (`.etiqueta-cartao--*` em `src/styles.css`).
 - No celular, arrastar não funciona: mude de coluna pelo campo Coluna da janela do cartão.
+- Excluir ou juntar uma demanda atualiza `vinculos` no cartão: ele não pode apontar para demanda apagada. Ao
+  juntar, a que fica herda o cartão da que sai, se ainda não tiver um. Não dá para juntar demanda em
+  andamento: apagá-la deixaria o cronômetro preso.
 - Anexos ainda não entram no quadro: o projeto está no plano gratuito (Spark) do Firebase. Arquivos seguem
   na pasta da rede, com o caminho escrito na descrição ou nos comentários.
 
@@ -554,8 +557,8 @@ Colunas nesta ordem:
 - Arquivos da Klavika: colocar em `public/fontes/` quando chegarem (nomes acima).
 - Regras do Firestore: conferidas no console em 04/11/2026. As publicadas não são iguais a
   `firestore.rules`: usam outros nomes de função (`membro()` no lugar de `ativo()`, `verTudo()`,
-  `meuEmail()`) e nelas só o admin apaga demandas, enquanto o arquivo também deixa a equipe apagar as
-  próprias. Não colar o arquivo inteiro no console sem comparar antes. Resumo do que o app grava, como
+  `meuEmail()`). Não colar o arquivo inteiro no console sem comparar antes. A equipe precisa poder apagar as
+  próprias demandas, porque Juntar apaga a repetida, embora o botão Excluir seja só do admin. Resumo do que o app grava, como
   admin, em `areas`, `membros`, `solicitacoes` (apaga ao liberar ou recusar), `tipos`,
   `palavrasChave`, `config/listas`, `config/quadro`, `demandas` e `cartoes`. As regras não são publicadas
   pelo GitHub Actions: coleção nova precisa estar publicada no console **antes** de o código ir para o ar.

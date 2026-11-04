@@ -12,7 +12,7 @@ import { excluirDemanda, reabrir, useDemandasDoMes } from '../../dados/demandas.
 import { formatarAjustes, formatarData, formatarMes } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import { podeEditar, podeExcluir } from '../../lib/papeis.js'
-import { SITUACOES } from '../../lib/regras.js'
+import { motivoParaNaoJuntar, SITUACOES } from '../../lib/regras.js'
 import { formatarTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
 import JanelaJuntar from './JanelaJuntar.jsx'
@@ -92,8 +92,7 @@ export default function Demandas() {
   const totalSeg = visiveis.reduce((s, d) => s + (d.tempoGastoSeg ?? 0), 0)
   const comFalta = visiveis.filter(faltaInformacao).length
   const escolhidas = todas.filter((d) => selecionadas.includes(d.id))
-  const podeJuntar =
-    escolhidas.length === 2 && escolhidas[0].responsavelEmail === escolhidas[1].responsavelEmail && escolhidas[0].area === escolhidas[1].area
+  const motivoSemJuntar = motivoParaNaoJuntar(escolhidas)
 
   function ordenarPor(chave) {
     setOrdem((atual) => ({ chave, crescente: atual.chave === chave ? !atual.crescente : true }))
@@ -179,10 +178,13 @@ export default function Demandas() {
           </p>
           <div className="acoes">
             {(membro.papel === 'admin' || membro.papel === 'equipe') && (
-              <button type="button" className="botao botao--secundario" disabled={!podeJuntar} onClick={() => setJuntando(escolhidas)} title="Marque duas demandas repetidas da mesma pessoa">
-                <Merge aria-hidden="true" />
-                Juntar
-              </button>
+              <>
+                {escolhidas.length === 2 && motivoSemJuntar && <span className="texto-alerta texto-pequeno">{motivoSemJuntar}</span>}
+                <button type="button" className="botao botao--secundario" disabled={Boolean(motivoSemJuntar)} onClick={() => setJuntando(escolhidas)} title={motivoSemJuntar || 'Juntar as duas demandas marcadas'}>
+                  <Merge aria-hidden="true" />
+                  Juntar
+                </button>
+              </>
             )}
             <button type="button" className="botao botao--principal" onClick={exportar} disabled={!todas.length}>
               <Download aria-hidden="true" />

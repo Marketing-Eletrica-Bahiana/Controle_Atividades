@@ -3,7 +3,7 @@ import { useAcesso } from '../../acesso/ProvedorAcesso.jsx'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import { useConfirmar } from '../../componentes/Confirmar.jsx'
 import { useAreas } from '../../dados/areas.js'
-import { useColunas } from '../../dados/cartoes.js'
+import { esquecerDemanda, useColunas } from '../../dados/cartoes.js'
 import { concluir, criarEIniciar, pausar, retomar, situacaoDaDemanda, useCronometro } from '../../dados/demandas.js'
 import { useMembros } from '../../dados/membros.js'
 import { podeExcluirCartao, podeMexerNoQuadro } from '../../lib/papeis.js'
@@ -57,6 +57,12 @@ export function useAcoesDoCartao(cartoes) {
     const minha = minhaDemanda(cartao)
     if (!minha) {
       setIniciando(cartao)
+      return
+    }
+    // A demanda pode ter sido excluída antes de o cartão aprender a se limpar: recomeça em vez de dar erro.
+    const situacao = await situacaoDaDemanda(minha.demandaId).catch(() => undefined)
+    if (situacao === null) {
+      if (await executar(() => esquecerDemanda(cartao, minha.demandaId))) setIniciando(cartao)
       return
     }
     if (await podeTrocar(cartao.titulo)) executar(() => retomar(minha.demandaId, pessoa), `Cronômetro rodando: ${cartao.titulo}`)

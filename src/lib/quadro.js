@@ -101,6 +101,13 @@ export function filtrarCartoes(cartoes, { busca = '', etiqueta = '', pessoa = ''
   )
 }
 
+// Tira do cartão a demanda apagada e, ao juntar, coloca no lugar a que ficou (sem repetir).
+export function vinculosSemDemanda(vinculos = [], demandaId, novo = null) {
+  const restantes = vinculos.filter((v) => v.demandaId !== demandaId)
+  if (!novo || restantes.some((v) => v.demandaId === novo.demandaId)) return restantes
+  return [...restantes, novo]
+}
+
 export const cartaoAtrasado = (cartao, hoje) => Boolean(cartao.prazo && !cartao.entregue && cartao.prazo < hoje)
 
 export function camposDeEntrega(coluna, dia) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, regraAutomatica, situacaoDaDemandaManual } from './regras.js'
+import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, motivoParaNaoJuntar, proximoNumero, regraAutomatica, situacaoDaDemandaManual } from './regras.js'
 
 describe('regras automáticas', () => {
   it('Trello, Reunião de Setor e Claude preenchem IA, Template e Solicitante', () => {
@@ -31,6 +31,25 @@ describe('cálculos', () => {
   it('próximo Nº do mês', () => {
     expect(proximoNumero([])).toBe(1)
     expect(proximoNumero([{ numero: 3 }, { numero: 7 }, { numero: 5 }])).toBe(8)
+  })
+})
+
+describe('juntar demandas', () => {
+  const demanda = (extra = {}) => ({ responsavelEmail: 'um@x', area: 'designs', status: 'pausada', ...extra })
+
+  it('pede duas demandas da mesma pessoa e da mesma área', () => {
+    expect(motivoParaNaoJuntar([])).toContain('Marque duas')
+    expect(motivoParaNaoJuntar([demanda()])).toContain('Marque duas')
+    expect(motivoParaNaoJuntar([demanda(), demanda({ responsavelEmail: 'dois@x' })])).toContain('mesma pessoa')
+    expect(motivoParaNaoJuntar([demanda(), demanda({ area: 'marketing' })])).toContain('mesma área')
+  })
+
+  it('não deixa juntar com o cronômetro ligado em uma delas', () => {
+    expect(motivoParaNaoJuntar([demanda(), demanda({ status: 'em_andamento' })])).toContain('Pause')
+  })
+
+  it('libera pausadas e concluídas', () => {
+    expect(motivoParaNaoJuntar([demanda(), demanda({ status: 'concluida' })])).toBe('')
   })
 })
 
