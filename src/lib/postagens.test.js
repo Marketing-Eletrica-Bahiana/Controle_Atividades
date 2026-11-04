@@ -89,29 +89,30 @@ describe('situação', () => {
 })
 
 describe('calendário', () => {
-  it('novembro de 2026 começa num domingo e fecha as semanas', () => {
+  it('a semana começa no domingo: novembro de 2026 começa num domingo, sem dias vazios no início', () => {
     const dias = diasDoCalendario('2026-11')
-    expect(dias.length % 7).toBe(0)
-    expect(dias.slice(0, 7)).toEqual([null, null, null, null, null, null, '2026-11-01'])
+    expect(dias[0]).toBe('2026-11-01')
+    expect(dias.length).toBe(35)
     expect(dias.filter(Boolean).length).toBe(30)
     expect(dias.filter(Boolean).at(-1)).toBe('2026-11-30')
   })
 
-  it('mês que começa na segunda não tem dias vazios no início', () => {
+  it('mês que começa na segunda tem um dia vazio, o domingo', () => {
     const dias = diasDoCalendario('2026-06')
-    expect(dias[0]).toBe('2026-06-01')
+    expect(dias.slice(0, 2)).toEqual([null, '2026-06-01'])
     expect(dias.filter(Boolean).length).toBe(30)
     expect(dias.length).toBe(35)
   })
 
-  it('fevereiro cabe em quatro semanas quando começa na segunda', () => {
-    const dias = diasDoCalendario('2027-02')
+  it('fevereiro cabe em quatro semanas quando começa no domingo', () => {
+    const dias = diasDoCalendario('2026-02')
     expect(dias.length).toBe(28)
     expect(dias.filter(Boolean).length).toBe(28)
   })
 
   it('mês longo ocupa seis semanas e não perde dias', () => {
     const dias = diasDoCalendario('2026-08')
+    expect(dias.slice(0, 7)).toEqual([null, null, null, null, null, null, '2026-08-01'])
     expect(dias.length).toBe(42)
     expect(dias.filter(Boolean).length).toBe(31)
   })

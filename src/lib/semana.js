@@ -16,7 +16,9 @@ export const somarDias = (dia, dias) => {
   return iso(data)
 }
 
-export const nomeDoDia = (dia) => NOMES_DOS_DIAS[utc(dia).getUTCDay()]
+export const diaDaSemana = (dia) => utc(dia).getUTCDay()
+
+export const nomeDoDia = (dia) => NOMES_DOS_DIAS[diaDaSemana(dia)]
 
 // Segunda-feira da semana do dia informado (a semana de trabalho vai de segunda a sábado).
 export function segundaDaSemana(dia = hojeISO()) {

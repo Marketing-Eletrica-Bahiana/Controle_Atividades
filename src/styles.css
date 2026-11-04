@@ -2920,12 +2920,18 @@ button.abas__item.ativo {
   font-size: 0.6875rem;
 }
 
-.postagem__rede {
-  padding: 0 4px;
-  border-radius: var(--raio-etiqueta);
-  background: var(--marinho);
-  color: var(--branco);
-  font-weight: 700;
+.postagem__pessoas {
+  margin-left: auto;
+}
+
+.icone-rede {
+  flex-shrink: 0;
+  width: auto;
+  height: 16px;
+}
+
+.opcao .icone-rede {
+  align-self: center;
 }
 
 .calendario-legenda {
@@ -3031,4 +3037,36 @@ button.abas__item.ativo {
   margin: 0;
   padding-left: 24px;
   overflow-y: auto;
+}
+
+/* Cor de cada pessoa nas bolinhas */
+
+.pessoa-cartao--brilhante {
+  background: var(--brilhante);
+}
+
+.pessoa-cartao--vermelho {
+  background: var(--vermelho);
+}
+
+.pessoa-cartao--marinho {
+  background: var(--marinho);
+}
+
+.pessoa-cartao--preto {
+  background: var(--preto);
+}
+
+.pessoa-cartao--medio {
+  background: var(--medio);
+}
+
+.pessoa-cartao--vermelho-escuro {
+  background: var(--vermelho-escuro);
+}
+
+.pessoas-cartao--pequenas .pessoa-cartao {
+  width: 22px;
+  height: 22px;
+  font-size: 0.625rem;
 }

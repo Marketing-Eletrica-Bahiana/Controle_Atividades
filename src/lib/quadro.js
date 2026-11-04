@@ -1,7 +1,7 @@
 // Regras do quadro de demandas, sem acesso ao Firestore.
 
 import { mesDe } from './datas.js'
-import { normalizar, paraId } from './texto.js'
+import { normalizar, paraId, primeiroNome } from './texto.js'
 
 export const COLUNA_ENTREGUES = 'entregues'
 
@@ -113,6 +113,17 @@ export const cartaoAtrasado = (cartao, hoje) => Boolean(cartao.prazo && !cartao.
 export function camposDeEntrega(coluna, dia) {
   const entregue = coluna === COLUNA_ENTREGUES
   return { entregue, entregueEm: entregue ? dia : null, mesEntrega: entregue ? mesDe(dia) : null }
+}
+
+// Cada pessoa tem uma cor de bolinha, dentro da paleta. Quem entrar depois recebe uma das cores de reserva.
+const CORES_DAS_PESSOAS = { ivie: 'brilhante', tais: 'vermelho', adelaide: 'marinho', gleidiane: 'preto', gleide: 'preto' }
+const CORES_DE_RESERVA = ['medio', 'vermelho-escuro']
+
+export function corDaPessoa(nome) {
+  const primeiro = normalizar(primeiroNome(nome))
+  if (CORES_DAS_PESSOAS[primeiro]) return CORES_DAS_PESSOAS[primeiro]
+  const soma = [...primeiro].reduce((total, letra) => total + letra.charCodeAt(0), 0)
+  return CORES_DE_RESERVA[soma % CORES_DE_RESERVA.length]
 }
 
 export function iniciais(nome) {

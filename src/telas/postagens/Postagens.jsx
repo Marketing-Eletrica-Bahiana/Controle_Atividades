@@ -1,21 +1,23 @@
 import { useMemo, useState } from 'react'
 import { CalendarCheck, Plus } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
+import BolinhasDePessoas from '../../componentes/BolinhasDePessoas.jsx'
 import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
+import IconeDaRede from '../../componentes/IconeDaRede.jsx'
 import Indicadores from '../../componentes/Indicadores.jsx'
 import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
 import { moverPostagem, useCartoesDoCalendario } from '../../dados/cartoes.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import {
-  agruparPorDia, diasDoCalendario, postagensDoMes, postagensSemData, REDES, resumoDoMes, siglaDaRede, situacaoDaPostagem, SITUACOES_POSTAGEM,
+  agruparPorDia, diasDoCalendario, postagensDoMes, postagensSemData, REDES, resumoDoMes, situacaoDaPostagem, SITUACOES_POSTAGEM,
 } from '../../lib/postagens.js'
 import { nomeDoDia } from '../../lib/semana.js'
 import { useAcoesDoCartao } from '../quadro/useAcoesDoCartao.jsx'
 import JanelaNovaPostagem from './JanelaNovaPostagem.jsx'
 
 const SEM_CARTOES = []
-const DIAS_DA_SEMANA = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+const DIAS_DA_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 export default function Postagens() {
   const { executar } = useAvisos()
@@ -66,6 +68,7 @@ export default function Postagens() {
       key={cartao.id}
       cartao={cartao}
       hoje={hoje}
+      nomeDaPessoa={acoes.nomeDaPessoa}
       arrastando={arrastandoId === cartao.id}
       arraste={arraste(cartao)}
       aoAbrir={() => acoes.abrir(cartao.id)}
@@ -200,9 +203,10 @@ export default function Postagens() {
   )
 }
 
-function PostagemDoCalendario({ cartao, hoje, arrastando, arraste, aoAbrir }) {
+function PostagemDoCalendario({ cartao, hoje, nomeDaPessoa, arrastando, arraste, aoAbrir }) {
   const { rotulo, classe } = SITUACOES_POSTAGEM[situacaoDaPostagem(cartao, hoje)]
   const { redes = [], formato, estimada, redeAConfirmar } = cartao.postagem ?? {}
+  const responsaveis = cartao.responsaveis ?? []
   const detalhes = [rotulo, ...redes, formato, estimada && 'data estimada', redeAConfirmar && 'rede a confirmar'].filter(Boolean).join(' · ')
   return (
     <li className={`postagem ${classe} ${arrastando ? 'postagem--arrastando' : ''}`} title={`${cartao.titulo} (${detalhes})`} {...arraste}>
@@ -210,14 +214,15 @@ function PostagemDoCalendario({ cartao, hoje, arrastando, arraste, aoAbrir }) {
         {estimada && <span aria-label="Data estimada">≈ </span>}
         {cartao.titulo}
       </button>
-      {(redes.length > 0 || formato) && (
+      {(redes.length > 0 || formato || responsaveis.length > 0) && (
         <span className="postagem__detalhes">
           {redes.map((rede) => (
-            <span key={rede} className="postagem__rede">
-              {siglaDaRede(rede)}
-            </span>
+            <IconeDaRede key={rede} rede={rede} />
           ))}
           {formato && <span>{formato}</span>}
+          <span className="postagem__pessoas">
+            <BolinhasDePessoas emails={responsaveis} nomeDaPessoa={nomeDaPessoa} pequenas />
+          </span>
         </span>
       )}
     </li>

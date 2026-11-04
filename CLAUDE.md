@@ -370,8 +370,14 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
 Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/componentes/CamposDaPostagem.jsx`.
 
 - A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
-- Só postagens externas em Instagram, LinkedIn e LinkedIn do CAE. A data de postagem é diferente do prazo do
-  cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
+- Só postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
+  diferente do prazo do cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
+- A grade do calendário vai de domingo a sábado, por pedido da pessoa. O campo de data e a tela Semana continuam
+  começando na segunda.
+- As redes aparecem com os ícones de `public/marca/icones/`, nas cores oficiais de cada rede: é a única exceção à
+  paleta, por pedido da pessoa. O LinkedIn do CAE usa o ícone do CAE.
+- Cada pessoa tem uma cor de bolinha, dentro da paleta (`corDaPessoa` em `src/lib/quadro.js`), no Quadro e no
+  calendário.
 - A postagem entra sozinha no calendário por quatro caminhos: botão Nova postagem ou "+" no dia; cartão
   (qualquer cartão com a opção "É postagem em rede social"); Meu Cronômetro; lançamento manual. Nos dois
   últimos, o público Externo ou Interno e Externo já marca a opção, e sendo postagem o cartão é sempre criado.
@@ -404,7 +410,7 @@ arquivo na tela. O teste usa dados de exemplo.
 - Lista que não existe como coluna vira coluna nova. Membros são ligados às pessoas pelo nome, com correção
   na prévia. Anexos ficam no Trello: o cartão tem o link "Ver anexos e imagens no Trello".
 - Postagem: quem tem o modelo "Postagem nas Redes Sociais" tem data exata, salvo comentário de reprogramação
-  (fica estimada). O modelo com outra rede, como YouTube, fica fora do calendário. Cartão com a etiqueta
+  (fica estimada). O modelo com rede que o calendário não acompanha, como TikTok, fica fora dele. Cartão com a etiqueta
   Comunicação Externa e sem o modelo usa, nesta ordem: comentário, campo "Postagem:", linha da descrição que
   fale em postar, prazo e entrega, sempre como `estimada`. Sem rede citada, fica `redeAConfirmar`. O prazo não
   serve como data exata. Sem ano escrito, a data vem depois da criação do cartão, com 45 dias de folga.

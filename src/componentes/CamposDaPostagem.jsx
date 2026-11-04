@@ -1,6 +1,7 @@
 import { FORMATOS, mudarPostagem, REDES } from '../lib/postagens.js'
 import CampoData from './CampoData.jsx'
 import { CampoLista } from './Campos.jsx'
+import IconeDaRede from './IconeDaRede.jsx'
 
 // Data, redes e formato de uma postagem externa. Usado no cartão, no cronômetro e no calendário.
 export default function CamposDaPostagem({ valor, aoMudar }) {
@@ -20,6 +21,7 @@ export default function CamposDaPostagem({ valor, aoMudar }) {
           {REDES.map((rede) => (
             <label key={rede} className="opcao">
               <input type="checkbox" checked={redes.includes(rede)} onChange={() => alternarRede(rede)} />
+              <IconeDaRede rede={rede} />
               {rede}
             </label>
           ))}

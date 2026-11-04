@@ -30,6 +30,14 @@ export const mascotes = {
   ebinha: arquivo('mascotes/Mascote_Ebinha.png'),
 }
 
+export const iconesDasRedes = {
+  Instagram: arquivo('icones/instagram.png'),
+  LinkedIn: arquivo('icones/linkedin.png'),
+  'LinkedIn do CAE': arquivo('icones/cae.png'),
+  YouTube: arquivo('icones/youtube.png'),
+  'YouTube Shorts': arquivo('icones/youtube-shorts.png'),
+}
+
 export const patterns = {
   circuito: arquivo('patterns/Pattern_EB_1080x1920.png'),
   ondas: arquivo('patterns/Pattern_Endomarketing_1080x1920.png'),

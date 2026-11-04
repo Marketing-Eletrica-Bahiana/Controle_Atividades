@@ -87,6 +87,8 @@ export function redesDoTexto(texto) {
   if (/\binstagram\b|\binsta\b/.test(limpo)) achadas.add('Instagram')
   if (/\blinkedin (do )?cae\b/.test(limpo)) achadas.add('LinkedIn do CAE')
   if (/\blinkedin\b/.test(limpo.replace(/\blinkedin (do )?cae\b/g, ''))) achadas.add('LinkedIn')
+  if (/\bshorts\b|\byoutube short\b/.test(limpo)) achadas.add('YouTube Shorts')
+  if (/\byoutube\b/.test(limpo.replace(/\byoutube shorts?\b/g, ''))) achadas.add('YouTube')
   return REDES.filter((rede) => achadas.has(rede))
 }
 
@@ -117,7 +119,7 @@ export function postagemDoCartao({ nome, descricao, comentarios = [], etiquetas 
 
   if (modelo) {
     const redes = redesDoTexto(textoDasRedes ?? '')
-    // O modelo diz a rede, e ela é outra (YouTube, por exemplo): fora do calendário.
+    // O modelo diz a rede, e ela não é uma das que o calendário acompanha: fora dele.
     if (textoDasRedes && !redes.length) return null
     const data = reprogramada ?? dataEscrita
     return {

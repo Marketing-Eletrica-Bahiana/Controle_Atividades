@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  agruparPorColuna, camposDeEntrega, cartaoAtrasado, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDaColuna, etiquetaDoPublico,
+  agruparPorColuna, camposDeEntrega, cartaoAtrasado, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, corDaPessoa, etiquetaDaColuna, etiquetaDoPublico,
   filtrarCartoes, iniciais, ordemEntre, ordemParaSoltar, publicoDaEtiqueta, vaiParaOQuadro, vinculosSemDemanda,
 } from './quadro.js'
 
@@ -144,6 +144,19 @@ describe('filtros e situação', () => {
   it('entrega marca e desmarca junto com a coluna', () => {
     expect(camposDeEntrega(COLUNA_ENTREGUES, '2026-10-30')).toEqual({ entregue: true, entregueEm: '2026-10-30', mesEntrega: '2026-10' })
     expect(camposDeEntrega('ajustar', '2026-10-30')).toEqual({ entregue: false, entregueEm: null, mesEntrega: null })
+  })
+
+  it('cada pessoa da equipe tem uma cor diferente, sem depender de acento nem sobrenome', () => {
+    const cores = ['Ivie Cidreira', 'Taís', 'Adelaide da Costa', 'Gleidiane'].map(corDaPessoa)
+    expect(new Set(cores).size).toBe(4)
+    expect(corDaPessoa('Tais Amorim')).toBe(corDaPessoa('Taís'))
+    expect(corDaPessoa('Gleide')).toBe(corDaPessoa('Gleidiane'))
+  })
+
+  it('quem entrar depois também recebe uma cor, sempre a mesma', () => {
+    expect(corDaPessoa('Pessoa Nova')).toBe(corDaPessoa('Pessoa Nova'))
+    expect(corDaPessoa('Pessoa Nova')).toBeTruthy()
+    expect(corDaPessoa('')).toBeTruthy()
   })
 
   it('iniciais do nome', () => {

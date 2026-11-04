@@ -3,16 +3,14 @@
 
 import { formatarData, mesDe } from './datas.js'
 import { COLUNA_ENTREGUES, etiquetaDoPublico } from './quadro.js'
-import { segundaDaSemana, somarDias } from './semana.js'
+import { diaDaSemana, somarDias } from './semana.js'
 import { normalizar } from './texto.js'
 
 const ETIQUETA_EXTERNA = 'Comunicação Externa'
 export const COLUNA_PROGRAMADO = 'legendado-programado'
 const COLUNA_IDEIAS = 'ideias'
 
-export const REDES = ['Instagram', 'LinkedIn', 'LinkedIn do CAE']
-const SIGLAS = { Instagram: 'IG', LinkedIn: 'LI', 'LinkedIn do CAE': 'LI CAE' }
-export const siglaDaRede = (rede) => SIGLAS[rede] ?? rede
+export const REDES = ['Instagram', 'LinkedIn', 'LinkedIn do CAE', 'YouTube', 'YouTube Shorts']
 
 export const FORMATOS = ['Reels', 'Stories', 'Carrossel', 'Card', 'Vídeo', 'Artigo', 'Ao vivo']
 
@@ -88,17 +86,12 @@ export function situacaoDaPostagem(cartao, hoje) {
   return data && data < hoje ? 'atrasada' : 'producao'
 }
 
-// Dias do mês para a grade de segunda a domingo. Dias de outros meses completam as semanas como null.
+// Dias do mês para a grade de domingo a sábado. Dias de outros meses completam as semanas como null.
 export function diasDoCalendario(mes) {
   const primeiro = `${mes}-01`
-  const inicio = segundaDaSemana(primeiro)
-  const dias = []
-  let dia = inicio
-  while (dias.length < 42) {
-    dias.push(mesDe(dia) === mes ? dia : null)
-    dia = somarDias(dia, 1)
-    if (dias.length % 7 === 0 && mesDe(dia) !== mes && dia > primeiro) break
-  }
+  const dias = Array(diaDaSemana(primeiro)).fill(null)
+  for (let dia = primeiro; mesDe(dia) === mes; dia = somarDias(dia, 1)) dias.push(dia)
+  while (dias.length % 7) dias.push(null)
   return dias
 }
 

@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { CalendarClock, Megaphone, MessageSquare, Pause, Play, Plus, SquareKanban, Timer, X } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
+import BolinhasDePessoas from '../../componentes/BolinhasDePessoas.jsx'
 import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
 import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
 import { criarCartao, moverCartao, useCartoesDoQuadro } from '../../dados/cartoes.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import {
-  agruparPorColuna, cartaoAtrasado, classeDaEtiqueta, COLUNA_ENTREGUES, etiquetaDaColuna, ETIQUETAS, filtrarCartoes, iniciais, ordemParaSoltar,
+  agruparPorColuna, cartaoAtrasado, classeDaEtiqueta, COLUNA_ENTREGUES, etiquetaDaColuna, ETIQUETAS, filtrarCartoes, ordemParaSoltar,
 } from '../../lib/quadro.js'
 import { useAcoesDoCartao } from './useAcoesDoCartao.jsx'
 
@@ -224,13 +225,7 @@ function CartaoDoQuadro({
           )}
         </div>
         <div className="cartao-quadro__acoes">
-          <span className="pessoas-cartao">
-            {(cartao.responsaveis ?? []).map((email) => (
-              <span key={email} className="pessoa-cartao" title={nomeDaPessoa(email)}>
-                {iniciais(nomeDaPessoa(email))}
-              </span>
-            ))}
-          </span>
+          <BolinhasDePessoas emails={cartao.responsaveis} nomeDaPessoa={nomeDaPessoa} />
           {podeUsarCronometro && (
             <button
               type="button"

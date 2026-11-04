@@ -61,7 +61,11 @@ describe('modelo do cartão', () => {
     expect(redesDoTexto('INSTAGRAM e LinkedIn (Reels)')).toEqual(['Instagram', 'LinkedIn'])
     expect(redesDoTexto('LinkedIn do CAE (Carrossel)')).toEqual(['LinkedIn do CAE'])
     expect(redesDoTexto('LinkedIn e LinkedIn do CAE')).toEqual(['LinkedIn', 'LinkedIn do CAE'])
-    expect(redesDoTexto('Canal do YouTube')).toEqual([])
+    expect(redesDoTexto('Canal do YouTube')).toEqual(['YouTube'])
+    expect(redesDoTexto('YouTube Shorts')).toEqual(['YouTube Shorts'])
+    expect(redesDoTexto('YouTube e Shorts')).toEqual(['YouTube', 'YouTube Shorts'])
+    expect(redesDoTexto('Instagram e Shorts')).toEqual(['Instagram', 'YouTube Shorts'])
+    expect(redesDoTexto('TikTok')).toEqual([])
     expect(redesDoTexto('instalação')).toEqual([])
   })
 })
@@ -81,8 +85,9 @@ describe('postagem do cartão', () => {
     expect(postagemDoCartao({ ...base, etiquetas: [], descricao: MODELO('Instagram', '26 de Outubro', 'Reels') })?.data).toBe('2026-10-26')
   })
 
-  it('modelo só com outra rede fica fora do calendário', () => {
-    expect(postagemDoCartao({ ...base, descricao: MODELO('YouTube', '26 de Outubro', 'Vídeo') })).toBeNull()
+  it('modelo só com outra rede fica fora do calendário, e o YouTube entra', () => {
+    expect(postagemDoCartao({ ...base, descricao: MODELO('TikTok', '26 de Outubro', 'Vídeo') })).toBeNull()
+    expect(postagemDoCartao({ ...base, descricao: MODELO('YouTube', '26 de Outubro', 'Vídeo') })).toMatchObject({ data: '2026-10-26', redes: ['YouTube'] })
   })
 
   it('reprogramação em comentário passa à frente e fica como estimada', () => {
