@@ -6,7 +6,7 @@ import { useListas } from '../../dados/listas.js'
 import { usePalavras, useTipos } from '../../dados/tipos.js'
 import { classificar, prepararHistorico, textoDaOrigem } from '../../lib/classificacao.js'
 import { hojeISO, mesDe } from '../../lib/datas.js'
-import { formatoDoNome, POSTAGEM_VAZIA, publicoDePostagem } from '../../lib/postagens.js'
+import { formatoDoNome, POSTAGEM_VAZIA, publicoDePostagem, publicoInterno, rotuloDaPostagem } from '../../lib/postagens.js'
 import { vaiParaOQuadro } from '../../lib/quadro.js'
 import { regraAutomatica } from '../../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../../lib/tempo.js'
@@ -24,9 +24,8 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
 
   const [dados, setDados] = useState({ ...VAZIO, ...inicial })
   const [manual, setManual] = useState({})
-  // Sem escolha da pessoa, o público decide se a demanda ganha cartão no Quadro.
+  // Sem escolha da pessoa, o público dá o padrão de "Criar cartão no Quadro".
   const [noQuadroEscolhido, setNoQuadro] = useState(null)
-  // Com o público Externo, a demanda já vem marcada como postagem e entra no calendário.
   const [ehPostEscolhido, setEhPost] = useState(null)
   const [dadosDaPostagem, setPostagem] = useState(POSTAGEM_VAZIA)
 
@@ -42,9 +41,9 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   const solicitante = valor('solicitante')
   const usoIA = valor('usoIA')
   const usoTemplate = valor('usoTemplate')
-  const ehPost = ehPostEscolhido ?? publicoDePostagem(publico)
-  // A postagem mora no cartão: sendo postagem, o cartão é criado de qualquer jeito.
-  const noQuadro = ehPost || (noQuadroEscolhido ?? vaiParaOQuadro(publico))
+  const noQuadro = noQuadroEscolhido ?? vaiParaOQuadro(publico)
+  // A postagem mora no cartão: sem cartão não há postagem. Com o público Externo, marcar o cartão já marca a postagem.
+  const ehPost = noQuadro && (ehPostEscolhido ?? publicoDePostagem(publico))
   const postagem = { ...dadosDaPostagem, formato: dadosDaPostagem.formato || formatoDoNome(dados.nome) }
 
   return {
@@ -139,23 +138,28 @@ export function CampoTipo({ campos, erro }) {
 
 export function CampoNoQuadro({ campos }) {
   return (
-    <label className="opcao">
-      <input type="checkbox" checked={campos.noQuadro} disabled={campos.ehPost} onChange={(e) => campos.setNoQuadro(e.target.checked)} />
-      Criar cartão no Quadro
-    </label>
+    <>
+      <label className="opcao">
+        <input type="checkbox" checked={campos.noQuadro} onChange={(e) => campos.setNoQuadro(e.target.checked)} />
+        Criar cartão no Quadro
+      </label>
+      {!campos.noQuadro && <p className="campo__ajuda">Sem cartão, a demanda fica só no cronômetro e não entra no calendário de postagens.</p>}
+    </>
   )
 }
 
 export function CampoDaPostagem({ campos }) {
+  const interno = publicoInterno(campos.publico)
+  if (!campos.noQuadro) return null
   return (
     <>
       <label className="opcao">
         <input type="checkbox" checked={campos.ehPost} onChange={(e) => campos.setEhPost(e.target.checked)} />
-        É postagem em rede social
+        {rotuloDaPostagem(interno)}
       </label>
       {campos.ehPost && (
         <>
-          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} />
+          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} interno={interno} />
           <p className="campo__ajuda">Com a data, a postagem já entra no calendário. Sem data, ela fica na lista Sem data, na tela Postagens.</p>
         </>
       )}

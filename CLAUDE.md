@@ -283,7 +283,7 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   - `importada` (boolean), `arquivoOrigem`, `criadoEm`, `atualizadoEm`
   - `manual` (`true` só nas demandas criadas pelo lançamento manual)
   - `cartaoId` (cartão do Quadro ligado a ela, ou `null`)
-- `cartoes/{id}`: `titulo`, `descricao`, `coluna`, `ordem`, `etiquetas` (lista), `responsaveis` (lista de
+- `cartoes/{id}`: `titulo`, `descricao`, `caminho` (pasta do conteúdo no computador, texto livre; cartão antigo não tem), `coluna`, `ordem`, `etiquetas` (lista), `responsaveis` (lista de
   e-mails), `prazo`, `entregue` (boolean), `entregueEm`, `mesEntrega` (ex.: `"2026-10"`), `vinculos` (lista
   de `{demandaId, area, email, nome}`), `comentarios` (lista de `{email, nome, quando, texto}`), `historico`,
   `criadoPor`, `criadoEm`, `atualizadoEm`, `postagem` (`{data, redes, formato}`, e `estimada` e
@@ -358,9 +358,10 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
   cria a demanda dela. Depois o botão só retoma ou pausa. Vale a regra de um cronômetro por pessoa.
 - Cartão em Entregues não conclui demanda sozinho, nem demanda concluída move cartão (ainda pode faltar
   aprovação). Ao entregar, quem moveu é perguntado se quer concluir a própria demanda.
-- Demanda nova no cronômetro ou no lançamento manual ganha cartão, salvo se a pessoa desmarcar. O padrão
-  vem do Público: Externo, Interno, Endomarketing e CAE marcam a opção; rotina fica só no cronômetro. O
-  cartão é gravado depois da demanda: se falhar, o tempo continua valendo e a pessoa é avisada.
+- Na demanda nova, no cronômetro ou no lançamento manual, "Criar cartão no Quadro" é escolha da pessoa. O padrão
+  vem do Público: Interno, Endomarketing e CAE vêm marcados; Externo e Interno e Externo vêm desmarcados, por pedido
+  da pessoa em 05/11/2026 (legendas e afins nem sempre viram cartão); rotina também. O cartão é gravado depois da
+  demanda: se falhar, o tempo continua valendo e a pessoa é avisada.
 - Permissões: admin e equipe criam, editam e movem qualquer cartão; só o admin exclui; gestão e diretoria
   só leem. Excluir o cartão não apaga as demandas.
 - Etiquetas só com as cores da paleta (`.etiqueta-cartao--*` em `src/styles.css`).
@@ -369,24 +370,30 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
   juntar, a que fica herda o cartão da que sai, se ainda não tiver um. Não dá para juntar demanda em
   andamento: apagá-la deixaria o cronômetro preso.
 - Anexos ainda não entram no quadro: o projeto está no plano gratuito (Spark) do Firebase. Arquivos seguem
-  na pasta da rede, com o caminho escrito na descrição ou nos comentários.
+  na pasta da rede, com o endereço no campo Caminho do cartão. O navegador não deixa um site abrir pastas do
+  computador: o botão Copiar leva o caminho para colar no Explorador de Arquivos, e quem só lê também pode copiar.
 
 ## Calendário de postagens (Fase 9)
 
 Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/componentes/CamposDaPostagem.jsx`.
 
 - A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
-- Só postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
+- Postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
   diferente do prazo do cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
+- Comunicação interna: WhatsApp e Lideranças (`GRUPOS_INTERNOS`), gravados em `postagem.redes`. As opções aparecem com
+  Comunicação Interna ou Endomarketing no cartão, ou público Interno, Interno e Externo ou Endomarketing no cronômetro. Marcar
+  a etiqueta não liga a postagem sozinha, porque nem todo cartão interno vai para um grupo. Com a opção marcada, entra no
+  calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello só procura `REDES`.
 - A grade do calendário vai de domingo a sábado, por pedido da pessoa. O campo de data e a tela Semana continuam
   começando na segunda.
-- As redes aparecem com os ícones de `public/marca/icones/`, nas cores oficiais de cada rede: é a única exceção à
-  paleta, por pedido da pessoa. O LinkedIn do CAE usa o ícone do CAE.
+- As redes e os grupos internos aparecem com os ícones de `public/marca/icones/`, nas cores originais: é a única exceção à
+  paleta, por pedido da pessoa. O LinkedIn do CAE usa o ícone do CAE. Os ícones também aparecem no cartão do Quadro.
 - Cada pessoa tem uma cor de bolinha, dentro da paleta (`corDaPessoa` em `src/lib/quadro.js`), no Quadro e no
   calendário.
 - A postagem entra sozinha no calendário por quatro caminhos: botão Nova postagem ou "+" no dia; cartão
   (qualquer cartão com a opção "É postagem em rede social"); Meu Cronômetro; lançamento manual. Nos dois
-  últimos, o público Externo ou Interno e Externo já marca a opção, e sendo postagem o cartão é sempre criado.
+  últimos, a postagem mora no cartão: a opção só aparece com "Criar cartão no Quadro" marcado e, no público Externo ou
+  Interno e Externo, já vem marcada junto com o cartão.
 - Sem data, a postagem em andamento fica na lista "Sem data", abaixo do calendário. Cartão gravado antes
   desta fase, sem o campo, conta como postagem se tiver a etiqueta Comunicação Externa.
 - Arrastar no calendário muda a data e fica no histórico do cartão. No celular, o calendário vira agenda só

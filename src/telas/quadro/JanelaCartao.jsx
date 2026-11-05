@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ExternalLink, Pause, Play, Send, Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Copy, ExternalLink, Pause, Play, Send, Trash2 } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
@@ -11,7 +11,7 @@ import { comentar, excluirCartao, salvarCartao } from '../../dados/cartoes.js'
 import { useDemandasDoCartao } from '../../dados/demandas.js'
 import { formatarData } from '../../lib/datas.js'
 import { veTodasAsAreas } from '../../lib/papeis.js'
-import { ehPostagem, POSTAGEM_VAZIA, postagemPadrao } from '../../lib/postagens.js'
+import { ehInterno, ehPostagem, POSTAGEM_VAZIA, postagemPadrao, rotuloDaPostagem } from '../../lib/postagens.js'
 import { COLUNA_ENTREGUES, ETIQUETAS } from '../../lib/quadro.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
@@ -43,6 +43,7 @@ function Conteudo({
   const [dados, setDados] = useState({
     titulo: cartao.titulo ?? '',
     descricao: cartao.descricao ?? '',
+    caminho: cartao.caminho ?? '',
     coluna: cartao.entregue ? COLUNA_ENTREGUES : cartao.coluna,
     etiquetas: cartao.etiquetas ?? [],
     responsaveis: cartao.responsaveis ?? [],
@@ -62,6 +63,7 @@ function Conteudo({
     alternar('etiquetas', etiqueta)
   }
 
+  const interno = ehInterno(dados.etiquetas)
   const pessoasDaLista = membros.filter((m) => m.ativo !== false || dados.responsaveis.includes(m.id))
 
   async function salvar(evento) {
@@ -74,7 +76,7 @@ function Conteudo({
     setOcupado(true)
     let mudou = false
     const deuCerto = await executar(async () => {
-      const novos = { ...dados, titulo: dados.titulo.trim(), postagem: ehPost ? postagem : null }
+      const novos = { ...dados, titulo: dados.titulo.trim(), caminho: dados.caminho.trim(), postagem: ehPost ? postagem : null }
       mudou = await salvarCartao(cartao, novos, membro.email, nomeDaColuna, mostrarValor)
     })
     setOcupado(false)
@@ -141,14 +143,15 @@ function Conteudo({
           </fieldset>
           <label className="opcao">
             <input type="checkbox" checked={ehPost} onChange={(e) => setEhPost(e.target.checked)} />
-            É postagem em rede social
+            {rotuloDaPostagem(interno)}
           </label>
-          {ehPost && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} />}
+          {ehPost && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} interno={interno} />}
           <label className="campo">
             <span className="campo__rotulo">Descrição</span>
             <textarea rows={5} value={dados.descricao} onChange={(e) => mudar('descricao', e.target.value)} />
           </label>
         </fieldset>
+        <CampoCaminho valor={dados.caminho} aoMudar={(v) => mudar('caminho', v)} somenteLeitura={!podeMexer} />
         <div className="janela-modal__acoes janela-cartao__acoes">
           {podeApagar && (
             <button type="button" className="botao botao--perigo" onClick={excluir}>
@@ -206,6 +209,51 @@ function Conteudo({
           </ol>
         </details>
       )}
+    </div>
+  )
+}
+
+// Pasta do conteúdo no computador. O navegador não deixa um site abrir pastas: o botão copia para colar no Explorador de Arquivos.
+// Fica fora do bloco desativado para quem só lê também poder copiar.
+function CampoCaminho({ valor, aoMudar, somenteLeitura }) {
+  const { avisar } = useAvisos()
+  const campo = useRef(null)
+
+  // Alguns navegadores bloqueiam a área de transferência: aí o caminho fica selecionado e tenta do jeito antigo.
+  async function copiar() {
+    let copiou = false
+    try {
+      await navigator.clipboard.writeText(valor.trim())
+      copiou = true
+    } catch {
+      campo.current.select()
+      copiou = document.execCommand('copy')
+    }
+    if (copiou) avisar('Caminho copiado. Cole na barra de endereço do Explorador de Arquivos.')
+    else avisar('Não deu para copiar. O caminho está selecionado: use Ctrl+C.', 'erro')
+  }
+
+  return (
+    <div className="campo">
+      <label className="campo__rotulo" htmlFor="caminho-do-cartao">
+        Caminho
+      </label>
+      <div className="campo-caminho">
+        <input
+          id="caminho-do-cartao"
+          ref={campo}
+          value={valor}
+          onChange={(e) => aoMudar(e.target.value)}
+          readOnly={somenteLeitura}
+          placeholder={somenteLeitura ? '' : 'Cole aqui o caminho da pasta no computador'}
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <button type="button" className="botao botao--secundario" onClick={copiar} disabled={!valor.trim()}>
+          <Copy aria-hidden="true" />
+          Copiar
+        </button>
+      </div>
     </div>
   )
 }

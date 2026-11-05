@@ -176,8 +176,8 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
           Essa demanda já foi concluída
         </label>
       )}
-      {nova && <CampoDaPostagem campos={campos} />}
       {nova && <CampoNoQuadro campos={campos} />}
+      {nova && <CampoDaPostagem campos={campos} />}
       <p className="texto-suave texto-pequeno">
         {nova && nomeDaArea && `Área ${nomeDaArea}. `}
         {texto}

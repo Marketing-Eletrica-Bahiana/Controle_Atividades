@@ -2689,6 +2689,21 @@ button.abas__item.ativo {
   overflow-wrap: anywhere;
 }
 
+.campo-caminho {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.campo-caminho input {
+  flex: 1;
+  min-width: 0;
+}
+
+.campo-caminho .botao {
+  flex-shrink: 0;
+}
+
 .janela-cartao__comentar {
   display: flex;
   flex-direction: column;

@@ -46,12 +46,13 @@ export async function contarCartoesNaColuna(coluna) {
 // ---------- Criação ----------
 
 function novoCartao(
-  { titulo, coluna, etiquetas = [], responsaveis = [], prazo = null, descricao = '', vinculos = [], entregueEm = null, postagem = postagemPadrao(etiquetas) },
+  { titulo, coluna, etiquetas = [], responsaveis = [], prazo = null, descricao = '', caminho = '', vinculos = [], entregueEm = null, postagem = postagemPadrao(etiquetas) },
   pessoa,
 ) {
   return {
     titulo: titulo.trim(),
     descricao,
+    caminho,
     coluna,
     ordem: Date.now(),
     etiquetas,
@@ -115,12 +116,15 @@ export function moverCartao(cartao, coluna, ordem, quem, nomeDaColuna) {
   })
 }
 
-const iguais = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+// Campo em branco e campo que o cartão antigo nem tem são a mesma coisa: abrir e salvar não muda nada.
+const semVazio = (valor) => (valor === '' || valor === undefined ? null : valor)
+const iguais = (a, b) => JSON.stringify(semVazio(a)) === JSON.stringify(semVazio(b))
 
 // Descrição e responsáveis entram no histórico sem os valores, para a linha não virar um texto enorme.
 const CAMPOS_EDITAVEIS = {
   titulo: { rotulo: 'Título', comValores: true },
   descricao: { rotulo: 'Descrição' },
+  caminho: { rotulo: 'Caminho', comValores: true },
   etiquetas: { rotulo: 'Etiquetas', comValores: true },
   responsaveis: { rotulo: 'Responsáveis' },
   prazo: { rotulo: 'Prazo', comValores: true },

@@ -10,7 +10,7 @@ import { moverPostagem, useCartoesDoCalendario } from '../../dados/cartoes.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import {
-  agruparPorDia, diasDoCalendario, postagensDoMes, postagensSemData, REDES, resumoDoMes, situacaoDaPostagem, SITUACOES_POSTAGEM,
+  agruparPorDia, diasDoCalendario, GRUPOS_INTERNOS, postagensDoMes, postagensSemData, REDES, resumoDoMes, situacaoDaPostagem, SITUACOES_POSTAGEM, SO_EXTERNAS, SO_INTERNAS,
 } from '../../lib/postagens.js'
 import { nomeDoDia } from '../../lib/semana.js'
 import { useAcoesDoCartao } from '../quadro/useAcoesDoCartao.jsx'
@@ -91,7 +91,7 @@ export default function Postagens() {
           <span className="campo__rotulo">Rede</span>
           <select value={rede} onChange={(e) => setRede(e.target.value)}>
             <option value="">Todas</option>
-            {REDES.map((r) => (
+            {[SO_EXTERNAS, SO_INTERNAS, ...REDES, ...GRUPOS_INTERNOS].map((r) => (
               <option key={r} value={r}>
                 {r}
               </option>

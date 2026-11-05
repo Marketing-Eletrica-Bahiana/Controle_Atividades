@@ -1,10 +1,52 @@
 import { describe, expect, it } from 'vitest'
 import {
-  agruparPorDia, camposDaPostagem, diasDoCalendario, ehPostagem, formatoDoNome, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensDoMes,
-  postagensIguais, postagensSemData, publicoDePostagem, resumoDaPostagem, resumoDoMes, situacaoDaPostagem,
+  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, etiquetasDasRedes, formatoDoNome, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensDoMes,
+  postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS,
 } from './postagens.js'
 
 const HOJE = '2026-11-04'
+
+describe('grupos internos: WhatsApp e Lideranças', () => {
+  it('aparecem para Comunicação Interna e Endomarketing, e nos públicos internos', () => {
+    expect(ehInterno(['Comunicação Interna'])).toBe(true)
+    expect(ehInterno(['Endomarketing', 'CAE'])).toBe(true)
+    expect(ehInterno(['Comunicação Externa'])).toBe(false)
+    expect(ehInterno()).toBe(false)
+    expect(publicoInterno('Interno')).toBe(true)
+    expect(publicoInterno('Interno e Externo')).toBe(true)
+    expect(publicoInterno('Endomarketing')).toBe(true)
+    expect(publicoInterno('Externo')).toBe(false)
+    expect(publicoInterno('Atividades de Rotina')).toBe(false)
+  })
+
+  it('não contam como postagem sozinhos: o cartão interno só entra marcando a opção', () => {
+    expect(postagemPadrao(['Comunicação Interna'])).toBeNull()
+    expect(ehPostagem({ etiquetas: ['Comunicação Interna'] })).toBe(false)
+    expect(publicoDePostagem('Interno')).toBe(false)
+  })
+
+  it('o leitor do Trello continua procurando só as redes externas', () => {
+    expect(REDES).not.toContain('WhatsApp')
+    expect(REDES).not.toContain('Lideranças')
+  })
+
+  it('a postagem nova ganha a etiqueta que as redes pedem', () => {
+    expect(etiquetasDasRedes([])).toEqual(['Comunicação Externa'])
+    expect(etiquetasDasRedes(['Instagram'])).toEqual(['Comunicação Externa'])
+    expect(etiquetasDasRedes(['WhatsApp', 'Lideranças'])).toEqual(['Comunicação Interna'])
+    expect(etiquetasDasRedes(['WhatsApp', 'Instagram'])).toEqual(['Comunicação Externa', 'Comunicação Interna'])
+  })
+
+  it('o calendário filtra externas e internas; sem rede conta como externa', () => {
+    const cartao = (id, redes) => ({ id, etiquetas: [], postagem: { data: '2026-11-10', redes, formato: '' } })
+    const cartoes = [cartao('externa', ['Instagram']), cartao('interna', ['WhatsApp']), cartao('as-duas', ['Lideranças', 'LinkedIn']), cartao('sem-rede', [])]
+    const ids = (filtro) => postagensDoMes(cartoes, '2026-11', filtro).map((c) => c.id)
+    expect(ids('')).toEqual(['externa', 'interna', 'as-duas', 'sem-rede'])
+    expect(ids(SO_EXTERNAS)).toEqual(['externa', 'as-duas', 'sem-rede'])
+    expect(ids(SO_INTERNAS)).toEqual(['interna', 'as-duas'])
+    expect(ids('WhatsApp')).toEqual(['interna'])
+  })
+})
 
 describe('o que é postagem', () => {
   it('sem o campo, a etiqueta decide; null quer dizer que não é', () => {

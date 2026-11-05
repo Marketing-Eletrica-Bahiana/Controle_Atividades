@@ -86,8 +86,8 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
         <CamposDaClassificacao campos={campos}>
           <CampoData rotulo="Data de Solicitação" valor={dataSolicitacao} aoMudar={setDataSolicitacao} erro={erros.dataSolicitacao} obrigatorio />
         </CamposDaClassificacao>
-        <CampoDaPostagem campos={campos} />
         <CampoNoQuadro campos={campos} />
+        <CampoDaPostagem campos={campos} />
 
         <div className="acoes acoes--fim">
           <button type="submit" className="botao botao--principal botao--grande-largo" disabled={ocupado || iniciando || Boolean(repetida)}>

@@ -5,12 +5,10 @@ import CamposDaPostagem from '../../componentes/CamposDaPostagem.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { criarCartao } from '../../dados/cartoes.js'
 import { formatarData } from '../../lib/datas.js'
-import { formatoDoNome, POSTAGEM_VAZIA } from '../../lib/postagens.js'
+import { etiquetasDasRedes, formatoDoNome, POSTAGEM_VAZIA } from '../../lib/postagens.js'
 import { colunaDaEtiqueta } from '../../lib/quadro.js'
 
-const ETIQUETA = 'Comunicação Externa'
-
-// Postagem criada direto no calendário: vira um cartão de Comunicação Externa no Quadro.
+// Postagem criada direto no calendário: vira um cartão no Quadro, com a etiqueta que as redes escolhidas pedem.
 export default function JanelaNovaPostagem({ aberta, dataInicial, colunas, pessoa, aoFechar }) {
   return (
     <Janela aberta={aberta} titulo="Nova postagem" aoFechar={aoFechar} largura={560}>
@@ -27,6 +25,7 @@ function Formulario({ dataInicial, colunas, pessoa, aoFechar }) {
   const [ocupado, setOcupado] = useState(false)
   // O formato vem do título até a pessoa escolher outro.
   const comFormato = { ...postagem, formato: postagem.formato || formatoDoNome(titulo) }
+  const etiquetas = etiquetasDasRedes(comFormato.redes)
 
   async function enviar(evento) {
     evento.preventDefault()
@@ -39,7 +38,7 @@ function Formulario({ dataInicial, colunas, pessoa, aoFechar }) {
     const deuCerto = await executar(
       () =>
         criarCartao(
-          { titulo, coluna: colunaDaEtiqueta(ETIQUETA, colunas), etiquetas: [ETIQUETA], responsaveis: [pessoa.email], postagem: comFormato },
+          { titulo, coluna: colunaDaEtiqueta(etiquetas[0], colunas), etiquetas, responsaveis: [pessoa.email], postagem: comFormato },
           pessoa,
         ),
       comFormato.data ? `${titulo.trim()} no calendário em ${formatarData(comFormato.data)}.` : `${titulo.trim()} criada, ainda sem data.`,
@@ -55,8 +54,8 @@ function Formulario({ dataInicial, colunas, pessoa, aoFechar }) {
         <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Reels Dia do Cliente" autoComplete="off" aria-invalid={Boolean(erro)} />
         <ErroCampo texto={erro} />
       </label>
-      <CamposDaPostagem valor={comFormato} aoMudar={setPostagem} />
-      <p className="texto-suave texto-pequeno">Ela também entra no Quadro, em Comunicação Externa, para ligar o cronômetro e acompanhar a produção.</p>
+      <CamposDaPostagem valor={comFormato} aoMudar={setPostagem} interno />
+      <p className="texto-suave texto-pequeno">Ela também entra no Quadro, em {etiquetas[0]}, para ligar o cronômetro e acompanhar a produção.</p>
       <div className="janela-modal__acoes">
         <button type="button" className="botao botao--secundario" onClick={aoFechar}>
           Cancelar

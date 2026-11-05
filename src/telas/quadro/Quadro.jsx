@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CalendarClock, Megaphone, MessageSquare, Pause, Play, Plus, SquareKanban, Timer, X } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import BolinhasDePessoas from '../../componentes/BolinhasDePessoas.jsx'
+import IconeDaRede from '../../componentes/IconeDaRede.jsx'
 import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
 import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
 import { criarCartao, moverCartao, useCartoesDoQuadro } from '../../dados/cartoes.js'
@@ -217,6 +218,9 @@ function CartaoDoQuadro({
               {formatarData(cartao.postagem.data)}
             </span>
           )}
+          {(cartao.postagem?.redes ?? []).map((rede) => (
+            <IconeDaRede key={rede} rede={rede} />
+          ))}
           {comentarios > 0 && (
             <span className="cartao-quadro__dado" title="Comentários">
               <MessageSquare aria-hidden="true" />

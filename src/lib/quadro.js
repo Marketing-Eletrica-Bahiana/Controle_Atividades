@@ -45,7 +45,11 @@ export const etiquetaDoPublico = (publico) => ETIQUETA_DO_PUBLICO[normalizar(pub
 export const publicoDaEtiqueta = (etiquetas = []) => PUBLICO_DA_ETIQUETA[etiquetas.find((e) => PUBLICO_DA_ETIQUETA[e])] ?? ''
 
 // Atividades de rotina (almoço, reunião) ficam só no cronômetro; o resto vira cartão, salvo se a pessoa desmarcar.
-export const vaiParaOQuadro = (publico) => Boolean(etiquetaDoPublico(publico))
+// Comunicação externa vem desmarcada: legendas e afins nem sempre viram cartão, e a pessoa decide.
+export const vaiParaOQuadro = (publico) => {
+  const etiqueta = etiquetaDoPublico(publico)
+  return Boolean(etiqueta) && etiqueta !== 'Comunicação Externa'
+}
 
 const primeiraColuna = (colunas) => colunas.find((c) => c.id !== COLUNA_ENTREGUES)?.id
 

@@ -83,7 +83,11 @@ describe('público e etiquetas', () => {
   })
 
   it('rotina não vai para o quadro', () => {
-    expect(vaiParaOQuadro('Externo')).toBe(true)
+    expect(vaiParaOQuadro('Externo')).toBe(false)
+    expect(vaiParaOQuadro('Interno e Externo')).toBe(false)
+    expect(vaiParaOQuadro('Interno')).toBe(true)
+    expect(vaiParaOQuadro('Endomarketing')).toBe(true)
+    expect(vaiParaOQuadro('CAE')).toBe(true)
     expect(vaiParaOQuadro('Atividades de Rotina')).toBe(false)
     expect(vaiParaOQuadro('')).toBe(false)
   })

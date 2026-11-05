@@ -1,4 +1,4 @@
-// Regras do calendário de postagens externas, sem acesso ao Firestore. A postagem é um campo do cartão:
+// Regras do calendário de postagens, sem acesso ao Firestore. A postagem é um campo do cartão:
 // o calendário e o Quadro leem o mesmo dado, sem digitar duas vezes.
 
 import { formatarData, mesDe } from './datas.js'
@@ -7,10 +7,19 @@ import { diaDaSemana, somarDias } from './semana.js'
 import { normalizar } from './texto.js'
 
 const ETIQUETA_EXTERNA = 'Comunicação Externa'
+const ETIQUETA_INTERNA = 'Comunicação Interna'
+const ETIQUETAS_INTERNAS = [ETIQUETA_INTERNA, 'Endomarketing']
+const PUBLICOS_INTERNOS = ['interno', 'interno e externo', 'endomarketing']
 export const COLUNA_PROGRAMADO = 'legendado-programado'
 const COLUNA_IDEIAS = 'ideias'
 
 export const REDES = ['Instagram', 'LinkedIn', 'LinkedIn do CAE', 'YouTube', 'YouTube Shorts']
+
+// Comunicação interna: ficam em postagem.redes, junto com as redes. O leitor do Trello só procura as de REDES.
+export const GRUPOS_INTERNOS = ['WhatsApp', 'Lideranças']
+
+export const SO_EXTERNAS = 'Só externas'
+export const SO_INTERNAS = 'Só internas'
 
 export const FORMATOS = ['Reels', 'Stories', 'Carrossel', 'Card', 'Vídeo', 'Artigo', 'Ao vivo']
 
@@ -23,6 +32,21 @@ export const ehPostagem = (cartao) =>
 export const postagemPadrao = (etiquetas = []) => (etiquetas.includes(ETIQUETA_EXTERNA) ? POSTAGEM_VAZIA : null)
 
 export const publicoDePostagem = (publico) => etiquetaDoPublico(publico) === ETIQUETA_EXTERNA
+
+export const ehInterno = (etiquetas = []) => etiquetas.some((e) => ETIQUETAS_INTERNAS.includes(e))
+
+export const publicoInterno = (publico) => PUBLICOS_INTERNOS.includes(normalizar(publico))
+
+export const rotuloDaPostagem = (interno) => (interno ? 'É postagem em rede social ou grupo interno' : 'É postagem em rede social')
+
+const ehGrupoInterno = (rede) => GRUPOS_INTERNOS.includes(rede)
+
+// Cartão criado direto no calendário: as redes escolhidas dizem se é comunicação externa, interna ou as duas.
+export function etiquetasDasRedes(redes = []) {
+  const interna = redes.some(ehGrupoInterno)
+  const externa = !interna || !redes.every(ehGrupoInterno)
+  return [externa && ETIQUETA_EXTERNA, interna && ETIQUETA_INTERNA].filter(Boolean)
+}
 
 export const camposDaPostagem = (postagem) => ({
   postagem,
@@ -107,10 +131,16 @@ export function agruparPorDia(cartoes) {
   return grupos
 }
 
-export const postagensDoMes = (cartoes, mes, rede = '') =>
-  cartoes.filter(
-    (c) => ehPostagem(c) && mesDe(c.postagem?.data) === mes && (!rede || (c.postagem.redes ?? []).includes(rede)),
-  )
+// Postagem sem rede informada conta como externa: é o caso das antigas, de antes dos grupos internos.
+function passaNoFiltro(redes, filtro) {
+  if (!filtro) return true
+  if (filtro === SO_INTERNAS) return redes.some(ehGrupoInterno)
+  if (filtro === SO_EXTERNAS) return !redes.length || !redes.every(ehGrupoInterno)
+  return redes.includes(filtro)
+}
+
+export const postagensDoMes = (cartoes, mes, filtro = '') =>
+  cartoes.filter((c) => ehPostagem(c) && mesDe(c.postagem?.data) === mes && passaNoFiltro(c.postagem.redes ?? [], filtro))
 
 // Ideia ainda não é trabalho a agendar: não entra na lista de postagens sem data.
 export const postagensSemData = (cartoes) =>
