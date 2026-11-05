@@ -205,9 +205,9 @@ export default function Postagens() {
 
 function PostagemDoCalendario({ cartao, hoje, nomeDaPessoa, arrastando, arraste, aoAbrir }) {
   const { rotulo, classe } = SITUACOES_POSTAGEM[situacaoDaPostagem(cartao, hoje)]
-  const { redes = [], formato, estimada, redeAConfirmar } = cartao.postagem ?? {}
+  const { redes = [], formato, envio, estimada, redeAConfirmar } = cartao.postagem ?? {}
   const responsaveis = cartao.responsaveis ?? []
-  const detalhes = [rotulo, ...redes, formato, estimada && 'data estimada', redeAConfirmar && 'rede a confirmar'].filter(Boolean).join(' · ')
+  const detalhes = [rotulo, ...redes, formato, envio && 'envio interno', estimada && 'data estimada', redeAConfirmar && 'rede a confirmar'].filter(Boolean).join(' · ')
   return (
     <li className={`postagem ${classe} ${arrastando ? 'postagem--arrastando' : ''}`} title={`${cartao.titulo} (${detalhes})`} {...arraste}>
       <button type="button" className="postagem__titulo" onClick={aoAbrir}>

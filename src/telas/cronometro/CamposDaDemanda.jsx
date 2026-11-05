@@ -28,6 +28,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   const [noQuadroEscolhido, setNoQuadro] = useState(null)
   const [ehPostEscolhido, setEhPost] = useState(null)
   const [ehInternaEscolhida, setEhInterna] = useState(false)
+  const [ehEnvioEscolhido, setEhEnvio] = useState(false)
   const [dadosDaPostagem, setPostagem] = useState(POSTAGEM_VAZIA)
 
   const classificacao = useMemo(
@@ -46,6 +47,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   // A postagem mora no cartão: sem cartão não há postagem. Com o público Externo, marcar o cartão já marca a postagem.
   const ehPost = noQuadro && (ehPostEscolhido ?? publicoDePostagem(publico))
   const ehInterna = noQuadro && ehInternaEscolhida
+  const ehEnvio = noQuadro && ehEnvioEscolhido
   const postagem = { ...dadosDaPostagem, formato: dadosDaPostagem.formato || formatoDoNome(dados.nome) }
 
   return {
@@ -55,6 +57,8 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
     setEhPost,
     ehInterna,
     setEhInterna,
+    ehEnvio,
+    setEhEnvio,
     postagem,
     setPostagem,
     tipos,
@@ -85,6 +89,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
       setNoQuadro(null)
       setEhPost(null)
       setEhInterna(false)
+      setEhEnvio(false)
       setPostagem(POSTAGEM_VAZIA)
     },
     paraGravar: (dataSolicitacao) => ({
@@ -98,7 +103,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
       usoTemplate,
       dataSolicitacao,
       noQuadro,
-      postagem: postagemDasOpcoes(postagem, { redeSocial: ehPost, interna: ehInterna }),
+      postagem: postagemDasOpcoes(postagem, { redeSocial: ehPost, interna: ehInterna, envio: ehEnvio }),
     }),
   }
 }
@@ -155,19 +160,21 @@ export function CampoNoQuadro({ campos }) {
 
 export function CampoDaPostagem({ campos }) {
   if (!campos.noQuadro) return null
-  const { ehPost, ehInterna } = campos
+  const { ehPost, ehInterna, ehEnvio } = campos
   return (
     <>
       <OpcoesDaPostagem
         redeSocial={ehPost}
         interna={ehInterna}
-        mostrarInterna={publicoInterno(campos.publico) || ehInterna}
+        envio={ehEnvio}
+        mostrarInterna={publicoInterno(campos.publico) || ehInterna || ehEnvio}
         aoMudarRedeSocial={campos.setEhPost}
         aoMudarInterna={campos.setEhInterna}
+        aoMudarEnvio={campos.setEhEnvio}
       />
-      {(ehPost || ehInterna) && (
+      {(ehPost || ehInterna || ehEnvio) && (
         <>
-          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} redeSocial={ehPost} interna={ehInterna} />
+          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} redeSocial={ehPost} interna={ehInterna} envio={ehEnvio} />
           <p className="campo__ajuda">Com a data, a postagem já entra no calendário. Sem data, ela fica na lista Sem data, na tela Postagens.</p>
         </>
       )}

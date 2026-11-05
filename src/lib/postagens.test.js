@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, etiquetasDasRedes, formatoDoNome, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensDoMes,
-  postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS, tiposDaPostagem,
+  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, etiquetasDasRedes, formatoDoNome, FORMATOS, FORMATOS_INTERNOS, GRUPOS_INTERNOS, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensDoMes,
+  postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, rotuloDaData, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS, tiposDaPostagem,
 } from './postagens.js'
 
 const HOJE = '2026-11-04'
@@ -26,8 +26,42 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
   })
 
   it('o leitor do Trello continua procurando só as redes externas', () => {
-    expect(REDES).not.toContain('WhatsApp')
-    expect(REDES).not.toContain('Lideranças')
+    for (const grupo of GRUPOS_INTERNOS) expect(REDES).not.toContain(grupo)
+  })
+
+  it('Grupos do CAE conta como interno, não como o LinkedIn do CAE', () => {
+    const cartao = (redes) => ({ etiquetas: [], postagem: { data: null, redes, formato: '' } })
+    expect(tiposDaPostagem(cartao(['Grupos do CAE']))).toEqual({ redeSocial: false, interna: true, envio: false })
+    expect(tiposDaPostagem(cartao(['LinkedIn do CAE']))).toEqual({ redeSocial: true, interna: false, envio: false })
+    expect(etiquetasDasRedes(['Grupos do CAE'])).toEqual(['Comunicação Interna'])
+    expect(postagemDasOpcoes({ redes: ['Grupos do CAE', 'Instagram'] }, { redeSocial: true, interna: false }).redes).toEqual(['Instagram'])
+  })
+
+  it('Envio Interno: é uma caixa própria e fica gravado sem precisar de rede', () => {
+    const cartao = (postagem, etiquetas = ['Endomarketing']) => ({ etiquetas, postagem: { data: '2026-11-10', redes: [], formato: '', ...postagem } })
+    expect(tiposDaPostagem(cartao({ envio: true }))).toEqual({ redeSocial: false, interna: false, envio: true })
+    expect(tiposDaPostagem(cartao({ envio: true, redes: ['WhatsApp'] }))).toEqual({ redeSocial: false, interna: true, envio: true })
+    expect(tiposDaPostagem(cartao({ envio: true }, ['Comunicação Externa']))).toEqual({ redeSocial: false, interna: false, envio: true })
+    const base = { data: '2026-11-10', redes: ['Instagram', 'WhatsApp'], formato: 'Apresentação' }
+    expect(postagemDasOpcoes(base, { redeSocial: false, interna: false, envio: true })).toEqual({ data: '2026-11-10', redes: [], formato: 'Apresentação', envio: true })
+    const semEnvio = postagemDasOpcoes({ ...base, envio: true }, { redeSocial: true, interna: true, envio: false })
+    expect('envio' in semEnvio).toBe(false)
+    expect(postagemDasOpcoes({ ...base, envio: true }, { redeSocial: false, interna: false, envio: false })).toBeNull()
+    expect(postagensIguais({ ...base, envio: true }, base)).toBe(false)
+    expect(resumoDaPostagem({ data: '2026-11-10', redes: [], formato: 'Card', envio: true })).toBe('10/11/2026, Card, Envio Interno')
+  })
+
+  it('a data muda de nome conforme o que está marcado', () => {
+    expect(rotuloDaData({ redeSocial: true, interna: false, envio: false })).toBe('Data da postagem')
+    expect(rotuloDaData({ redeSocial: false, interna: true, envio: false })).toBe('Data da postagem')
+    expect(rotuloDaData({ redeSocial: false, interna: false, envio: true })).toBe('Data do Envio')
+    expect(rotuloDaData({ redeSocial: true, interna: false, envio: true })).toBe('Data da postagem e do envio')
+    expect(rotuloDaData({ redeSocial: false, interna: true, envio: true })).toBe('Data da postagem e do envio')
+  })
+
+  it('os formatos internos não entram na lista das redes sociais', () => {
+    expect(FORMATOS_INTERNOS).toEqual(['Foto de Perfil', 'Assinatura de e-Mail', 'Apresentação'])
+    for (const formato of FORMATOS_INTERNOS) expect(FORMATOS).not.toContain(formato)
   })
 
   it('a postagem nova ganha a etiqueta que as redes pedem', () => {
@@ -39,15 +73,15 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
 
   it('as duas caixas vêm das redes; sem rede, a etiqueta decide', () => {
     const cartao = (redes, etiquetas = []) => ({ etiquetas, postagem: { data: null, redes, formato: '' } })
-    expect(tiposDaPostagem(cartao(['Instagram']))).toEqual({ redeSocial: true, interna: false })
-    expect(tiposDaPostagem(cartao(['WhatsApp']))).toEqual({ redeSocial: false, interna: true })
-    expect(tiposDaPostagem(cartao(['Lideranças', 'LinkedIn']))).toEqual({ redeSocial: true, interna: true })
-    expect(tiposDaPostagem(cartao([]))).toEqual({ redeSocial: true, interna: false })
-    expect(tiposDaPostagem(cartao([], ['Comunicação Externa']))).toEqual({ redeSocial: true, interna: false })
-    expect(tiposDaPostagem(cartao([], ['Comunicação Interna']))).toEqual({ redeSocial: false, interna: true })
-    expect(tiposDaPostagem(cartao([], ['Endomarketing', 'Comunicação Externa']))).toEqual({ redeSocial: true, interna: false })
-    expect(tiposDaPostagem({ etiquetas: ['Comunicação Interna'], postagem: null })).toEqual({ redeSocial: false, interna: false })
-    expect(tiposDaPostagem({ etiquetas: ['Comunicação Externa'] })).toEqual({ redeSocial: true, interna: false })
+    expect(tiposDaPostagem(cartao(['Instagram']))).toEqual({ redeSocial: true, interna: false, envio: false })
+    expect(tiposDaPostagem(cartao(['WhatsApp']))).toEqual({ redeSocial: false, interna: true, envio: false })
+    expect(tiposDaPostagem(cartao(['Lideranças', 'LinkedIn']))).toEqual({ redeSocial: true, interna: true, envio: false })
+    expect(tiposDaPostagem(cartao([]))).toEqual({ redeSocial: true, interna: false, envio: false })
+    expect(tiposDaPostagem(cartao([], ['Comunicação Externa']))).toEqual({ redeSocial: true, interna: false, envio: false })
+    expect(tiposDaPostagem(cartao([], ['Comunicação Interna']))).toEqual({ redeSocial: false, interna: true, envio: false })
+    expect(tiposDaPostagem(cartao([], ['Endomarketing', 'Comunicação Externa']))).toEqual({ redeSocial: true, interna: false, envio: false })
+    expect(tiposDaPostagem({ etiquetas: ['Comunicação Interna'], postagem: null })).toEqual({ redeSocial: false, interna: false, envio: false })
+    expect(tiposDaPostagem({ etiquetas: ['Comunicação Externa'] })).toEqual({ redeSocial: true, interna: false, envio: false })
   })
 
   it('desmarcar uma caixa tira as redes dela; sem nenhuma, não é postagem', () => {
@@ -70,6 +104,9 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
     const semRedeInterna = { id: 'interna-sem-rede', etiquetas: ['Comunicação Interna'], postagem: { data: '2026-11-10', redes: [], formato: '' } }
     expect(postagensDoMes([semRedeInterna], '2026-11', SO_INTERNAS)).toHaveLength(1)
     expect(postagensDoMes([semRedeInterna], '2026-11', SO_EXTERNAS)).toHaveLength(0)
+    const soEnvio = { id: 'envio', etiquetas: ['Endomarketing'], postagem: { data: '2026-11-10', redes: [], formato: '', envio: true } }
+    expect(postagensDoMes([soEnvio], '2026-11', SO_INTERNAS)).toHaveLength(1)
+    expect(postagensDoMes([soEnvio], '2026-11', SO_EXTERNAS)).toHaveLength(0)
   })
 })
 

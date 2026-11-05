@@ -286,7 +286,7 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
 - `cartoes/{id}`: `titulo`, `descricao`, `caminho` (pasta do conteúdo no computador, texto livre; cartão antigo não tem), `coluna`, `ordem`, `etiquetas` (lista), `responsaveis` (lista de
   e-mails), `prazo`, `entregue` (boolean), `entregueEm`, `mesEntrega` (ex.: `"2026-10"`), `vinculos` (lista
   de `{demandaId, area, email, nome}`), `comentarios` (lista de `{email, nome, quando, texto}`), `historico`,
-  `criadoPor`, `criadoEm`, `atualizadoEm`, `postagem` (`{data, redes, formato}`, e `estimada` e
+  `criadoPor`, `criadoEm`, `atualizadoEm`, `postagem` (`{data, redes, formato}`, `envio: true` no Envio Interno, e `estimada` e
   `redeAConfirmar` quando vierem da importação; `null` quando não é postagem) e `postagemMes`
   (ex.: `"2026-11"`, para o calendário consultar). Só nos importados: `origem: "trello"` e `trello`
   (`{id, url, ultimaAtividade, importadoEm}`). O ID desses documentos é `trello-{id do cartão}`.
@@ -380,21 +380,22 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
 - A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
 - Postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
   diferente do prazo do cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
-- Comunicação interna: WhatsApp e Lideranças (`GRUPOS_INTERNOS`), gravados em `postagem.redes`. São duas caixas separadas,
-  "É postagem em rede social" (abre `REDES`) e "É postagem interna" (abre os grupos), com a mesma data e o mesmo formato. Desmarcar
-  uma tira as redes dela (`postagemDasOpcoes`), e sem rede informada a etiqueta diz qual é (`tiposDaPostagem`). A interna aparece
+- Comunicação interna: WhatsApp, Lideranças e Grupos do CAE (`GRUPOS_INTERNOS`), gravados em `postagem.redes`. São caixas separadas,
+  "É postagem em rede social" (abre `REDES`), "É postagem interna" (abre os grupos) e "Envio Interno" (só data e formato, para o que é
+  enviado e não postado), com a mesma data e o mesmo formato. Só com o Envio Interno marcado, a data se chama "Data do Envio"
+  (`rotuloDaData`). Desmarcar uma tira as redes dela (`postagemDasOpcoes`), e sem rede informada a etiqueta diz qual é (`tiposDaPostagem`). A interna e o envio aparecem
   com Comunicação Interna ou Endomarketing no cartão, com público Interno, Interno e Externo ou Endomarketing no cronômetro, ou
-  se já estiver marcada. Marcar a etiqueta não liga a postagem sozinha, porque nem todo cartão interno vai para um grupo. Com a
-  opção marcada, entra no calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello
+  se já estiverem marcados. Marcar a etiqueta não liga a postagem sozinha, porque nem todo cartão interno vai para um grupo. Com a
+  opção marcada ou com o envio, o Formato ganha Foto de Perfil, Assinatura de e-Mail e Apresentação (`FORMATOS_INTERNOS`), e a postagem entra no calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello
   só procura `REDES`.
 - A grade do calendário e o campo de data vão de domingo a sábado, por pedido da pessoa. A tela Semana continua
   começando na segunda.
 - As redes e os grupos internos aparecem com os ícones de `public/marca/icones/`, nas cores originais: é a única exceção à
-  paleta, por pedido da pessoa. O LinkedIn do CAE usa o ícone do CAE. Os ícones também aparecem no cartão do Quadro.
+  paleta, por pedido da pessoa. O LinkedIn do CAE e os Grupos do CAE usam o ícone do CAE. Os ícones também aparecem no cartão do Quadro.
 - Cada pessoa tem uma cor de bolinha, dentro da paleta (`corDaPessoa` em `src/lib/quadro.js`), no Quadro e no
   calendário.
 - A postagem entra sozinha no calendário por quatro caminhos: botão Nova postagem ou "+" no dia; cartão
-  (qualquer cartão com a opção "É postagem em rede social" ou "É postagem interna"); Meu Cronômetro; lançamento manual. Nos dois
+  (qualquer cartão com "É postagem em rede social", "É postagem interna" ou "Envio Interno"); Meu Cronômetro; lançamento manual. Nos dois
   últimos, a postagem mora no cartão: as opções só aparecem com "Criar cartão no Quadro" marcado e, no público Externo ou
   Interno e Externo, a de rede social já vem marcada junto com o cartão.
 - Sem data, a postagem em andamento fica na lista "Sem data", abaixo do calendário. Cartão gravado antes

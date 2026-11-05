@@ -8,6 +8,7 @@ import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
 import { criarCartao, moverCartao, useCartoesDoQuadro } from '../../dados/cartoes.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
+import { rotuloDaData, tiposDaPostagem } from '../../lib/postagens.js'
 import {
   agruparPorColuna, cartaoAtrasado, classeDaEtiqueta, COLUNA_ENTREGUES, etiquetaDaColuna, ETIQUETAS, filtrarCartoes, ordemParaSoltar,
 } from '../../lib/quadro.js'
@@ -213,7 +214,7 @@ function CartaoDoQuadro({
             </span>
           )}
           {cartao.postagem?.data && (
-            <span className="cartao-quadro__dado numero" title="Data da postagem">
+            <span className="cartao-quadro__dado numero" title={rotuloDaData(tiposDaPostagem(cartao))}>
               <Megaphone aria-hidden="true" />
               {formatarData(cartao.postagem.data)}
             </span>

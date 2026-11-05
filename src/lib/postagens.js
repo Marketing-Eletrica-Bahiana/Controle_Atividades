@@ -16,12 +16,15 @@ const COLUNA_IDEIAS = 'ideias'
 export const REDES = ['Instagram', 'LinkedIn', 'LinkedIn do CAE', 'YouTube', 'YouTube Shorts']
 
 // Comunicação interna: ficam em postagem.redes, junto com as redes. O leitor do Trello só procura as de REDES.
-export const GRUPOS_INTERNOS = ['WhatsApp', 'Lideranças']
+export const GRUPOS_INTERNOS = ['WhatsApp', 'Lideranças', 'Grupos do CAE']
 
 export const SO_EXTERNAS = 'Só externas'
 export const SO_INTERNAS = 'Só internas'
 
 export const FORMATOS = ['Reels', 'Stories', 'Carrossel', 'Card', 'Vídeo', 'Artigo', 'Ao vivo']
+
+// Só aparecem na postagem interna, depois dos outros.
+export const FORMATOS_INTERNOS = ['Foto de Perfil', 'Assinatura de e-Mail', 'Apresentação']
 
 export const POSTAGEM_VAZIA = { data: null, redes: [], formato: '' }
 
@@ -39,20 +42,30 @@ export const publicoInterno = (publico) => PUBLICOS_INTERNOS.includes(normalizar
 
 const ehGrupoInterno = (rede) => GRUPOS_INTERNOS.includes(rede)
 
-// O que o cartão marca: rede social, interna ou as duas. Sem rede informada, quem decide é a etiqueta.
+// O que o cartão marca: rede social, interna e envio interno. Sem rede informada, quem decide é a etiqueta.
 export function tiposDaPostagem(cartao) {
-  if (!ehPostagem(cartao)) return { redeSocial: false, interna: false }
+  if (!ehPostagem(cartao)) return { redeSocial: false, interna: false, envio: false }
+  const envio = Boolean(cartao.postagem?.envio)
   const redes = cartao.postagem?.redes ?? []
-  if (redes.length) return { redeSocial: !redes.every(ehGrupoInterno), interna: redes.some(ehGrupoInterno) }
+  if (redes.length) return { redeSocial: !redes.every(ehGrupoInterno), interna: redes.some(ehGrupoInterno), envio }
+  if (envio) return { redeSocial: false, interna: false, envio }
   const etiquetas = cartao.etiquetas ?? []
   const soInterna = ehInterno(etiquetas) && !etiquetas.includes(ETIQUETA_EXTERNA)
-  return { redeSocial: !soInterna, interna: soInterna }
+  return { redeSocial: !soInterna, interna: soInterna, envio }
+}
+
+// A data é uma só para as opções marcadas: o nome diz o que ela representa.
+export function rotuloDaData({ redeSocial, interna, envio }) {
+  if (!envio) return 'Data da postagem'
+  return redeSocial || interna ? 'Data da postagem e do envio' : 'Data do Envio'
 }
 
 // Só fica gravado o que está à vista: desmarcar uma opção tira as redes dela. Sem nenhuma opção, não é postagem.
-export function postagemDasOpcoes(postagem, { redeSocial, interna }) {
-  if (!redeSocial && !interna) return null
-  return { ...postagem, redes: (postagem.redes ?? []).filter((rede) => (ehGrupoInterno(rede) ? interna : redeSocial)) }
+export function postagemDasOpcoes(postagem, { redeSocial, interna, envio }) {
+  if (!redeSocial && !interna && !envio) return null
+  const { envio: _envioAntes, ...resto } = postagem
+  const redes = (postagem.redes ?? []).filter((rede) => (ehGrupoInterno(rede) ? interna : redeSocial))
+  return { ...resto, redes, ...(envio ? { envio: true } : {}) }
 }
 
 // Cartão criado direto no calendário: as redes escolhidas dizem se é comunicação externa, interna ou as duas.
@@ -81,13 +94,14 @@ export function postagensIguais(a, b) {
   const redes = (p) => [...(p.redes ?? [])].sort().join('|')
   return (a.data ?? null) === (b.data ?? null) && (a.formato ?? '') === (b.formato ?? '') && redes(a) === redes(b)
     && Boolean(a.estimada) === Boolean(b.estimada) && Boolean(a.redeAConfirmar) === Boolean(b.redeAConfirmar)
+    && Boolean(a.envio) === Boolean(b.envio)
 }
 
 const juntarRedes = (redes) => (redes.length < 2 ? (redes[0] ?? '') : `${redes.slice(0, -1).join(', ')} e ${redes.at(-1)}`)
 
 export function resumoDaPostagem(postagem) {
   if (!postagem) return 'Não é postagem'
-  const partes = [postagem.data ? formatarData(postagem.data) : 'Sem data', juntarRedes(postagem.redes ?? []), postagem.formato]
+  const partes = [postagem.data ? formatarData(postagem.data) : 'Sem data', juntarRedes(postagem.redes ?? []), postagem.formato, postagem.envio && 'Envio Interno']
   return partes.filter(Boolean).join(', ')
 }
 
@@ -147,7 +161,7 @@ export function agruparPorDia(cartoes) {
 
 function passaNoFiltro(cartao, filtro) {
   if (!filtro) return true
-  if (filtro === SO_INTERNAS) return tiposDaPostagem(cartao).interna
+  if (filtro === SO_INTERNAS) return tiposDaPostagem(cartao).interna || tiposDaPostagem(cartao).envio
   if (filtro === SO_EXTERNAS) return tiposDaPostagem(cartao).redeSocial
   return (cartao.postagem?.redes ?? []).includes(filtro)
 }

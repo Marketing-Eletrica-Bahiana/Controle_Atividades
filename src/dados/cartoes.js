@@ -5,7 +5,7 @@ import { arrayUnion, collection, deleteDoc, doc, getDocs, query, serverTimestamp
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarData, hojeISO } from '../lib/datas.js'
-import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensIguais, resumoDaPostagem } from '../lib/postagens.js'
+import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensIguais, resumoDaPostagem, rotuloDaData, tiposDaPostagem } from '../lib/postagens.js'
 import { camposDeEntrega, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDoPublico, vinculosSemDemanda } from '../lib/quadro.js'
 import { refDemanda, registro } from './demandas.js'
 
@@ -158,7 +158,7 @@ export function moverPostagem(cartao, data, quem) {
   const antes = cartao.postagem ?? POSTAGEM_VAZIA
   return updateDoc(refCartao(cartao.id), {
     ...camposDaPostagem(mudarPostagem(antes, 'data', data)),
-    historico: arrayUnion(registro(quem, 'edicao', 'Data da postagem', formatarData(antes.data), formatarData(data))),
+    historico: arrayUnion(registro(quem, 'edicao', rotuloDaData(tiposDaPostagem(cartao)), formatarData(antes.data), formatarData(data))),
     atualizadoEm: serverTimestamp(),
   })
 }

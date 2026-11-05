@@ -51,6 +51,7 @@ function Conteudo({
   })
   const [redeSocial, setRedeSocial] = useState(() => tiposDaPostagem(cartao).redeSocial)
   const [interna, setInterna] = useState(() => tiposDaPostagem(cartao).interna)
+  const [envio, setEnvio] = useState(() => tiposDaPostagem(cartao).envio)
   const [postagem, setPostagem] = useState({ ...POSTAGEM_VAZIA, ...cartao.postagem })
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -76,7 +77,7 @@ function Conteudo({
     setOcupado(true)
     let mudou = false
     const deuCerto = await executar(async () => {
-      const novos = { ...dados, titulo: dados.titulo.trim(), caminho: dados.caminho.trim(), postagem: postagemDasOpcoes(postagem, { redeSocial, interna }) }
+      const novos = { ...dados, titulo: dados.titulo.trim(), caminho: dados.caminho.trim(), postagem: postagemDasOpcoes(postagem, { redeSocial, interna, envio }) }
       mudou = await salvarCartao(cartao, novos, membro.email, nomeDaColuna, mostrarValor)
     })
     setOcupado(false)
@@ -144,11 +145,13 @@ function Conteudo({
           <OpcoesDaPostagem
             redeSocial={redeSocial}
             interna={interna}
-            mostrarInterna={ehInterno(dados.etiquetas) || interna}
+            envio={envio}
+            mostrarInterna={ehInterno(dados.etiquetas) || interna || envio}
             aoMudarRedeSocial={setRedeSocial}
             aoMudarInterna={setInterna}
+            aoMudarEnvio={setEnvio}
           />
-          {(redeSocial || interna) && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} redeSocial={redeSocial} interna={interna} />}
+          {(redeSocial || interna || envio) && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} redeSocial={redeSocial} interna={interna} envio={envio} />}
           <label className="campo">
             <span className="campo__rotulo">Descrição</span>
             <textarea rows={5} value={dados.descricao} onChange={(e) => mudar('descricao', e.target.value)} />

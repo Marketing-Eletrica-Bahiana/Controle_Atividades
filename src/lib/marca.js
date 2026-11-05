@@ -38,6 +38,7 @@ export const iconesDasRedes = {
   'YouTube Shorts': arquivo('icones/youtube-shorts.png'),
   WhatsApp: arquivo('icones/whatsapp.png'),
   Lideranças: arquivo('icones/liderancas.png'),
+  'Grupos do CAE': arquivo('icones/cae.png'),
 }
 
 export const patterns = {
