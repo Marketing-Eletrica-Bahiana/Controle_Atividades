@@ -1,12 +1,12 @@
 import { useId, useMemo, useState } from 'react'
 import { CampoLista, ErroCampo, SimNao } from '../../componentes/Campos.jsx'
-import CamposDaPostagem from '../../componentes/CamposDaPostagem.jsx'
+import CamposDaPostagem, { OpcoesDaPostagem } from '../../componentes/CamposDaPostagem.jsx'
 import { useHistoricoDaArea } from '../../dados/demandas.js'
 import { useListas } from '../../dados/listas.js'
 import { usePalavras, useTipos } from '../../dados/tipos.js'
 import { classificar, prepararHistorico, textoDaOrigem } from '../../lib/classificacao.js'
 import { hojeISO, mesDe } from '../../lib/datas.js'
-import { formatoDoNome, POSTAGEM_VAZIA, publicoDePostagem, publicoInterno, rotuloDaPostagem } from '../../lib/postagens.js'
+import { formatoDoNome, POSTAGEM_VAZIA, postagemDasOpcoes, publicoDePostagem, publicoInterno } from '../../lib/postagens.js'
 import { vaiParaOQuadro } from '../../lib/quadro.js'
 import { regraAutomatica } from '../../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../../lib/tempo.js'
@@ -27,6 +27,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   // Sem escolha da pessoa, o público dá o padrão de "Criar cartão no Quadro".
   const [noQuadroEscolhido, setNoQuadro] = useState(null)
   const [ehPostEscolhido, setEhPost] = useState(null)
+  const [ehInternaEscolhida, setEhInterna] = useState(false)
   const [dadosDaPostagem, setPostagem] = useState(POSTAGEM_VAZIA)
 
   const classificacao = useMemo(
@@ -44,6 +45,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
   const noQuadro = noQuadroEscolhido ?? vaiParaOQuadro(publico)
   // A postagem mora no cartão: sem cartão não há postagem. Com o público Externo, marcar o cartão já marca a postagem.
   const ehPost = noQuadro && (ehPostEscolhido ?? publicoDePostagem(publico))
+  const ehInterna = noQuadro && ehInternaEscolhida
   const postagem = { ...dadosDaPostagem, formato: dadosDaPostagem.formato || formatoDoNome(dados.nome) }
 
   return {
@@ -51,6 +53,8 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
     setNoQuadro,
     ehPost,
     setEhPost,
+    ehInterna,
+    setEhInterna,
     postagem,
     setPostagem,
     tipos,
@@ -80,6 +84,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
       setManual({})
       setNoQuadro(null)
       setEhPost(null)
+      setEhInterna(false)
       setPostagem(POSTAGEM_VAZIA)
     },
     paraGravar: (dataSolicitacao) => ({
@@ -93,7 +98,7 @@ export function useCamposDaDemanda(area, pessoa, inicial = {}) {
       usoTemplate,
       dataSolicitacao,
       noQuadro,
-      postagem: ehPost ? postagem : null,
+      postagem: postagemDasOpcoes(postagem, { redeSocial: ehPost, interna: ehInterna }),
     }),
   }
 }
@@ -149,17 +154,20 @@ export function CampoNoQuadro({ campos }) {
 }
 
 export function CampoDaPostagem({ campos }) {
-  const interno = publicoInterno(campos.publico)
   if (!campos.noQuadro) return null
+  const { ehPost, ehInterna } = campos
   return (
     <>
-      <label className="opcao">
-        <input type="checkbox" checked={campos.ehPost} onChange={(e) => campos.setEhPost(e.target.checked)} />
-        {rotuloDaPostagem(interno)}
-      </label>
-      {campos.ehPost && (
+      <OpcoesDaPostagem
+        redeSocial={ehPost}
+        interna={ehInterna}
+        mostrarInterna={publicoInterno(campos.publico) || ehInterna}
+        aoMudarRedeSocial={campos.setEhPost}
+        aoMudarInterna={campos.setEhInterna}
+      />
+      {(ehPost || ehInterna) && (
         <>
-          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} interno={interno} />
+          <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} redeSocial={ehPost} interna={ehInterna} />
           <p className="campo__ajuda">Com a data, a postagem já entra no calendário. Sem data, ela fica na lista Sem data, na tela Postagens.</p>
         </>
       )}

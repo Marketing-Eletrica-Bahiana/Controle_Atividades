@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
 import { formatarData, hojeISO, lerData, montarISO, NOMES_MESES } from '../lib/datas.js'
 
-const DIAS_DA_SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+const DIAS_DA_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 // Coloca as barras enquanto a pessoa digita: 01102026 vira 01/10/2026.
 function mascarar(texto) {
@@ -12,7 +12,7 @@ function mascarar(texto) {
   return numeros
 }
 
-// Campo de data próprio: aceita digitar DD/MM/AAAA e tem calendário em português começando na segunda.
+// Campo de data próprio: aceita digitar DD/MM/AAAA e tem calendário em português começando no domingo.
 // Não depende do formato de data do navegador. Valor sempre em "AAAA-MM-DD" (ou null).
 export default function CampoData({ rotulo, valor, aoMudar, erro, obrigatorio = false, compacto = false }) {
   const [texto, setTexto] = useState(formatarData(valor))
@@ -108,7 +108,7 @@ export function Calendario({ valor, aoEscolher }) {
   const hoje = hojeISO()
   const [mesVisivel, setMesVisivel] = useState((valor ?? hoje).slice(0, 7))
   const [ano, mes] = mesVisivel.split('-').map(Number)
-  const primeiroDia = (new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay() + 6) % 7 // segunda = 0
+  const primeiroDia = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay() // domingo = 0
   const diasNoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate()
   const casas = [...Array(primeiroDia).fill(null), ...Array.from({ length: diasNoMes }, (_, i) => i + 1)]
 

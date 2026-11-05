@@ -3,7 +3,7 @@ import { Copy, ExternalLink, Pause, Play, Send, Trash2 } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
-import CamposDaPostagem from '../../componentes/CamposDaPostagem.jsx'
+import CamposDaPostagem, { OpcoesDaPostagem } from '../../componentes/CamposDaPostagem.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { dataHora } from '../../componentes/JanelaDetalhes.jsx'
 import { EtiquetaSituacao } from '../../componentes/Seletores.jsx'
@@ -11,7 +11,7 @@ import { comentar, excluirCartao, salvarCartao } from '../../dados/cartoes.js'
 import { useDemandasDoCartao } from '../../dados/demandas.js'
 import { formatarData } from '../../lib/datas.js'
 import { veTodasAsAreas } from '../../lib/papeis.js'
-import { ehInterno, ehPostagem, POSTAGEM_VAZIA, postagemPadrao, rotuloDaPostagem } from '../../lib/postagens.js'
+import { ehInterno, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, tiposDaPostagem } from '../../lib/postagens.js'
 import { COLUNA_ENTREGUES, ETIQUETAS } from '../../lib/quadro.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
@@ -49,7 +49,8 @@ function Conteudo({
     responsaveis: cartao.responsaveis ?? [],
     prazo: cartao.prazo ?? null,
   })
-  const [ehPost, setEhPost] = useState(ehPostagem(cartao))
+  const [redeSocial, setRedeSocial] = useState(() => tiposDaPostagem(cartao).redeSocial)
+  const [interna, setInterna] = useState(() => tiposDaPostagem(cartao).interna)
   const [postagem, setPostagem] = useState({ ...POSTAGEM_VAZIA, ...cartao.postagem })
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -59,11 +60,10 @@ function Conteudo({
 
   // Marcar Comunicação Externa já abre os campos da postagem; a pessoa desmarca se não for postagem.
   function alternarEtiqueta(etiqueta) {
-    if (!dados.etiquetas.includes(etiqueta) && postagemPadrao([etiqueta])) setEhPost(true)
+    if (!dados.etiquetas.includes(etiqueta) && postagemPadrao([etiqueta])) setRedeSocial(true)
     alternar('etiquetas', etiqueta)
   }
 
-  const interno = ehInterno(dados.etiquetas)
   const pessoasDaLista = membros.filter((m) => m.ativo !== false || dados.responsaveis.includes(m.id))
 
   async function salvar(evento) {
@@ -76,7 +76,7 @@ function Conteudo({
     setOcupado(true)
     let mudou = false
     const deuCerto = await executar(async () => {
-      const novos = { ...dados, titulo: dados.titulo.trim(), caminho: dados.caminho.trim(), postagem: ehPost ? postagem : null }
+      const novos = { ...dados, titulo: dados.titulo.trim(), caminho: dados.caminho.trim(), postagem: postagemDasOpcoes(postagem, { redeSocial, interna }) }
       mudou = await salvarCartao(cartao, novos, membro.email, nomeDaColuna, mostrarValor)
     })
     setOcupado(false)
@@ -141,11 +141,14 @@ function Conteudo({
               ))}
             </div>
           </fieldset>
-          <label className="opcao">
-            <input type="checkbox" checked={ehPost} onChange={(e) => setEhPost(e.target.checked)} />
-            {rotuloDaPostagem(interno)}
-          </label>
-          {ehPost && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} interno={interno} />}
+          <OpcoesDaPostagem
+            redeSocial={redeSocial}
+            interna={interna}
+            mostrarInterna={ehInterno(dados.etiquetas) || interna}
+            aoMudarRedeSocial={setRedeSocial}
+            aoMudarInterna={setInterna}
+          />
+          {(redeSocial || interna) && <CamposDaPostagem valor={postagem} aoMudar={setPostagem} redeSocial={redeSocial} interna={interna} />}
           <label className="campo">
             <span className="campo__rotulo">Descrição</span>
             <textarea rows={5} value={dados.descricao} onChange={(e) => mudar('descricao', e.target.value)} />

@@ -54,7 +54,7 @@ function Formulario({ dataInicial, colunas, pessoa, aoFechar }) {
         <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Reels Dia do Cliente" autoComplete="off" aria-invalid={Boolean(erro)} />
         <ErroCampo texto={erro} />
       </label>
-      <CamposDaPostagem valor={comFormato} aoMudar={setPostagem} interno />
+      <CamposDaPostagem valor={comFormato} aoMudar={setPostagem} />
       <p className="texto-suave texto-pequeno">Ela também entra no Quadro, em {etiquetas[0]}, para ligar o cronômetro e acompanhar a produção.</p>
       <div className="janela-modal__acoes">
         <button type="button" className="botao botao--secundario" onClick={aoFechar}>

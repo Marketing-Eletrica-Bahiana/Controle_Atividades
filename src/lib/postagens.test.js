@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, etiquetasDasRedes, formatoDoNome, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensDoMes,
-  postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS,
+  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, etiquetasDasRedes, formatoDoNome, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensDoMes,
+  postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS, tiposDaPostagem,
 } from './postagens.js'
 
 const HOJE = '2026-11-04'
@@ -37,6 +37,28 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
     expect(etiquetasDasRedes(['WhatsApp', 'Instagram'])).toEqual(['Comunicação Externa', 'Comunicação Interna'])
   })
 
+  it('as duas caixas vêm das redes; sem rede, a etiqueta decide', () => {
+    const cartao = (redes, etiquetas = []) => ({ etiquetas, postagem: { data: null, redes, formato: '' } })
+    expect(tiposDaPostagem(cartao(['Instagram']))).toEqual({ redeSocial: true, interna: false })
+    expect(tiposDaPostagem(cartao(['WhatsApp']))).toEqual({ redeSocial: false, interna: true })
+    expect(tiposDaPostagem(cartao(['Lideranças', 'LinkedIn']))).toEqual({ redeSocial: true, interna: true })
+    expect(tiposDaPostagem(cartao([]))).toEqual({ redeSocial: true, interna: false })
+    expect(tiposDaPostagem(cartao([], ['Comunicação Externa']))).toEqual({ redeSocial: true, interna: false })
+    expect(tiposDaPostagem(cartao([], ['Comunicação Interna']))).toEqual({ redeSocial: false, interna: true })
+    expect(tiposDaPostagem(cartao([], ['Endomarketing', 'Comunicação Externa']))).toEqual({ redeSocial: true, interna: false })
+    expect(tiposDaPostagem({ etiquetas: ['Comunicação Interna'], postagem: null })).toEqual({ redeSocial: false, interna: false })
+    expect(tiposDaPostagem({ etiquetas: ['Comunicação Externa'] })).toEqual({ redeSocial: true, interna: false })
+  })
+
+  it('desmarcar uma caixa tira as redes dela; sem nenhuma, não é postagem', () => {
+    const postagem = { data: '2026-11-10', redes: ['Instagram', 'WhatsApp'], formato: 'Reels' }
+    expect(postagemDasOpcoes(postagem, { redeSocial: true, interna: true })).toEqual(postagem)
+    expect(postagemDasOpcoes(postagem, { redeSocial: true, interna: false })).toEqual({ ...postagem, redes: ['Instagram'] })
+    expect(postagemDasOpcoes(postagem, { redeSocial: false, interna: true })).toEqual({ ...postagem, redes: ['WhatsApp'] })
+    expect(postagemDasOpcoes(postagem, { redeSocial: false, interna: false })).toBeNull()
+    expect(postagensIguais(postagemDasOpcoes(POSTAGEM_VAZIA, { redeSocial: true, interna: false }), POSTAGEM_VAZIA)).toBe(true)
+  })
+
   it('o calendário filtra externas e internas; sem rede conta como externa', () => {
     const cartao = (id, redes) => ({ id, etiquetas: [], postagem: { data: '2026-11-10', redes, formato: '' } })
     const cartoes = [cartao('externa', ['Instagram']), cartao('interna', ['WhatsApp']), cartao('as-duas', ['Lideranças', 'LinkedIn']), cartao('sem-rede', [])]
@@ -45,6 +67,9 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
     expect(ids(SO_EXTERNAS)).toEqual(['externa', 'as-duas', 'sem-rede'])
     expect(ids(SO_INTERNAS)).toEqual(['interna', 'as-duas'])
     expect(ids('WhatsApp')).toEqual(['interna'])
+    const semRedeInterna = { id: 'interna-sem-rede', etiquetas: ['Comunicação Interna'], postagem: { data: '2026-11-10', redes: [], formato: '' } }
+    expect(postagensDoMes([semRedeInterna], '2026-11', SO_INTERNAS)).toHaveLength(1)
+    expect(postagensDoMes([semRedeInterna], '2026-11', SO_EXTERNAS)).toHaveLength(0)
   })
 })
 

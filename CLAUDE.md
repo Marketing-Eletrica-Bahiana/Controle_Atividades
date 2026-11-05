@@ -78,8 +78,8 @@ ao fim de cada uma, e completar o que faltou da Fase 2 (roteiro completo dela: a
 - Login com `signInWithPopup`; se falhar no celular, usar `signInWithRedirect`.
 - Fuso horário `America/Bahia`.
 - Semana de trabalho: segunda a sábado.
-- Campo de data próprio: aceita digitar DD/MM/AAAA e tem calendário em português começando na
-  segunda. Não depender do formato de data do navegador.
+- Campo de data próprio: aceita digitar DD/MM/AAAA e tem calendário em português começando no
+  domingo, por pedido da pessoa. Não depender do formato de data do navegador.
 - Node 24.
 
 ## Firebase
@@ -380,20 +380,23 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
 - A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
 - Postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
   diferente do prazo do cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
-- Comunicação interna: WhatsApp e Lideranças (`GRUPOS_INTERNOS`), gravados em `postagem.redes`. As opções aparecem com
-  Comunicação Interna ou Endomarketing no cartão, ou público Interno, Interno e Externo ou Endomarketing no cronômetro. Marcar
-  a etiqueta não liga a postagem sozinha, porque nem todo cartão interno vai para um grupo. Com a opção marcada, entra no
-  calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello só procura `REDES`.
-- A grade do calendário vai de domingo a sábado, por pedido da pessoa. O campo de data e a tela Semana continuam
+- Comunicação interna: WhatsApp e Lideranças (`GRUPOS_INTERNOS`), gravados em `postagem.redes`. São duas caixas separadas,
+  "É postagem em rede social" (abre `REDES`) e "É postagem interna" (abre os grupos), com a mesma data e o mesmo formato. Desmarcar
+  uma tira as redes dela (`postagemDasOpcoes`), e sem rede informada a etiqueta diz qual é (`tiposDaPostagem`). A interna aparece
+  com Comunicação Interna ou Endomarketing no cartão, com público Interno, Interno e Externo ou Endomarketing no cronômetro, ou
+  se já estiver marcada. Marcar a etiqueta não liga a postagem sozinha, porque nem todo cartão interno vai para um grupo. Com a
+  opção marcada, entra no calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello
+  só procura `REDES`.
+- A grade do calendário e o campo de data vão de domingo a sábado, por pedido da pessoa. A tela Semana continua
   começando na segunda.
 - As redes e os grupos internos aparecem com os ícones de `public/marca/icones/`, nas cores originais: é a única exceção à
   paleta, por pedido da pessoa. O LinkedIn do CAE usa o ícone do CAE. Os ícones também aparecem no cartão do Quadro.
 - Cada pessoa tem uma cor de bolinha, dentro da paleta (`corDaPessoa` em `src/lib/quadro.js`), no Quadro e no
   calendário.
 - A postagem entra sozinha no calendário por quatro caminhos: botão Nova postagem ou "+" no dia; cartão
-  (qualquer cartão com a opção "É postagem em rede social"); Meu Cronômetro; lançamento manual. Nos dois
-  últimos, a postagem mora no cartão: a opção só aparece com "Criar cartão no Quadro" marcado e, no público Externo ou
-  Interno e Externo, já vem marcada junto com o cartão.
+  (qualquer cartão com a opção "É postagem em rede social" ou "É postagem interna"); Meu Cronômetro; lançamento manual. Nos dois
+  últimos, a postagem mora no cartão: as opções só aparecem com "Criar cartão no Quadro" marcado e, no público Externo ou
+  Interno e Externo, a de rede social já vem marcada junto com o cartão.
 - Sem data, a postagem em andamento fica na lista "Sem data", abaixo do calendário. Cartão gravado antes
   desta fase, sem o campo, conta como postagem se tiver a etiqueta Comunicação Externa.
 - Arrastar no calendário muda a data e fica no histórico do cartão. No celular, o calendário vira agenda só

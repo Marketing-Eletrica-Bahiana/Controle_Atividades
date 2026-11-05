@@ -37,9 +37,23 @@ export const ehInterno = (etiquetas = []) => etiquetas.some((e) => ETIQUETAS_INT
 
 export const publicoInterno = (publico) => PUBLICOS_INTERNOS.includes(normalizar(publico))
 
-export const rotuloDaPostagem = (interno) => (interno ? 'É postagem em rede social ou grupo interno' : 'É postagem em rede social')
-
 const ehGrupoInterno = (rede) => GRUPOS_INTERNOS.includes(rede)
+
+// O que o cartão marca: rede social, interna ou as duas. Sem rede informada, quem decide é a etiqueta.
+export function tiposDaPostagem(cartao) {
+  if (!ehPostagem(cartao)) return { redeSocial: false, interna: false }
+  const redes = cartao.postagem?.redes ?? []
+  if (redes.length) return { redeSocial: !redes.every(ehGrupoInterno), interna: redes.some(ehGrupoInterno) }
+  const etiquetas = cartao.etiquetas ?? []
+  const soInterna = ehInterno(etiquetas) && !etiquetas.includes(ETIQUETA_EXTERNA)
+  return { redeSocial: !soInterna, interna: soInterna }
+}
+
+// Só fica gravado o que está à vista: desmarcar uma opção tira as redes dela. Sem nenhuma opção, não é postagem.
+export function postagemDasOpcoes(postagem, { redeSocial, interna }) {
+  if (!redeSocial && !interna) return null
+  return { ...postagem, redes: (postagem.redes ?? []).filter((rede) => (ehGrupoInterno(rede) ? interna : redeSocial)) }
+}
 
 // Cartão criado direto no calendário: as redes escolhidas dizem se é comunicação externa, interna ou as duas.
 export function etiquetasDasRedes(redes = []) {
@@ -131,16 +145,15 @@ export function agruparPorDia(cartoes) {
   return grupos
 }
 
-// Postagem sem rede informada conta como externa: é o caso das antigas, de antes dos grupos internos.
-function passaNoFiltro(redes, filtro) {
+function passaNoFiltro(cartao, filtro) {
   if (!filtro) return true
-  if (filtro === SO_INTERNAS) return redes.some(ehGrupoInterno)
-  if (filtro === SO_EXTERNAS) return !redes.length || !redes.every(ehGrupoInterno)
-  return redes.includes(filtro)
+  if (filtro === SO_INTERNAS) return tiposDaPostagem(cartao).interna
+  if (filtro === SO_EXTERNAS) return tiposDaPostagem(cartao).redeSocial
+  return (cartao.postagem?.redes ?? []).includes(filtro)
 }
 
 export const postagensDoMes = (cartoes, mes, filtro = '') =>
-  cartoes.filter((c) => ehPostagem(c) && mesDe(c.postagem?.data) === mes && passaNoFiltro(c.postagem.redes ?? [], filtro))
+  cartoes.filter((c) => ehPostagem(c) && mesDe(c.postagem?.data) === mes && passaNoFiltro(c, filtro))
 
 // Ideia ainda não é trabalho a agendar: não entra na lista de postagens sem data.
 export const postagensSemData = (cartoes) =>
