@@ -19,6 +19,26 @@ describe('painel', () => {
     expect(quantidadePor(itens, (x) => x.publico).map((x) => x.rotulo)).toEqual(['Interno', 'Externo', 'Não informado'])
   })
 
+  it('solicitantes: conta cada demanda uma vez, soma as horas e mostra quem não informou', () => {
+    const comSolicitante = [
+      { demanda: d('a', { solicitante: 'Marketing' }), segundos: 600 },
+      { demanda: d('b', { solicitante: 'CAE' }), segundos: 1200 },
+      { demanda: d('b', { solicitante: 'CAE' }), segundos: 600 },
+      { demanda: d('c', { solicitante: '' }), segundos: 300 },
+      { demanda: d('e', { solicitante: 'Marketing' }), segundos: 100 },
+    ]
+    expect(quantidadePor(comSolicitante, (x) => x.solicitante)).toEqual([
+      { rotulo: 'Marketing', quantidade: 2 },
+      { rotulo: 'CAE', quantidade: 1 },
+      { rotulo: 'Não informado', quantidade: 1 },
+    ])
+    expect(horasPor(comSolicitante, (x) => x.solicitante)).toEqual([
+      { rotulo: 'CAE', segundos: 1800 },
+      { rotulo: 'Marketing', segundos: 700 },
+      { rotulo: 'Não informado', segundos: 300 },
+    ])
+  })
+
   it('tempo médio por tipo usa o tempo total de cada demanda', () => {
     expect(tempoMedioPorTipo(itens)).toEqual([{ rotulo: 'Vídeo', segundos: 3600 }, { rotulo: 'Card', segundos: 1200 }])
   })

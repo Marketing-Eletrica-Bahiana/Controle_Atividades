@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, RotateCcw } from 'lucide-react'
+import { LoaderCircle, Play, RotateCcw } from 'lucide-react'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
 import { hojeISO } from '../../lib/datas.js'
@@ -14,6 +14,8 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
   const campos = useCamposDaDemanda(area, pessoa)
   const [dataSolicitacao, setDataSolicitacao] = useState(hojeISO())
   const [erros, setErros] = useState({})
+  // Ligar depende da internet: mostra que o clique foi recebido enquanto o servidor responde.
+  const [iniciando, setIniciando] = useState(false)
 
   const termo = normalizar(campos.nome)
   const parecidas = termo.length >= 2 ? (abertas ?? []).filter((d) => normalizar(d.nome).includes(termo)).slice(0, 5) : []
@@ -33,7 +35,9 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
     if (!dataSolicitacao) novosErros.dataSolicitacao = 'Informe a data de solicitação.'
     setErros(novosErros)
     if (Object.keys(novosErros).length) return
+    setIniciando(true)
     const deuCerto = await aoIniciar(campos.paraGravar(dataSolicitacao))
+    setIniciando(false)
     if (deuCerto) limpar()
   }
 
@@ -86,9 +90,9 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
         <CampoNoQuadro campos={campos} />
 
         <div className="acoes acoes--fim">
-          <button type="submit" className="botao botao--principal botao--grande-largo" disabled={ocupado || Boolean(repetida)}>
-            <Play aria-hidden="true" />
-            Iniciar
+          <button type="submit" className="botao botao--principal botao--grande-largo" disabled={ocupado || iniciando || Boolean(repetida)}>
+            {iniciando ? <LoaderCircle className="girando" aria-hidden="true" /> : <Play aria-hidden="true" />}
+            {iniciando ? 'Iniciando...' : 'Iniciar'}
           </button>
         </div>
       </form>

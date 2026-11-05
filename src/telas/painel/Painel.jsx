@@ -191,7 +191,17 @@ function Graficos({ itens, evolucao, nomeDaArea, escuro }) {
     const medio = tempoMedioPorTipo(itens).slice(0, 10)
     const porPessoa = horasPor(itens, (d) => d.responsavelNome)
     const porPublico = quantidadePor(itens, (d) => d.publico)
+    const demandasPorSolicitante = principais(quantidadePor(itens, (d) => d.solicitante), 10, 'quantidade')
+    const horasPorSolicitante = principais(horasPor(itens, (d) => d.solicitante), 10, 'segundos')
     return {
+      demandasPorSolicitante: {
+        vazio: !demandasPorSolicitante.length,
+        config: configBarras({ rotulos: demandasPorSolicitante.map((x) => x.rotulo), valores: demandasPorSolicitante.map((x) => x.quantidade), horizontal: true, escuro }),
+      },
+      horasPorSolicitante: {
+        vazio: !horasPorSolicitante.length,
+        config: configBarras({ rotulos: horasPorSolicitante.map((x) => x.rotulo), valores: horasPorSolicitante.map((x) => x.segundos), tempo: true, horizontal: true, escuro }),
+      },
       porArea: { vazio: !porArea.length, config: configBarras({ rotulos: porArea.map((x) => x.rotulo), valores: porArea.map((x) => x.segundos), tempo: true, escuro }) },
       porTipo: { vazio: !porTipo.length, config: configBarras({ rotulos: porTipo.map((x) => x.rotulo), valores: porTipo.map((x) => x.quantidade), horizontal: true, escuro }) },
       medio: { vazio: !medio.length, config: configBarras({ rotulos: medio.map((x) => x.rotulo), valores: medio.map((x) => x.segundos), tempo: true, horizontal: true, escuro }) },
@@ -210,6 +220,8 @@ function Graficos({ itens, evolucao, nomeDaArea, escuro }) {
       <Grafico titulo="Horas por pessoa" configuracao={configs.porPessoa.config} vazio={configs.porPessoa.vazio} />
       <Grafico titulo="Demandas por tipo" configuracao={configs.porTipo.config} vazio={configs.porTipo.vazio} altura={380} />
       <Grafico titulo="Tempo médio por tipo" configuracao={configs.medio.config} vazio={configs.medio.vazio} altura={380} />
+      <Grafico titulo="Demandas por solicitante" configuracao={configs.demandasPorSolicitante.config} vazio={configs.demandasPorSolicitante.vazio} />
+      <Grafico titulo="Horas por solicitante" configuracao={configs.horasPorSolicitante.config} vazio={configs.horasPorSolicitante.vazio} />
       <Grafico titulo="Distribuição por público" configuracao={configs.porPublico.config} vazio={configs.porPublico.vazio} />
       <Grafico titulo="Evolução mês a mês desde julho de 2026" configuracao={configs.evolucao.config} vazio={configs.evolucao.vazio} />
     </div>

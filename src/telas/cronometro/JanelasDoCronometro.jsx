@@ -4,6 +4,7 @@ import { CampoLista, ErroCampo, SimNao } from '../../componentes/Campos.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { useListas } from '../../dados/listas.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
+import { agoraNoServidor } from '../../lib/relogio.js'
 import { lerTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
 import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
@@ -212,7 +213,7 @@ function FormCorrigirInicio({ inicioAtual, aoSalvar, aoFechar }) {
     }
     const dia = hojeISO(inicioAtual ?? new Date())
     const novo = new Date(`${dia}T${partes[1].padStart(2, '0')}:${partes[2]}:${partes[3] ?? '00'}-03:00`)
-    if (novo.getTime() > Date.now()) {
+    if (novo.getTime() > agoraNoServidor()) {
       setErro('O início não pode ser no futuro.')
       return
     }

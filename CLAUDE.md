@@ -318,6 +318,9 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
   de computador.
 - Um cronômetro por pessoa: iniciar ou retomar outra demanda pergunta antes e pausa a atual na
   mesma transação.
+- `inicio` é a hora do servidor, e o relógio do computador pode estar diferente. Atrasado, o cronômetro ficava
+  parado em 00:00:00 e pausar gravava zero. Por isso, o tempo usa `agoraNoServidor()` (`src/lib/relogio.js`),
+  com a diferença medida a cada vez que a pessoa liga o cronômetro. Nunca usar `Date.now()` para calcular sessão.
 - `sessoes`: `{ inicio, fim, seg }` (Timestamp); tempo manual acrescenta `manual: true`, às 08:00
   da data escolhida, e a data entra em `datasAjuste`.
 - Mês e Nº: a demanda pertence ao mês em que foi criada. Se a Data de Entrega for editada para

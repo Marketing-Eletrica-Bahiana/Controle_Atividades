@@ -8,6 +8,7 @@ import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarAjustes, formatarData, hojeISO, mesDe } from '../lib/datas.js'
 import { vinculosSemDemanda } from '../lib/quadro.js'
+import { acertarRelogio, agoraNoServidor } from '../lib/relogio.js'
 import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, situacaoDaDemandaManual } from '../lib/regras.js'
 import { formatarTempo, horasParaSegundos } from '../lib/tempo.js'
 import { normalizar } from '../lib/texto.js'
@@ -130,6 +131,17 @@ function fecharSessaoNaTransacao(t, { cron, demanda }, agoraMs, alteracoes = {})
 
 const cronometroParado = { demandaId: null, area: null, inicio: null, rodando: false }
 
+// Mede a diferença entre este computador e o servidor logo depois de ligar o cronômetro.
+// Falhar aqui não atrapalha: o cronômetro já está ligado e vale a última medição.
+async function medirRelogio(email, horaLocal) {
+  try {
+    const inicio = (await getDoc(refCronometro(email))).data()?.inicio
+    if (inicio?.toMillis) acertarRelogio(inicio.toMillis(), horaLocal)
+  } catch {
+    // Sem medição nova.
+  }
+}
+
 async function numeroNoMes(area, email, mes) {
   const snap = await getDocs(daPessoaNoMes(area, email, mes))
   return proximoNumero(snap.docs.map((d) => d.data()))
@@ -164,7 +176,7 @@ export async function criarEIniciar(dados, pessoa) {
   const ref = doc(colecao())
   await runTransaction(db, async (t) => {
     const rodando = await lerRodando(t, pessoa.email)
-    if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, Date.now(), { status: 'pausada' })
+    if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, agoraNoServidor(), { status: 'pausada' })
     const novos = camposDaNovaDemanda(dados, pessoa)
     t.set(ref, {
       ...novos,
@@ -186,6 +198,7 @@ export async function criarEIniciar(dados, pessoa) {
       })
     }
   })
+  await medirRelogio(pessoa.email, Date.now())
   esquecerHistorico(dados.area)
   return ref.id
 }
@@ -225,12 +238,12 @@ export async function criarDemandaManual(dados, { data, segundos, concluida }, p
 }
 
 // Liga o cronômetro numa demanda que já existe (pausada, em andamento ou concluída).
-export function retomar(demandaId, pessoa) {
-  return runTransaction(db, async (t) => {
+export async function retomar(demandaId, pessoa) {
+  const ligou = await runTransaction(db, async (t) => {
     const rodando = await lerRodando(t, pessoa.email)
-    if (rodando.demanda?.id === demandaId) return
+    if (rodando.demanda?.id === demandaId) return false
     const alvo = await t.get(refDemanda(demandaId))
-    if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, Date.now(), { status: 'pausada' })
+    if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, agoraNoServidor(), { status: 'pausada' })
     const atual = alvo.data()
     const alteracoes = { status: 'em_andamento', atualizadoEm: serverTimestamp() }
     if (atual.status === 'concluida') {
@@ -238,14 +251,16 @@ export function retomar(demandaId, pessoa) {
     }
     t.update(alvo.ref, alteracoes)
     t.set(refCronometro(pessoa.email), { demandaId, area: atual.area, inicio: serverTimestamp(), rodando: true })
+    return true
   })
+  if (ligou) await medirRelogio(pessoa.email, Date.now())
 }
 
 export function pausar(pessoa) {
   return runTransaction(db, async (t) => {
     const rodando = await lerRodando(t, pessoa.email)
     if (!rodando.demanda) return
-    fecharSessaoNaTransacao(t, rodando, Date.now(), { status: 'pausada' })
+    fecharSessaoNaTransacao(t, rodando, agoraNoServidor(), { status: 'pausada' })
     t.set(refCronometro(pessoa.email), cronometroParado)
   })
 }
@@ -259,10 +274,11 @@ export function concluir(demandaId, pessoa, extras = {}) {
     let atual = alvo.data()
     if (estaRodando) {
       // Calcula a sessão sem gravar ainda: a gravação vai junto com a conclusão, num update só.
-      const { segundos } = fecharSessao(rodando.cron.inicio.toMillis(), Date.now())
+      const agora = agoraNoServidor()
+      const { segundos } = fecharSessao(rodando.cron.inicio.toMillis(), agora)
       atual = {
         ...atual,
-        sessoes: [...(atual.sessoes ?? []), { inicio: rodando.cron.inicio, fim: Timestamp.now(), seg: segundos }],
+        sessoes: [...(atual.sessoes ?? []), { inicio: rodando.cron.inicio, fim: Timestamp.fromMillis(agora), seg: segundos }],
         tempoGastoSeg: (atual.tempoGastoSeg ?? 0) + segundos,
       }
     }
