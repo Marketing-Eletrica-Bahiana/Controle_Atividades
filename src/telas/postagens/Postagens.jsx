@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
-import { CalendarCheck, Plus } from 'lucide-react'
+import { CalendarCheck, Plus, X } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import BolinhasDePessoas from '../../componentes/BolinhasDePessoas.jsx'
 import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
 import IconeDaRede from '../../componentes/IconeDaRede.jsx'
 import Indicadores from '../../componentes/Indicadores.jsx'
 import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
-import { moverPostagem, useCartoesDoCalendario } from '../../dados/cartoes.js'
+import { moverPostagem, tirarDoCalendario, useCartoesDoCalendario } from '../../dados/cartoes.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import {
@@ -47,6 +47,16 @@ export default function Postagens() {
     executar(() => moverPostagem(cartao, dia, membro.email), `${cartao.titulo}: postagem em ${formatarData(dia)}.`)
   }
 
+  async function tirar(cartao) {
+    const sim = await acoes.confirmar({
+      titulo: 'Tirar do calendário?',
+      texto: `"${cartao.titulo}" sai do calendário, e a data e as redes dela são apagadas. O cartão continua no Quadro, com o tempo registrado.`,
+      botao: 'Tirar do calendário',
+      perigo: true,
+    })
+    if (sim) executar(() => tirarDoCalendario(cartao, membro.email), `${cartao.titulo} saiu do calendário.`)
+  }
+
   const arraste = (cartao) =>
     podeMexer
       ? {
@@ -72,6 +82,7 @@ export default function Postagens() {
       arrastando={arrastandoId === cartao.id}
       arraste={arraste(cartao)}
       aoAbrir={() => acoes.abrir(cartao.id)}
+      aoTirar={podeMexer ? () => tirar(cartao) : null}
     />
   )
 
@@ -203,17 +214,22 @@ export default function Postagens() {
   )
 }
 
-function PostagemDoCalendario({ cartao, hoje, nomeDaPessoa, arrastando, arraste, aoAbrir }) {
+function PostagemDoCalendario({ cartao, hoje, nomeDaPessoa, arrastando, arraste, aoAbrir, aoTirar }) {
   const { rotulo, classe } = SITUACOES_POSTAGEM[situacaoDaPostagem(cartao, hoje)]
   const { redes = [], formato, envio, estimada, redeAConfirmar } = cartao.postagem ?? {}
   const responsaveis = cartao.responsaveis ?? []
   const detalhes = [rotulo, ...redes, formato, envio && 'envio interno', estimada && 'data estimada', redeAConfirmar && 'rede a confirmar'].filter(Boolean).join(' · ')
   return (
-    <li className={`postagem ${classe} ${arrastando ? 'postagem--arrastando' : ''}`} title={`${cartao.titulo} (${detalhes})`} {...arraste}>
+    <li className={`postagem ${classe} ${arrastando ? 'postagem--arrastando' : ''} ${aoTirar ? 'postagem--removivel' : ''}`} title={`${cartao.titulo} (${detalhes})`} {...arraste}>
       <button type="button" className="postagem__titulo" onClick={aoAbrir}>
         {estimada && <span aria-label="Data estimada">≈ </span>}
         {cartao.titulo}
       </button>
+      {aoTirar && (
+        <button type="button" className="postagem__tirar" aria-label={`Tirar ${cartao.titulo} do calendário`} title="Tirar do calendário" onClick={aoTirar}>
+          <X aria-hidden="true" />
+        </button>
+      )}
       {(redes.length > 0 || formato || responsaveis.length > 0) && (
         <span className="postagem__detalhes">
           {redes.map((rede) => (

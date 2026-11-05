@@ -2867,6 +2867,7 @@ button.abas__item.ativo {
 
 .postagem {
   --cor-situacao: var(--medio);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2924,6 +2925,50 @@ button.abas__item.ativo {
   cursor: pointer;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.postagem--removivel .postagem__titulo {
+  padding-right: 16px;
+}
+
+.postagem__tirar {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio-etiqueta);
+  background: transparent;
+  color: var(--marinho);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--transicao), color var(--transicao);
+}
+
+.postagem__tirar svg {
+  width: 14px;
+  height: 14px;
+}
+
+.postagem:hover .postagem__tirar,
+.postagem__tirar:focus-visible {
+  opacity: 1;
+}
+
+.postagem__tirar:hover {
+  color: var(--vermelho);
+}
+
+/* Sem mouse (celular), o botão fica sempre à vista. */
+@media (hover: none) {
+  .postagem__tirar {
+    opacity: 1;
+  }
 }
 
 .postagem__detalhes {

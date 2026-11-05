@@ -163,6 +163,15 @@ export function moverPostagem(cartao, data, quem) {
   })
 }
 
+// Só sai do calendário: o cartão fica no Quadro e o tempo continua nas demandas. Data e redes são apagadas.
+export function tirarDoCalendario(cartao, quem) {
+  return updateDoc(refCartao(cartao.id), {
+    ...camposDaPostagem(null),
+    historico: arrayUnion(registro(quem, 'edicao', 'Postagem', resumoDaPostagem(cartao.postagem ?? POSTAGEM_VAZIA), resumoDaPostagem(null))),
+    atualizadoEm: serverTimestamp(),
+  })
+}
+
 export function comentar(cartao, texto, pessoa) {
   return updateDoc(refCartao(cartao.id), {
     comentarios: arrayUnion({ email: pessoa.email, nome: pessoa.nome, quando: Timestamp.now(), texto: texto.trim() }),

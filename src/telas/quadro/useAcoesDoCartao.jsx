@@ -129,6 +129,7 @@ export function useAcoesDoCartao(cartoes) {
     estaRodando,
     temDemanda: (cartao) => Boolean(minhaDemanda(cartao)),
     oferecerConcluir,
+    confirmar,
     janelas,
   }
 }

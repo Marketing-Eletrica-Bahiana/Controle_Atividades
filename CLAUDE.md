@@ -400,6 +400,9 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
   Interno e Externo, a de rede social já vem marcada junto com o cartão.
 - Sem data, a postagem em andamento fica na lista "Sem data", abaixo do calendário. Cartão gravado antes
   desta fase, sem o campo, conta como postagem se tiver a etiqueta Comunicação Externa.
+- Cada item do calendário e da lista Sem data tem um X, à vista ao passar o mouse e sempre no celular, para tirar do calendário:
+  pede confirmação, grava `postagem: null` (data e redes são apagadas) e fica no histórico. O cartão continua no Quadro e o tempo nas
+  demandas. Reimportar o Trello não traz de volta, salvo se o admin marcar a troca na prévia. Gestão e diretoria não veem o botão.
 - Arrastar no calendário muda a data e fica no histórico do cartão. No celular, o calendário vira agenda só
   com os dias que têm postagem (e hoje), e a data muda pela janela do cartão.
 - A situação não é preenchida, vem da coluna e da data: em produção; atrasada (data passada e sem estar
