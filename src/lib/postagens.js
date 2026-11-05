@@ -54,6 +54,12 @@ export function tiposDaPostagem(cartao) {
   return { redeSocial: !soInterna, interna: soInterna, envio }
 }
 
+// O Envio Interno fica só no cartão: entra no calendário quem também é postagem.
+export function entraNoCalendario(cartao) {
+  const { redeSocial, interna } = tiposDaPostagem(cartao)
+  return redeSocial || interna
+}
+
 // A data é uma só para as opções marcadas: o nome diz o que ela representa.
 export function rotuloDaData({ redeSocial, interna, envio }) {
   if (!envio) return 'Data da postagem'
@@ -161,17 +167,17 @@ export function agruparPorDia(cartoes) {
 
 function passaNoFiltro(cartao, filtro) {
   if (!filtro) return true
-  if (filtro === SO_INTERNAS) return tiposDaPostagem(cartao).interna || tiposDaPostagem(cartao).envio
+  if (filtro === SO_INTERNAS) return tiposDaPostagem(cartao).interna
   if (filtro === SO_EXTERNAS) return tiposDaPostagem(cartao).redeSocial
   return (cartao.postagem?.redes ?? []).includes(filtro)
 }
 
 export const postagensDoMes = (cartoes, mes, filtro = '') =>
-  cartoes.filter((c) => ehPostagem(c) && mesDe(c.postagem?.data) === mes && passaNoFiltro(c, filtro))
+  cartoes.filter((c) => entraNoCalendario(c) && mesDe(c.postagem?.data) === mes && passaNoFiltro(c, filtro))
 
 // Ideia ainda não é trabalho a agendar: não entra na lista de postagens sem data.
 export const postagensSemData = (cartoes) =>
-  cartoes.filter((c) => ehPostagem(c) && !c.entregue && !c.postagem?.data && c.coluna !== COLUNA_IDEIAS)
+  cartoes.filter((c) => entraNoCalendario(c) && !c.entregue && !c.postagem?.data && c.coluna !== COLUNA_IDEIAS)
 
 export function resumoDoMes(cartoes, hoje) {
   const resumo = { total: cartoes.length, producao: 0, programada: 0, postada: 0, atrasada: 0 }

@@ -57,6 +57,7 @@ export default function CamposDaPostagem({ valor, aoMudar, redeSocial = true, in
       </div>
       {redeSocial && opcoes('Redes', REDES)}
       {interna && opcoes('Grupos internos', GRUPOS_INTERNOS)}
+      {envio && !redeSocial && !interna && <p className="campo__ajuda">O Envio Interno fica só no cartão, fora do calendário.</p>}
       {valor.estimada && <p className="aviso aviso--erro">Data estimada a partir do Trello. Confira e ajuste se precisar.</p>}
       {valor.redeAConfirmar && <p className="aviso aviso--erro">O cartão do Trello não dizia a rede. Marque onde foi postado.</p>}
     </div>

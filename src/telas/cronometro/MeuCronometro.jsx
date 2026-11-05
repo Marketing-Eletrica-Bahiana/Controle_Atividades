@@ -14,6 +14,7 @@ import {
 import { useAgora } from '../../hooks/useAgora.js'
 import { formatarData, formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
+import { entraNoCalendario } from '../../lib/postagens.js'
 import { COLUNAS_PADRAO } from '../../lib/quadro.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
 import FormDemanda from './FormDemanda.jsx'
@@ -89,7 +90,7 @@ export default function MeuCronometro() {
     }
   }
 
-  const noCalendario = (dados) => (dados.postagem?.data ? ` No calendário em ${formatarData(dados.postagem.data)}.` : '')
+  const noCalendario = (dados) => (dados.postagem?.data && entraNoCalendario(dados) ? ` No calendário em ${formatarData(dados.postagem.data)}.` : '')
 
   async function iniciarNova(dados) {
     if (!(await podeTrocar(dados.nome))) return false

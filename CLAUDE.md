@@ -382,11 +382,12 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
   diferente do prazo do cartão: no Trello, 46 de 51 cartões comparados tinham datas diferentes.
 - Comunicação interna: WhatsApp, Lideranças e Grupos do CAE (`GRUPOS_INTERNOS`), gravados em `postagem.redes`. São caixas separadas,
   "É postagem em rede social" (abre `REDES`), "É postagem interna" (abre os grupos) e "Envio Interno" (só data e formato, para o que é
-  enviado e não postado), com a mesma data e o mesmo formato. Só com o Envio Interno marcado, a data se chama "Data do Envio"
+  enviado e não postado), com a mesma data e o mesmo formato. Por pedido da pessoa, o Envio Interno fica só no cartão: sozinho, não entra
+  no calendário nem na lista Sem data (`entraNoCalendario`). Só com o Envio Interno marcado, a data se chama "Data do Envio"
   (`rotuloDaData`). Desmarcar uma tira as redes dela (`postagemDasOpcoes`), e sem rede informada a etiqueta diz qual é (`tiposDaPostagem`). A interna e o envio aparecem
   com Comunicação Interna ou Endomarketing no cartão, com público Interno, Interno e Externo ou Endomarketing no cronômetro, ou
   se já estiverem marcados. Marcar a etiqueta não liga a postagem sozinha, porque nem todo cartão interno vai para um grupo. Com a
-  opção marcada ou com o envio, o Formato ganha Foto de Perfil, Assinatura de e-Mail e Apresentação (`FORMATOS_INTERNOS`), e a postagem entra no calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello
+  opção marcada ou com o envio, o Formato ganha Foto de Perfil, Assinatura de e-Mail e Apresentação (`FORMATOS_INTERNOS`). A postagem interna entra no calendário junto com as externas, e o filtro Rede tem Só externas e Só internas. O leitor do Trello
   só procura `REDES`.
 - A grade do calendário e o campo de data vão de domingo a sábado, por pedido da pessoa. A tela Semana continua
   começando na segunda.
@@ -395,13 +396,13 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
 - Cada pessoa tem uma cor de bolinha, dentro da paleta (`corDaPessoa` em `src/lib/quadro.js`), no Quadro e no
   calendário.
 - A postagem entra sozinha no calendário por quatro caminhos: botão Nova postagem ou "+" no dia; cartão
-  (qualquer cartão com "É postagem em rede social", "É postagem interna" ou "Envio Interno"); Meu Cronômetro; lançamento manual. Nos dois
+  (qualquer cartão com "É postagem em rede social" ou "É postagem interna"); Meu Cronômetro; lançamento manual. Nos dois
   últimos, a postagem mora no cartão: as opções só aparecem com "Criar cartão no Quadro" marcado e, no público Externo ou
   Interno e Externo, a de rede social já vem marcada junto com o cartão.
 - Sem data, a postagem em andamento fica na lista "Sem data", abaixo do calendário. Cartão gravado antes
   desta fase, sem o campo, conta como postagem se tiver a etiqueta Comunicação Externa.
 - Cada item do calendário e da lista Sem data tem um X, à vista ao passar o mouse e sempre no celular, para tirar do calendário:
-  pede confirmação, grava `postagem: null` (data e redes são apagadas) e fica no histórico. O cartão continua no Quadro e o tempo nas
+  pede confirmação, grava `postagem: null` (data e redes são apagadas; se também for Envio Interno, continua como envio) e fica no histórico. O cartão continua no Quadro e o tempo nas
   demandas. Reimportar o Trello não traz de volta, salvo se o admin marcar a troca na prévia. Gestão e diretoria não veem o botão.
 - Arrastar no calendário muda a data e fica no histórico do cartão. No celular, o calendário vira agenda só
   com os dias que têm postagem (e hoje), e a data muda pela janela do cartão.

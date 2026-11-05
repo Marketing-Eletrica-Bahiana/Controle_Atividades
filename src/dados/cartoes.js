@@ -5,7 +5,7 @@ import { arrayUnion, collection, deleteDoc, doc, getDocs, query, serverTimestamp
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarData, hojeISO } from '../lib/datas.js'
-import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemPadrao, postagensIguais, resumoDaPostagem, rotuloDaData, tiposDaPostagem } from '../lib/postagens.js'
+import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensIguais, resumoDaPostagem, rotuloDaData, tiposDaPostagem } from '../lib/postagens.js'
 import { camposDeEntrega, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDoPublico, vinculosSemDemanda } from '../lib/quadro.js'
 import { refDemanda, registro } from './demandas.js'
 
@@ -163,11 +163,14 @@ export function moverPostagem(cartao, data, quem) {
   })
 }
 
-// Só sai do calendário: o cartão fica no Quadro e o tempo continua nas demandas. Data e redes são apagadas.
+// Só sai do calendário: o cartão fica no Quadro e o tempo continua nas demandas. Data e redes são apagadas,
+// a não ser que ele também seja Envio Interno: aí continua como envio, com a data e o formato.
 export function tirarDoCalendario(cartao, quem) {
+  const antes = cartao.postagem ?? POSTAGEM_VAZIA
+  const depois = postagemDasOpcoes(antes, { redeSocial: false, interna: false, envio: Boolean(antes.envio) })
   return updateDoc(refCartao(cartao.id), {
-    ...camposDaPostagem(null),
-    historico: arrayUnion(registro(quem, 'edicao', 'Postagem', resumoDaPostagem(cartao.postagem ?? POSTAGEM_VAZIA), resumoDaPostagem(null))),
+    ...camposDaPostagem(depois),
+    historico: arrayUnion(registro(quem, 'edicao', 'Postagem', resumoDaPostagem(antes), resumoDaPostagem(depois))),
     atualizadoEm: serverTimestamp(),
   })
 }

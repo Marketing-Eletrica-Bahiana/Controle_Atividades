@@ -50,7 +50,9 @@ export default function Postagens() {
   async function tirar(cartao) {
     const sim = await acoes.confirmar({
       titulo: 'Tirar do calendário?',
-      texto: `"${cartao.titulo}" sai do calendário, e a data e as redes dela são apagadas. O cartão continua no Quadro, com o tempo registrado.`,
+      texto: cartao.postagem?.envio
+        ? `"${cartao.titulo}" sai do calendário e as redes dela são apagadas, mas continua como Envio Interno. O cartão continua no Quadro, com o tempo registrado.`
+        : `"${cartao.titulo}" sai do calendário, e a data e as redes dela são apagadas. O cartão continua no Quadro, com o tempo registrado.`,
       botao: 'Tirar do calendário',
       perigo: true,
     })

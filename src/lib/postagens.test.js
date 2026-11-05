@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, etiquetasDasRedes, formatoDoNome, FORMATOS, FORMATOS_INTERNOS, GRUPOS_INTERNOS, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensDoMes,
+  agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, entraNoCalendario, etiquetasDasRedes, formatoDoNome, FORMATOS, FORMATOS_INTERNOS, GRUPOS_INTERNOS, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensDoMes,
   postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, rotuloDaData, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS, tiposDaPostagem,
 } from './postagens.js'
 
@@ -49,6 +49,28 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
     expect(postagemDasOpcoes({ ...base, envio: true }, { redeSocial: false, interna: false, envio: false })).toBeNull()
     expect(postagensIguais({ ...base, envio: true }, base)).toBe(false)
     expect(resumoDaPostagem({ data: '2026-11-10', redes: [], formato: 'Card', envio: true })).toBe('10/11/2026, Card, Envio Interno')
+  })
+
+  it('Envio Interno sozinho fica fora do calendário e da lista Sem data', () => {
+    const cartao = (id, postagem) => ({ id, etiquetas: ['Endomarketing'], entregue: false, coluna: 'endomarketing', postagem: { redes: [], formato: '', ...postagem } })
+    const soEnvio = cartao('so-envio', { data: '2026-11-10', envio: true })
+    const envioEGrupo = cartao('envio-e-grupo', { data: '2026-11-10', envio: true, redes: ['WhatsApp'] })
+    const envioERede = cartao('envio-e-rede', { data: '2026-11-10', envio: true, redes: ['Instagram'] })
+    const ids = (filtro) => postagensDoMes([soEnvio, envioEGrupo, envioERede], '2026-11', filtro).map((c) => c.id)
+    expect(entraNoCalendario(soEnvio)).toBe(false)
+    expect(entraNoCalendario(envioEGrupo)).toBe(true)
+    expect(ids('')).toEqual(['envio-e-grupo', 'envio-e-rede'])
+    expect(ids(SO_INTERNAS)).toEqual(['envio-e-grupo'])
+    expect(ids(SO_EXTERNAS)).toEqual(['envio-e-rede'])
+    expect(tiposDaPostagem(soEnvio).envio).toBe(true)
+    const semData = (postagem) => cartao('x', { data: null, ...postagem })
+    expect(postagensSemData([semData({ envio: true })])).toHaveLength(0)
+    expect(postagensSemData([semData({ envio: true, redes: ['WhatsApp'] })])).toHaveLength(1)
+  })
+
+  it('tirar do calendário quem também é envio deixa só o envio', () => {
+    const antes = { data: '2026-11-10', redes: ['WhatsApp'], formato: 'Card', envio: true }
+    expect(postagemDasOpcoes(antes, { redeSocial: false, interna: false, envio: true })).toEqual({ data: '2026-11-10', redes: [], formato: 'Card', envio: true })
   })
 
   it('a data muda de nome conforme o que está marcado', () => {
@@ -104,9 +126,6 @@ describe('grupos internos: WhatsApp e Lideranças', () => {
     const semRedeInterna = { id: 'interna-sem-rede', etiquetas: ['Comunicação Interna'], postagem: { data: '2026-11-10', redes: [], formato: '' } }
     expect(postagensDoMes([semRedeInterna], '2026-11', SO_INTERNAS)).toHaveLength(1)
     expect(postagensDoMes([semRedeInterna], '2026-11', SO_EXTERNAS)).toHaveLength(0)
-    const soEnvio = { id: 'envio', etiquetas: ['Endomarketing'], postagem: { data: '2026-11-10', redes: [], formato: '', envio: true } }
-    expect(postagensDoMes([soEnvio], '2026-11', SO_INTERNAS)).toHaveLength(1)
-    expect(postagensDoMes([soEnvio], '2026-11', SO_EXTERNAS)).toHaveLength(0)
   })
 })
 
