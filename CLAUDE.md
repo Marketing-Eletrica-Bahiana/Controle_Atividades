@@ -321,6 +321,9 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
 - `inicio` é a hora do servidor, e o relógio do computador pode estar diferente. Atrasado, o cronômetro ficava
   parado em 00:00:00 e pausar gravava zero. Por isso, o tempo usa `agoraNoServidor()` (`src/lib/relogio.js`),
   com a diferença medida a cada vez que a pessoa liga o cronômetro. Nunca usar `Date.now()` para calcular sessão.
+- A medição do relógio lê dentro de uma transação. `getDoc` e `getDocFromServer` em documento já escutado devolvem a última
+  foto, de antes da gravação: em 05/11/2026 isso deixou o cronômetro parado e, ao trocar de demanda sem pausar, gravou zero.
+  A demonstração de `.claude/` imita esse comportamento (`?escuta=ms`, `?rede=ms`, `?atraso=segundos`).
 - `sessoes`: `{ inicio, fim, seg }` (Timestamp); tempo manual acrescenta `manual: true`, às 08:00
   da data escolhida, e a data entra em `datasAjuste`.
 - Mês e Nº: a demanda pertence ao mês em que foi criada. Se a Data de Entrega for editada para

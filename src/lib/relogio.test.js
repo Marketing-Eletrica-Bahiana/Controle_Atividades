@@ -39,4 +39,13 @@ describe('relógio do computador diferente do servidor', () => {
     expect(fecharSessao(inicioNoServidor, agoraNoServidor())).toEqual({ segundos: 5 })
     expect(fecharSessao(inicioNoServidor, Date.now())).toEqual({ segundos: 0 })
   })
+
+  it('ignora a medição guardada pela primeira versão, que podia estar errada', async () => {
+    vi.useFakeTimers({ now: AGORA })
+    vi.stubGlobal('localStorage', { getItem: (chave) => (chave === 'controle-atividades:desvio-do-relogio' ? '-9005' : null), setItem() {} })
+    vi.resetModules()
+    const novo = await import('./relogio.js')
+    vi.unstubAllGlobals()
+    expect(novo.agoraNoServidor()).toBe(AGORA)
+  })
 })

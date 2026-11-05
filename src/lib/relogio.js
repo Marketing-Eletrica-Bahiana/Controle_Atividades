@@ -2,7 +2,9 @@
 // atrasado, ele ficava parado em 00:00:00 até alcançar o servidor, e pausar antes disso gravava zero.
 // Aqui fica a diferença entre os dois, medida a cada vez que a pessoa liga o cronômetro.
 
-const CHAVE = 'controle-atividades:desvio-do-relogio'
+// O nome mudou de propósito: a primeira versão podia guardar uma medição errada (ver medirRelogio) em
+// "controle-atividades:desvio-do-relogio", e esse valor não pode voltar a valer.
+const CHAVE = 'controle-atividades:desvio-do-servidor'
 
 function desvioGuardado() {
   try {

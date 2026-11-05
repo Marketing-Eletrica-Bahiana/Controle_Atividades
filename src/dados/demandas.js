@@ -131,12 +131,14 @@ function fecharSessaoNaTransacao(t, { cron, demanda }, agoraMs, alteracoes = {})
 
 const cronometroParado = { demandaId: null, area: null, inicio: null, rodando: false }
 
-// Mede a diferença entre este computador e o servidor logo depois de ligar o cronômetro.
+// Mede a diferença entre este computador e o servidor logo depois de ligar o cronômetro. Não pode ser getDoc:
+// com o documento já sendo escutado (o cabeçalho escuta sempre), ele devolve a última foto, de antes de ligar.
+// A leitura dentro de uma transação vai direto ao servidor.
 // Falhar aqui não atrapalha: o cronômetro já está ligado e vale a última medição.
-async function medirRelogio(email, horaLocal) {
+async function medirRelogio(email, demandaId, horaLocal) {
   try {
-    const inicio = (await getDoc(refCronometro(email))).data()?.inicio
-    if (inicio?.toMillis) acertarRelogio(inicio.toMillis(), horaLocal)
+    const cronometro = await runTransaction(db, async (t) => (await t.get(refCronometro(email))).data())
+    if (cronometro?.demandaId === demandaId && cronometro.inicio?.toMillis) acertarRelogio(cronometro.inicio.toMillis(), horaLocal)
   } catch {
     // Sem medição nova.
   }
@@ -198,7 +200,7 @@ export async function criarEIniciar(dados, pessoa) {
       })
     }
   })
-  await medirRelogio(pessoa.email, Date.now())
+  medirRelogio(pessoa.email, ref.id, Date.now())
   esquecerHistorico(dados.area)
   return ref.id
 }
@@ -253,7 +255,7 @@ export async function retomar(demandaId, pessoa) {
     t.set(refCronometro(pessoa.email), { demandaId, area: atual.area, inicio: serverTimestamp(), rodando: true })
     return true
   })
-  if (ligou) await medirRelogio(pessoa.email, Date.now())
+  if (ligou) medirRelogio(pessoa.email, demandaId, Date.now())
 }
 
 export function pausar(pessoa) {
