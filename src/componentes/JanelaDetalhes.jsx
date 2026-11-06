@@ -1,3 +1,4 @@
+import { Pencil } from 'lucide-react'
 import { formatarAjustes, formatarData, formatarMes } from '../lib/datas.js'
 import { formatarTempo } from '../lib/tempo.js'
 import Janela from './Janela.jsx'
@@ -23,7 +24,8 @@ export const dataHora = (ts) => {
 }
 
 // Detalhes da demanda com todos os campos e o histórico de alterações.
-export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => email, aoFechar }) {
+// "aoEditar" só vem quando a pessoa pode editar essa demanda; sem ele, o botão não aparece.
+export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => email, aoEditar = null, aoFechar }) {
   const campos = demanda
     ? [
         ['Nº', demanda.numero],
@@ -52,7 +54,15 @@ export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => emai
         <div className="detalhes-demanda">
           <div className="detalhes-demanda__topo">
             <h3 className="nome-demanda nome-demanda--grande">{demanda.nome}</h3>
-            <EtiquetaSituacao status={demanda.status} />
+            <div className="detalhes-demanda__acoes">
+              <EtiquetaSituacao status={demanda.status} />
+              {aoEditar && (
+                <button type="button" className="botao botao--secundario botao--pequeno" onClick={() => aoEditar(demanda)}>
+                  <Pencil aria-hidden="true" />
+                  Editar
+                </button>
+              )}
+            </div>
           </div>
           <dl className="ficha ficha--grade">
             {campos.map(([rotulo, valor]) => (

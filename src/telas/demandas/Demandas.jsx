@@ -68,6 +68,7 @@ export default function Demandas() {
   const comArea = areas.atual === TODAS
 
   const todas = consulta.dados ?? []
+  const detalheAtual = detalhe ? todas.find((d) => d.id === detalhe.id) : null
   const opcoesDosFiltros = useMemo(() => {
     const opcoes = {}
     for (const { chave } of FILTROS) opcoes[chave] = [...new Set(todas.map((d) => d[chave]).filter(Boolean))].sort((a, b) => String(a).localeCompare(b, 'pt-BR'))
@@ -271,7 +272,11 @@ export default function Demandas() {
         </div>
       )}
 
-      <JanelaDetalhes demanda={detalhe && todas.find((d) => d.id === detalhe.id)} aoFechar={() => setDetalhe(null)} />
+      <JanelaDetalhes
+        demanda={editando ? null : detalheAtual}
+        aoEditar={detalheAtual && podeEditar(membro, detalheAtual) ? setEditando : null}
+        aoFechar={() => setDetalhe(null)}
+      />
       <JanelaEditarDemanda demanda={editando} aoFechar={() => setEditando(null)} />
       <JanelaJuntar
         demandas={juntando}

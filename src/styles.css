@@ -2060,6 +2060,22 @@ button.abas__item.ativo {
   gap: 16px;
 }
 
+/* Em tela estreita, a situação e o Editar descem para baixo do nome, em vez de espremer o nome. */
+.detalhes-demanda__topo {
+  flex-wrap: wrap;
+}
+
+.detalhes-demanda__topo > h3 {
+  flex: 1 1 240px;
+}
+
+.detalhes-demanda__acoes {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
 .ficha--grade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

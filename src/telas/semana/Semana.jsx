@@ -33,6 +33,7 @@ export default function Semana() {
   // Inclui o mês anterior: demandas criadas antes podem ter sido trabalhadas nesta semana.
   const meses = mesesEntre(somarDias(segunda, -31), domingo)
   const consulta = useDemandasDosMeses(areas.ids, meses)
+  const detalheAtual = detalhe ? (consulta.dados ?? []).find((d) => d.id === detalhe.id) : null
 
   const todosOsItens = useMemo(() => tempoPorDia(consulta.dados ?? [], segunda, domingo), [consulta.dados, segunda, domingo])
   const pessoas = useMemo(() => {
@@ -196,7 +197,11 @@ export default function Semana() {
         })
       )}
 
-      <JanelaDetalhes demanda={detalhe && (consulta.dados ?? []).find((d) => d.id === detalhe.id)} aoFechar={() => setDetalhe(null)} />
+      <JanelaDetalhes
+        demanda={editando ? null : detalheAtual}
+        aoEditar={detalheAtual && podeEditar(membro, detalheAtual) ? setEditando : null}
+        aoFechar={() => setDetalhe(null)}
+      />
       <JanelaEditarDemanda demanda={editando} aoFechar={() => setEditando(null)} />
       {janelaConfirmar}
     </section>
