@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
 import { formatarData, hojeISO, lerData, montarISO, NOMES_MESES } from '../lib/datas.js'
+import { posicaoFlutuante } from '../lib/flutuante.js'
 
 const DIAS_DA_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -19,6 +20,7 @@ export default function CampoData({ rotulo, valor, aoMudar, erro, obrigatorio = 
   const [erroLocal, setErroLocal] = useState('')
   const [aberto, setAberto] = useState(false)
   const caixa = useRef(null)
+  const linha = useRef(null)
   const id = useId()
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function CampoData({ rotulo, valor, aoMudar, erro, obrigatorio = 
       <label className="campo__rotulo" htmlFor={id}>
         {rotulo}
       </label>
-      <div className="campo-data__linha">
+      <div className="campo-data__linha" ref={linha}>
         <input
           id={id}
           value={texto}
@@ -91,6 +93,7 @@ export default function CampoData({ rotulo, valor, aoMudar, erro, obrigatorio = 
       )}
       {aberto && (
         <Calendario
+          ancora={linha}
           valor={valor}
           aoEscolher={(iso) => {
             aoMudar(iso)
@@ -104,9 +107,39 @@ export default function CampoData({ rotulo, valor, aoMudar, erro, obrigatorio = 
   )
 }
 
-export function Calendario({ valor, aoEscolher }) {
+// Flutua por cima de tudo (camada do topo, quando o navegador tem) e sempre dentro da tela: as janelas rolam por
+// dentro e cortavam o calendário preso ao campo. Acompanha o campo quando a página ou a janela rola.
+export function Calendario({ valor, aoEscolher, ancora }) {
   const hoje = hojeISO()
   const [mesVisivel, setMesVisivel] = useState((valor ?? hoje).slice(0, 7))
+  const flutuante = useRef(null)
+  const [posicao, setPosicao] = useState(null)
+
+  useLayoutEffect(() => {
+    try {
+      flutuante.current?.showPopover?.()
+    } catch {
+      // Sem camada do topo: continua fixo na tela, na mesma posição.
+    }
+  }, [])
+
+  // Recalcula ao trocar de mês: com 5 ou 6 semanas, a altura muda.
+  useLayoutEffect(() => {
+    const caixaDoCalendario = flutuante.current
+    if (!ancora?.current || !caixaDoCalendario) return undefined
+    function posicionar() {
+      const tela = { largura: document.documentElement.clientWidth, altura: document.documentElement.clientHeight }
+      const tamanho = { largura: caixaDoCalendario.offsetWidth, altura: caixaDoCalendario.offsetHeight }
+      setPosicao(posicaoFlutuante(ancora.current.getBoundingClientRect(), tamanho, tela))
+    }
+    posicionar()
+    window.addEventListener('resize', posicionar)
+    window.addEventListener('scroll', posicionar, true)
+    return () => {
+      window.removeEventListener('resize', posicionar)
+      window.removeEventListener('scroll', posicionar, true)
+    }
+  }, [ancora, mesVisivel])
   const [ano, mes] = mesVisivel.split('-').map(Number)
   const primeiroDia = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay() // domingo = 0
   const diasNoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate()
@@ -118,7 +151,14 @@ export function Calendario({ valor, aoEscolher }) {
   }
 
   return (
-    <div className="calendario" role="dialog" aria-label="Calendário">
+    <div
+      ref={flutuante}
+      className="calendario"
+      popover="manual"
+      role="dialog"
+      aria-label="Calendário"
+      style={posicao ? { top: posicao.top, left: posicao.left } : { visibility: 'hidden' }}
+    >
       <div className="calendario__topo">
         <button type="button" className="botao-icone" onClick={() => andar(-1)} aria-label="Mês anterior">
           <ChevronLeft aria-hidden="true" />

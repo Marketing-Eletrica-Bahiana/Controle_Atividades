@@ -1433,19 +1433,22 @@ p {
   border-color: var(--medio);
 }
 
+/* Flutua por cima de tudo: top e left vêm de src/lib/flutuante.js. As outras regras desfazem o padrão do popover. */
 .calendario {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 30;
+  position: fixed;
+  inset: auto;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 288px;
-  margin-top: 4px;
+  margin: 0;
   padding: 16px;
+  overflow: visible;
+  border: 0;
   border-radius: var(--raio);
   background: var(--branco);
+  color: inherit;
   box-shadow: var(--sombra-janela);
 }
 

@@ -79,7 +79,9 @@ ao fim de cada uma, e completar o que faltou da Fase 2 (roteiro completo dela: a
 - Fuso horário `America/Bahia`.
 - Semana de trabalho: segunda a sábado.
 - Campo de data próprio: aceita digitar DD/MM/AAAA e tem calendário em português começando no
-  domingo, por pedido da pessoa. Não depender do formato de data do navegador.
+  domingo, por pedido da pessoa. Não depender do formato de data do navegador. O calendário flutua
+  por cima de tudo (`popover` e `position: fixed`), sempre dentro da tela (`src/lib/flutuante.js`):
+  preso ao campo, ele era cortado pelas janelas, que rolam por dentro.
 - Node 24.
 
 ## Firebase
