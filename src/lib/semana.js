@@ -46,6 +46,27 @@ const diaDaSessao = (sessao) => {
   return data ? hojeISO(data) : null
 }
 
+// Tempo de uma demanda em cada dia, pelas sessões do cronômetro. Editar o Tempo Gasto não mexe nas sessões, e o
+// total dos dias precisa bater com ele: o que sobra sai dos dias mais recentes (quem esqueceu o cronômetro ligado
+// corrige o fim) e o que falta entra no último dia com sessão.
+export function segundosPorDia(demanda) {
+  const porDia = new Map()
+  for (const sessao of demanda.sessoes ?? []) {
+    const dia = diaDaSessao(sessao)
+    if (dia) porDia.set(dia, (porDia.get(dia) ?? 0) + (sessao.seg ?? 0))
+  }
+  const dias = [...porDia.keys()].sort()
+  if (!dias.length || typeof demanda.tempoGastoSeg !== 'number') return porDia
+  let diferenca = demanda.tempoGastoSeg - [...porDia.values()].reduce((soma, seg) => soma + seg, 0)
+  if (diferenca > 0) porDia.set(dias.at(-1), porDia.get(dias.at(-1)) + diferenca)
+  for (let i = dias.length - 1; diferenca < 0 && i >= 0; i -= 1) {
+    const tirar = Math.min(porDia.get(dias[i]), -diferenca)
+    porDia.set(dias[i], porDia.get(dias[i]) - tirar)
+    diferenca += tirar
+  }
+  return porDia
+}
+
 // Tempo de cada demanda em cada dia do período: pelas sessões do cronômetro; sem sessões
 // (demandas importadas), o tempo todo vai para a data de entrega (ou de solicitação).
 export function tempoPorDia(demandas, inicio, fim) {
@@ -53,12 +74,9 @@ export function tempoPorDia(demandas, inicio, fim) {
   for (const demanda of demandas) {
     const sessoes = demanda.sessoes ?? []
     if (sessoes.length) {
-      const porDia = new Map()
-      for (const sessao of sessoes) {
-        const dia = diaDaSessao(sessao)
-        if (dia && dia >= inicio && dia <= fim) porDia.set(dia, (porDia.get(dia) ?? 0) + (sessao.seg ?? 0))
+      for (const [dia, segundos] of segundosPorDia(demanda)) {
+        if (dia >= inicio && dia <= fim) itens.push({ dia, demanda, segundos })
       }
-      for (const [dia, segundos] of porDia) itens.push({ dia, demanda, segundos })
     } else {
       const dia = demanda.dataEntrega ?? demanda.dataSolicitacao
       if (dia && dia >= inicio && dia <= fim) itens.push({ dia, demanda, segundos: demanda.tempoGastoSeg ?? 0 })

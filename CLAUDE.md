@@ -335,6 +335,10 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
   data informada, não ao mês de hoje. Concluída, a data vira a Data de Entrega; em aberto, fica
   pausada e a data vai para o Ajuste. Conta como demanda do cronômetro (`importada: false`), então
   "Substituir histórico" não a apaga.
+- Editar o Tempo Gasto não mexe nas sessões. O tempo de cada dia (Total do dia, Semana, Painel) vem de `segundosPorDia`
+  (`src/lib/semana.js`): as sessões dizem o dia, e a diferença para o Tempo Gasto sai dos dias mais recentes ou entra no
+  último. Antes, em 06/11/2026, o Total do dia continuava com o tempo antigo depois de uma edição. Com mais de uma área, o
+  rótulo vira "Total do dia, todas as áreas", porque a lista de baixo mostra só a aba aberta.
 - Concluir grava a entrega de hoje; os outros dias com sessão, a entrega anterior (se foi reaberta)
   e os ajustes já existentes vão para `datasAjuste`, sem solicitação e entrega, sem repetir.
   Faltando Uso de IA, Template ou Solicitante, uma janela pede antes de concluir.

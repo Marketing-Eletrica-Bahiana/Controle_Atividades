@@ -4,7 +4,7 @@ import { SITUACOES } from '../../lib/regras.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
 // Cartão principal: gradiente com o pattern de circuito, números grandes e os botões do cronômetro.
-export default function CartaoCronometro({ demanda, decorrido, totalDoDia, nomeDaArea, ocupado, aoPausar, aoConcluir, aoCorrigir }) {
+export default function CartaoCronometro({ demanda, decorrido, totalDoDia, variasAreas, nomeDaArea, ocupado, aoPausar, aoConcluir, aoCorrigir }) {
   const rodando = Boolean(demanda)
   return (
     <section className={`cartao-cronometro ${rodando ? 'rodando' : ''}`} style={{ '--pattern': `url("${patterns.circuito}")` }} aria-live="polite">
@@ -29,7 +29,7 @@ export default function CartaoCronometro({ demanda, decorrido, totalDoDia, nomeD
 
       <div className="cartao-cronometro__rodape">
         <p className="cartao-cronometro__total">
-          Total do dia <strong>{formatarTempo(totalDoDia)}</strong>
+          {variasAreas ? 'Total do dia, todas as áreas' : 'Total do dia'} <strong>{formatarTempo(totalDoDia)}</strong>
         </p>
         {rodando && (
           <div className="cartao-cronometro__acoes">

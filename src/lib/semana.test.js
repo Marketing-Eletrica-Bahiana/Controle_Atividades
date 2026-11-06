@@ -1,7 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { diasDaSemana, mesesEntre, nomeDoDia, resumoDoPeriodo, segundaDaSemana, tempoPorDia } from './semana.js'
+import { diasDaSemana, mesesEntre, nomeDoDia, resumoDoPeriodo, segundaDaSemana, segundosPorDia, tempoPorDia } from './semana.js'
 
 const sessao = (quando, seg) => ({ inicio: new Date(quando), seg })
+
+describe('tempo por dia com o Tempo Gasto editado', () => {
+  const dias = (demanda) => Object.fromEntries(segundosPorDia(demanda))
+  const sessoes = [sessao('2026-11-04T10:00:00-03:00', 3600), sessao('2026-11-05T09:00:00-03:00', 1800), sessao('2026-11-05T14:00:00-03:00', 12_000)]
+
+  it('sem edição, cada dia soma as próprias sessões', () => {
+    expect(dias({ tempoGastoSeg: 17_400, sessoes })).toEqual({ '2026-11-04': 3600, '2026-11-05': 13_800 })
+    expect(dias({ sessoes })).toEqual({ '2026-11-04': 3600, '2026-11-05': 13_800 })
+  })
+
+  it('tempo diminuído: sai do dia mais recente primeiro', () => {
+    expect(dias({ tempoGastoSeg: 10_000, sessoes })).toEqual({ '2026-11-04': 3600, '2026-11-05': 6400 })
+    expect(dias({ tempoGastoSeg: 1000, sessoes })).toEqual({ '2026-11-04': 1000, '2026-11-05': 0 })
+    expect(dias({ tempoGastoSeg: 0, sessoes })).toEqual({ '2026-11-04': 0, '2026-11-05': 0 })
+  })
+
+  it('tempo aumentado: entra no último dia com sessão', () => {
+    expect(dias({ tempoGastoSeg: 20_000, sessoes })).toEqual({ '2026-11-04': 3600, '2026-11-05': 16_400 })
+  })
+
+  it('o caso do print: Reels editado de 03:56:05 para 01:58:08 e o total do dia volta a bater com a lista', () => {
+    const reels = { tempoGastoSeg: 7088, sessoes: [sessao('2026-11-06T08:30:00-03:00', 14_165)] }
+    const outras = [
+      { tempoGastoSeg: 600, sessoes: [sessao('2026-11-06T11:00:00-03:00', 600)] },
+      { tempoGastoSeg: 123, sessoes: [sessao('2026-11-06T11:20:00-03:00', 123)] },
+    ]
+    const total = [reels, ...outras].reduce((soma, d) => soma + (segundosPorDia(d).get('2026-11-06') ?? 0), 0)
+    expect(total).toBe(7088 + 600 + 123)
+    expect(tempoPorDia([reels], '2026-11-06', '2026-11-06').map((i) => i.segundos)).toEqual([7088])
+  })
+})
 
 describe('semana', () => {
   it('a semana começa na segunda, inclusive quando o dia é domingo', () => {

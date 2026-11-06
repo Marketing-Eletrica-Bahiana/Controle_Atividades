@@ -15,6 +15,7 @@ import { useAgora } from '../../hooks/useAgora.js'
 import { formatarData, formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import { entraNoCalendario } from '../../lib/postagens.js'
+import { segundosPorDia } from '../../lib/semana.js'
 import { COLUNAS_PADRAO } from '../../lib/quadro.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
 import FormDemanda from './FormDemanda.jsx'
@@ -55,7 +56,7 @@ export default function MeuCronometro() {
   const todas = minhas.dados ?? []
   const demandaRodando = todas.find((d) => d.id === rodandoId)
   const totalDoDia =
-    todas.reduce((soma, d) => soma + (d.sessoes ?? []).filter((s) => diaDaSessao(s) === hoje).reduce((s, x) => s + (x.seg ?? 0), 0), 0) + decorrido
+    todas.reduce((soma, d) => soma + (segundosPorDia(d).get(hoje) ?? 0), 0) + decorrido
   const daArea = todas.filter((d) => d.area === area)
   const abertas = daArea.filter((d) => d.status !== 'concluida')
   const deHoje = daArea
@@ -155,6 +156,7 @@ export default function MeuCronometro() {
         demanda={demandaRodando}
         decorrido={decorrido}
         totalDoDia={totalDoDia}
+        variasAreas={minhasAreas.length > 1}
         nomeDaArea={minhasAreas.length > 1 && demandaRodando ? nomeDaArea(demandaRodando.area) : ''}
         ocupado={ocupado}
         aoPausar={() => agir(() => pausar(pessoa), 'Cronômetro pausado.')}
