@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  exclusaoComDemandas,
   agruparPorColuna, camposDeEntrega, cartaoAtrasado, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, corDaPessoa, etiquetaDaColuna, etiquetaDoPublico,
   filtrarCartoes, iniciais, ordemEntre, ordemParaSoltar, publicoDaEtiqueta, vaiParaOQuadro, vinculosSemDemanda,
 } from './quadro.js'
@@ -167,5 +168,30 @@ describe('filtros e situação', () => {
     expect(iniciais('Maria da Silva')).toBe('MS')
     expect(iniciais('Ana')).toBe('A')
     expect(iniciais('')).toBe('')
+  })
+})
+
+describe('excluir cartões com as demandas', () => {
+  const demanda = (nome, responsavelNome, tempoGastoSeg, status = 'concluida') => ({ nome, responsavelNome, tempoGastoSeg, status })
+
+  it('bloqueia quando alguma demanda está com o cronômetro rodando', () => {
+    const resultado = exclusaoComDemandas(2, [demanda('Reels', 'Taís', 600, 'em_andamento'), demanda('Card', 'Ivie', 300)])
+    expect(resultado.bloqueio).toBe('Não dá para excluir agora: "Reels" (Taís) está com o cronômetro rodando. Pause e tente de novo.')
+  })
+
+  it('um cartão sem demanda', () => {
+    expect(exclusaoComDemandas(1, [])).toEqual({
+      titulo: 'Excluir o cartão e as demandas?',
+      texto: 'O cartão sai do Quadro e do calendário de Postagens. Nenhuma demanda está ligada a ele.',
+    })
+  })
+
+  it('soma o tempo e lista as pessoas que perdem demandas', () => {
+    const { titulo, texto } = exclusaoComDemandas(3, [demanda('Reels', 'Taís', 3600, 'pausada'), demanda('Card', 'Ivie', 1800), demanda('Story', 'Ivie', 600)])
+    expect(titulo).toBe('Excluir 3 cartões e as demandas?')
+    expect(texto).toBe(
+      'Os 3 cartões saem do Quadro e do calendário de Postagens, e as 3 demandas ligadas a eles são apagadas de vez, com 01:40:00 de tempo registrado (Ivie, Taís). As outras demandas do mês são renumeradas. Não dá para desfazer.',
+    )
+    expect(exclusaoComDemandas(1, [demanda('Card', 'Ivie', 7140)]).texto).toContain('e a demanda ligada a ele é apagada de vez, com 01:59:00')
   })
 })

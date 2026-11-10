@@ -370,6 +370,12 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
   demanda: se falhar, o tempo continua valendo e a pessoa é avisada.
 - Permissões: admin e equipe criam, editam e movem qualquer cartão; só o admin exclui; gestão e diretoria
   só leem. Excluir o cartão não apaga as demandas.
+- Seleção (só admin): caixa no canto do cartão, à vista ao passar o mouse, com cartão marcado e sempre no celular. Com cartões
+  marcados, ao lado dos filtros: "Excluir do Quadro" (só os cartões, que saem também do calendário; as demandas ficam com o tempo)
+  e "Excluir cartão e demandas" (apaga também as demandas ligadas, de qualquer pessoa, com o tempo, e renumera os meses). Demanda
+  com o cronômetro rodando bloqueia a segunda (`exclusaoComDemandas`). Trocar filtro ou mês limpa a seleção.
+- Segurar e arrastar o fundo do Quadro com o mouse rola para os lados (`src/hooks/useArrastarParaRolar.js`). Não começa em
+  cartões, botões, campos nem nas barras de rolagem, para não atrapalhar o arraste dos cartões.
 - Etiquetas só com as cores da paleta (`.etiqueta-cartao--*` em `src/styles.css`).
 - No celular, arrastar não funciona: mude de coluna pelo campo Coluna da janela do cartão.
 - Excluir ou juntar uma demanda atualiza `vinculos` no cartão: ele não pode apontar para demanda apagada. Ao

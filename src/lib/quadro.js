@@ -1,6 +1,7 @@
 // Regras do quadro de demandas, sem acesso ao Firestore.
 
 import { mesDe } from './datas.js'
+import { formatarTempo } from './tempo.js'
 import { normalizar, paraId, primeiroNome } from './texto.js'
 
 export const COLUNA_ENTREGUES = 'entregues'
@@ -133,4 +134,26 @@ export function corDaPessoa(nome) {
 export function iniciais(nome) {
   const partes = String(nome ?? '').trim().split(/\s+/).filter(Boolean)
   return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes.at(-1)[0] : '')).toUpperCase()
+}
+
+// Confirmação de apagar cartões junto com as demandas ligadas. Demanda com o cronômetro rodando impede:
+// apagada, ela deixaria o cronômetro de quem usa preso.
+export function exclusaoComDemandas(quantosCartoes, demandas) {
+  const rodando = demandas.filter((d) => d.status === 'em_andamento')
+  if (rodando.length) {
+    const nomes = rodando.map((d) => `"${d.nome}" (${d.responsavelNome})`).join(', ')
+    return { bloqueio: `Não dá para excluir agora: ${nomes} ${rodando.length === 1 ? 'está' : 'estão'} com o cronômetro rodando. Pause e tente de novo.` }
+  }
+  const um = quantosCartoes === 1
+  const titulo = um ? 'Excluir o cartão e as demandas?' : `Excluir ${quantosCartoes} cartões e as demandas?`
+  const saem = um ? 'O cartão sai' : `Os ${quantosCartoes} cartões saem`
+  const aEles = um ? 'a ele' : 'a eles'
+  if (!demandas.length) return { titulo, texto: `${saem} do Quadro e do calendário de Postagens. Nenhuma demanda está ligada ${aEles}.` }
+  const pessoas = [...new Set(demandas.map((d) => d.responsavelNome).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  const segundos = demandas.reduce((soma, d) => soma + (d.tempoGastoSeg ?? 0), 0)
+  const ligadas = demandas.length === 1 ? `a demanda ligada ${aEles} é apagada` : `as ${demandas.length} demandas ligadas ${aEles} são apagadas`
+  return {
+    titulo,
+    texto: `${saem} do Quadro e do calendário de Postagens, e ${ligadas} de vez, com ${formatarTempo(segundos)} de tempo registrado (${pessoas.join(', ')}). As outras demandas do mês são renumeradas. Não dá para desfazer.`,
+  }
 }

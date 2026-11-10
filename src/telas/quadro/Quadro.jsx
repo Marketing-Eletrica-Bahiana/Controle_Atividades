@@ -1,24 +1,26 @@
 import { useMemo, useState } from 'react'
-import { CalendarClock, Megaphone, MessageSquare, Pause, Play, Plus, SquareKanban, Timer, X } from 'lucide-react'
+import { CalendarClock, Megaphone, MessageSquare, Pause, Play, Plus, SquareKanban, Timer, Trash2, X } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import BolinhasDePessoas from '../../componentes/BolinhasDePessoas.jsx'
 import IconeDaRede from '../../componentes/IconeDaRede.jsx'
 import CarregandoBloco from '../../componentes/CarregandoBloco.jsx'
 import { SeletorMes, useMesEscolhido } from '../../componentes/Seletores.jsx'
-import { criarCartao, moverCartao, useCartoesDoQuadro } from '../../dados/cartoes.js'
+import { criarCartao, demandasDosCartoes, excluirCartoes, moverCartao, useCartoesDoQuadro } from '../../dados/cartoes.js'
+import { useArrastarParaRolar } from '../../hooks/useArrastarParaRolar.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
+import { podeExcluirCartao } from '../../lib/papeis.js'
 import { rotuloDaData, tiposDaPostagem } from '../../lib/postagens.js'
 import {
-  agruparPorColuna, cartaoAtrasado, classeDaEtiqueta, COLUNA_ENTREGUES, etiquetaDaColuna, ETIQUETAS, filtrarCartoes, ordemParaSoltar,
+  agruparPorColuna, cartaoAtrasado, classeDaEtiqueta, COLUNA_ENTREGUES, etiquetaDaColuna, ETIQUETAS, exclusaoComDemandas, filtrarCartoes, ordemParaSoltar,
 } from '../../lib/quadro.js'
 import { useAcoesDoCartao } from './useAcoesDoCartao.jsx'
 
 const SEM_CARTOES = []
 
 export default function Quadro() {
-  const { executar } = useAvisos()
-  const [mes, setMes] = useMesEscolhido()
+  const { avisar, executar } = useAvisos()
+  const [mes, setMesEscolhido] = useMesEscolhido()
   const consulta = useCartoesDoQuadro(mes)
   const cartoes = consulta.dados ?? SEM_CARTOES
   const acoes = useAcoesDoCartao(cartoes)
@@ -27,12 +29,51 @@ export default function Quadro() {
   const [filtros, setFiltros] = useState({ busca: '', etiqueta: '', pessoa: '' })
   const [arrastandoId, setArrastandoId] = useState(null)
   const [alvo, setAlvo] = useState(null)
+  const [selecionados, setSelecionados] = useState([])
+  const rolagem = useArrastarParaRolar()
+  const podeApagar = podeExcluirCartao(membro)
 
   const listaDeColunas = colunas.dados ?? SEM_CARTOES
   const grupos = useMemo(() => agruparPorColuna(filtrarCartoes(cartoes, filtros), listaDeColunas), [cartoes, filtros, listaDeColunas])
   const hoje = hojeISO()
   const filtrando = Boolean(filtros.busca || filtros.etiqueta || filtros.pessoa)
-  const mudarFiltro = (campo, valor) => setFiltros((atual) => ({ ...atual, [campo]: valor }))
+  // Trocar o filtro ou o mês limpa a seleção: um cartão escondido não pode ser apagado sem ser visto.
+  const limparSelecao = () => setSelecionados([])
+  const mudarFiltro = (campo, valor) => {
+    setFiltros((atual) => ({ ...atual, [campo]: valor }))
+    limparSelecao()
+  }
+  const setMes = (novo) => {
+    setMesEscolhido(novo)
+    limparSelecao()
+  }
+  const selecionadosAgora = cartoes.filter((c) => selecionados.includes(c.id))
+  const alternarSelecao = (id) => setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]))
+
+  async function excluirDoQuadro() {
+    const lista = selecionadosAgora
+    const um = lista.length === 1
+    const sim = await acoes.confirmar({
+      titulo: um ? 'Excluir o cartão do Quadro?' : `Excluir ${lista.length} cartões do Quadro?`,
+      texto: `${um ? 'O cartão sai' : 'Os cartões saem'} do Quadro e do calendário de Postagens. As demandas ligadas continuam em Demandas, com o tempo registrado.`,
+      botao: 'Excluir do Quadro',
+      perigo: true,
+    })
+    if (sim && (await executar(() => excluirCartoes(lista), um ? 'Cartão excluído.' : `${lista.length} cartões excluídos.`))) limparSelecao()
+  }
+
+  async function excluirComDemandas() {
+    const lista = selecionadosAgora
+    let demandas = []
+    if (!(await executar(async () => { demandas = await demandasDosCartoes(lista) }))) return
+    const { bloqueio, titulo, texto } = exclusaoComDemandas(lista.length, demandas)
+    if (bloqueio) {
+      avisar(bloqueio, 'erro')
+      return
+    }
+    const sim = await acoes.confirmar({ titulo, texto, botao: 'Excluir tudo', perigo: true })
+    if (sim && (await executar(() => excluirCartoes(lista, demandas), 'Cartões e demandas excluídos.'))) limparSelecao()
+  }
 
   async function soltar(colunaId, antesDe) {
     const cartao = cartoes.find((c) => c.id === arrastandoId)
@@ -87,14 +128,42 @@ export default function Quadro() {
           </select>
         </label>
         {filtrando && (
-          <button type="button" className="botao botao--secundario" onClick={() => setFiltros({ busca: '', etiqueta: '', pessoa: '' })}>
+          <button
+            type="button"
+            className="botao botao--secundario"
+            onClick={() => {
+              setFiltros({ busca: '', etiqueta: '', pessoa: '' })
+              limparSelecao()
+            }}
+          >
             <X aria-hidden="true" />
             Limpar filtros
           </button>
         )}
+        {podeApagar && selecionadosAgora.length > 0 && (
+          <div className="quadro-selecao" role="region" aria-label="Cartões selecionados">
+            <span className="quadro-selecao__total">
+              {selecionadosAgora.length === 1 ? '1 cartão selecionado' : `${selecionadosAgora.length} cartões selecionados`}
+            </span>
+            <button type="button" className="botao botao--secundario" onClick={limparSelecao}>
+              Limpar seleção
+            </button>
+            <button type="button" className="botao botao--perigo" onClick={excluirDoQuadro}>
+              <Trash2 aria-hidden="true" />
+              Excluir do Quadro
+            </button>
+            <button type="button" className="botao botao--perigo" onClick={excluirComDemandas}>
+              <Trash2 aria-hidden="true" />
+              Excluir cartão e demandas
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="quadro">
+      <div
+        className={['quadro', rolagem.rolando && 'quadro--rolando', selecionadosAgora.length > 0 && 'quadro--selecionando'].filter(Boolean).join(' ')}
+        onPointerDown={rolagem.onPointerDown}
+      >
         {listaDeColunas.map((coluna) => {
           const lista = grupos.get(coluna.id) ?? []
           const ehEntregues = coluna.id === COLUNA_ENTREGUES
@@ -135,6 +204,9 @@ export default function Quadro() {
                     temDemanda={acoes.temDemanda(cartao)}
                     arrastando={arrastandoId === cartao.id}
                     soltarAqui={alvo?.antesDe === cartao.id}
+                    selecionavel={podeApagar}
+                    selecionado={selecionados.includes(cartao.id)}
+                    aoSelecionar={() => alternarSelecao(cartao.id)}
                     aoAbrir={() => acoes.abrir(cartao.id)}
                     aoCronometro={() => acoes.usarCronometro(cartao)}
                     aoArrastar={() => setArrastandoId(cartao.id)}
@@ -165,11 +237,18 @@ export default function Quadro() {
 }
 
 function CartaoDoQuadro({
-  cartao, hoje, nomeDaPessoa, podeMexer, podeUsarCronometro, rodando, temDemanda, arrastando, soltarAqui,
-  aoAbrir, aoCronometro, aoArrastar, aoSoltarArraste, aoPassarPorCima,
+  cartao, hoje, nomeDaPessoa, podeMexer, podeUsarCronometro, rodando, temDemanda, arrastando, soltarAqui, selecionavel, selecionado,
+  aoAbrir, aoCronometro, aoArrastar, aoSoltarArraste, aoPassarPorCima, aoSelecionar,
 }) {
   const comentarios = (cartao.comentarios ?? []).length
-  const classes = ['cartao-quadro', arrastando && 'cartao-quadro--arrastando', soltarAqui && 'cartao-quadro--antes', rodando && 'cartao-quadro--rodando']
+  const classes = [
+    'cartao-quadro',
+    arrastando && 'cartao-quadro--arrastando',
+    soltarAqui && 'cartao-quadro--antes',
+    rodando && 'cartao-quadro--rodando',
+    selecionavel && 'cartao-quadro--selecionavel',
+    selecionado && 'cartao-quadro--selecionado',
+  ]
   return (
     <li
       className={classes.filter(Boolean).join(' ')}
@@ -187,6 +266,11 @@ function CartaoDoQuadro({
         aoPassarPorCima()
       }}
     >
+      {selecionavel && (
+        <label className="cartao-quadro__selecao" title="Selecionar" onClick={(evento) => evento.stopPropagation()}>
+          <input type="checkbox" checked={selecionado} onChange={aoSelecionar} aria-label={`Selecionar ${cartao.titulo}`} />
+        </label>
+      )}
       {(cartao.etiquetas ?? []).length > 0 && (
         <div className="etiquetas-cartao">
           {cartao.etiquetas.map((etiqueta) => (
