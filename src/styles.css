@@ -2855,14 +2855,14 @@ button.abas__item.ativo {
   gap: 16px;
 }
 
-/* Altura fixa de 1600px, por pedido da pessoa em 11/11/2026: as semanas dividem o espaço por igual,
-   seja qual for o número de postagens. Dia com mais postagens do que cabe rola por dentro. */
+/* Altura fixa de 790px, por pedido da pessoa em 11/11/2026 (1600px ficou grande demais): as semanas dividem
+   o espaço por igual, seja qual for o número de postagens. Dia com mais postagens do que cabe rola por dentro. */
 .calendario-postagens {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: auto;
   grid-auto-rows: minmax(0, 1fr);
-  height: 1600px;
+  height: 790px;
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--medio-20);

@@ -392,9 +392,9 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
 - Em 11/11/2026, por pedido da pessoa, a tela passou a se chamar Calendário, no menu e no título, e o endereço virou
   `#/calendario`. O antigo `#/postagens` leva para o novo (`App.jsx`), por causa dos favoritos. Dentro da tela, os termos
   da postagem continuam ("Nova postagem", "Postagens no mês").
-- No computador, o calendário tem altura fixa de 1600px, também por pedido dela, mesmo passando da tela de 1920x1080: as
-  semanas dividem o espaço por igual, seja qual for o número de postagens, e o dia lotado rola por dentro. No celular, a
-  agenda continua com a altura natural.
+- No computador, o calendário tem altura fixa de 790px, também por pedido dela (1600px, a primeira tentativa, ficou
+  grande demais): as semanas dividem o espaço por igual, seja qual for o número de postagens, e o dia lotado rola por
+  dentro. No celular, a agenda continua com a altura natural.
 
 - A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
 - Postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
