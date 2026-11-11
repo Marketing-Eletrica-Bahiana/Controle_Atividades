@@ -4,11 +4,13 @@ import { useAvisos } from '../../componentes/Avisos.jsx'
 import { useConfirmar } from '../../componentes/Confirmar.jsx'
 import { useAreas } from '../../dados/areas.js'
 import { esquecerDemanda, useColunas } from '../../dados/cartoes.js'
-import { concluir, criarEIniciar, pausar, retomar, situacaoDaDemanda, useCronometro } from '../../dados/demandas.js'
+import { adicionarTempoManual, concluir, criarDemandaManual, criarEIniciar, pausar, retomar, situacaoDaDemanda, useCronometro } from '../../dados/demandas.js'
 import { useMembros } from '../../dados/membros.js'
 import { podeExcluirCartao, podeMexerNoQuadro } from '../../lib/papeis.js'
+import { formatarTempo } from '../../lib/tempo.js'
 import JanelaCartao from './JanelaCartao.jsx'
 import JanelaIniciarCartao from './JanelaIniciarCartao.jsx'
+import JanelaTempoDoCartao from './JanelaTempoDoCartao.jsx'
 
 const SEM_COLUNAS = []
 
@@ -26,6 +28,7 @@ export function useAcoesDoCartao(cartoes) {
   const cronometro = useCronometro(podeMexer ? membro.email : null)
   const [abertoId, setAbertoId] = useState(null)
   const [iniciando, setIniciando] = useState(null)
+  const [lancando, setLancando] = useState(null)
 
   const listaDeColunas = colunas.dados ?? SEM_COLUNAS
   const nomeDaColuna = (id) => listaDeColunas.find((c) => c.id === id)?.nome ?? id
@@ -73,6 +76,31 @@ export function useAcoesDoCartao(cartoes) {
     return executar(() => criarEIniciar({ ...dados, cartaoId: cartao.id }, pessoa), `Cronômetro rodando: ${dados.nome}`)
   }
 
+  // Tempo feito sem o cronômetro. Soma na demanda da pessoa no cartão; sem demanda, a janela também cria a dela.
+  // Não mexe no cronômetro que estiver rodando.
+  async function lancarTempo(cartao) {
+    const minha = minhaDemanda(cartao)
+    if (!minha) {
+      setLancando({ cartao, demandaId: null })
+      return
+    }
+    // A demanda pode ter sido excluída antes de o cartão aprender a se limpar: cria outra em vez de dar erro.
+    const situacao = await situacaoDaDemanda(minha.demandaId).catch(() => undefined)
+    if (situacao === null) {
+      if (await executar(() => esquecerDemanda(cartao, minha.demandaId))) setLancando({ cartao, demandaId: null })
+      return
+    }
+    setLancando({ cartao, demandaId: minha.demandaId })
+  }
+
+  const somado = (cartao, segundos) => `${formatarTempo(segundos)} adicionado em ${cartao.titulo}.`
+
+  const criarComTempo = (cartao, dados, lancamento) =>
+    executar(() => criarDemandaManual({ ...dados, cartaoId: cartao.id }, lancamento, pessoa), somado(cartao, lancamento.segundos))
+
+  const somarTempo = (cartao, demandaId, lancamento) =>
+    executar(() => adicionarTempoManual(demandaId, lancamento, membro.email), somado(cartao, lancamento.segundos))
+
   // O cartão entregue não conclui a demanda sozinho: quem entregou decide sobre a própria demanda.
   async function oferecerConcluir(cartao) {
     const minha = minhaDemanda(cartao)
@@ -107,10 +135,22 @@ export function useAcoesDoCartao(cartoes) {
           setAbertoId(null)
           usarCronometro(cartao)
         }}
+        aoTempoManual={(cartao) => {
+          setAbertoId(null)
+          lancarTempo(cartao)
+        }}
         aoEntregar={oferecerConcluir}
         aoFechar={() => setAbertoId(null)}
       />
       <JanelaIniciarCartao cartao={iniciando} pessoa={pessoa} areas={minhasAreas} aoIniciar={iniciarDoCartao} aoFechar={() => setIniciando(null)} />
+      <JanelaTempoDoCartao
+        pedido={lancando}
+        pessoa={pessoa}
+        areas={minhasAreas}
+        aoCriar={criarComTempo}
+        aoSomar={(demandaId, lancamento) => somarTempo(lancando.cartao, demandaId, lancamento)}
+        aoFechar={() => setLancando(null)}
+      />
       {janelaConfirmar}
     </>
   )

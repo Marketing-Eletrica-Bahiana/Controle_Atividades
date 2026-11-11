@@ -9,7 +9,7 @@ import { lerTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
 import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
-const BotoesDaJanela = ({ aoFechar, ocupado, rotulo }) => (
+export const BotoesDaJanela = ({ aoFechar, ocupado, rotulo }) => (
   <div className="janela-modal__acoes">
     <button type="button" className="botao botao--secundario" onClick={aoFechar}>
       Cancelar
@@ -25,11 +25,39 @@ const MODOS_DO_TEMPO_MANUAL = [
   { id: 'existente', rotulo: 'Demanda existente' },
 ]
 
-const TEXTOS_DO_TEMPO_MANUAL = {
+export const TEXTOS_DO_TEMPO_MANUAL = {
   existente: 'O tempo entra como uma sessão nessa data, e a data vai para o Ajuste.',
   concluida: 'A demanda entra como concluída, no mês da Data de Entrega.',
   aberta: 'A demanda fica pausada para retomar ou concluir depois, e o tempo entra como uma sessão nessa data.',
 }
+
+// Data e tempo de um lançamento manual: as mesmas regras no Meu Cronômetro e no cartão do Quadro.
+export function errosDoTempoManual(data, segundos) {
+  const achados = {}
+  if (!data) achados.data = 'Informe a data.'
+  else if (data > hojeISO()) achados.data = 'A data não pode ser no futuro.'
+  if (segundos == null) achados.tempo = 'Use o formato HH:MM:SS, por exemplo 00:45:00.'
+  else if (segundos === 0) achados.tempo = 'O tempo precisa ser maior que zero.'
+  return achados
+}
+
+// A solicitação não pode vir depois do dia do trabalho.
+export function erroDaSolicitacao(dataSolicitacao, data) {
+  if (!dataSolicitacao) return 'Informe a data de solicitação.'
+  if (data && dataSolicitacao > data) return `A solicitação não pode ser depois de ${formatarData(data)}.`
+  return ''
+}
+
+export const CamposDoTempoManual = ({ rotuloDaData, data, aoMudarData, tempo, aoMudarTempo, erros }) => (
+  <div className="grade-duas grade-duas--formulario">
+    <CampoData rotulo={rotuloDaData} valor={data} aoMudar={aoMudarData} erro={erros.data} obrigatorio />
+    <label className="campo">
+      <span className="campo__rotulo">Tempo</span>
+      <input value={tempo} onChange={(e) => aoMudarTempo(e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erros.tempo)} />
+      <ErroCampo texto={erros.tempo} />
+    </label>
+  </div>
+)
 
 // Trabalho feito sem o cronômetro ligado: cria uma demanda nova já com o tempo ou soma o tempo em uma que já existe.
 export function JanelaTempoManual({ aberta, aoFechar, ...resto }) {
@@ -61,16 +89,12 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
   const segundos = lerTempo(tempo)
 
   function validar() {
-    const achados = {}
-    if (!data) achados.data = 'Informe a data.'
-    else if (data > hojeISO()) achados.data = 'A data não pode ser no futuro.'
-    if (segundos == null) achados.tempo = 'Use o formato HH:MM:SS, por exemplo 00:45:00.'
-    else if (segundos === 0) achados.tempo = 'O tempo precisa ser maior que zero.'
+    const achados = errosDoTempoManual(data, segundos)
     if (nova) {
       if (!campos.nome.trim()) achados.nome = 'Informe o nome da demanda.'
       if (!campos.tipo) achados.tipo = 'Escolha o tipo.'
-      if (!dataSolicitacao) achados.dataSolicitacao = 'Informe a data de solicitação.'
-      else if (data && dataSolicitacao > data) achados.dataSolicitacao = `A solicitação não pode ser depois de ${formatarData(data)}.`
+      const solicitacao = erroDaSolicitacao(dataSolicitacao, data)
+      if (solicitacao) achados.dataSolicitacao = solicitacao
     } else if (!demandaId) {
       achados.demanda = 'Escolha a demanda.'
     }
@@ -162,14 +186,7 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
           <ErroCampo texto={erros.demanda} />
         </label>
       )}
-      <div className="grade-duas grade-duas--formulario">
-        <CampoData rotulo={rotuloDaData} valor={data} aoMudar={setData} erro={erros.data} obrigatorio />
-        <label className="campo">
-          <span className="campo__rotulo">Tempo</span>
-          <input value={tempo} onChange={(e) => setTempo(e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erros.tempo)} />
-          <ErroCampo texto={erros.tempo} />
-        </label>
-      </div>
+      <CamposDoTempoManual rotuloDaData={rotuloDaData} data={data} aoMudarData={setData} tempo={tempo} aoMudarTempo={setTempo} erros={erros} />
       {nova && (
         <label className="opcao">
           <input type="checkbox" checked={concluida} onChange={(e) => setConcluida(e.target.checked)} />

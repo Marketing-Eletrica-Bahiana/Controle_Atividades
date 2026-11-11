@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Copy, ExternalLink, Pause, Play, Send, Trash2 } from 'lucide-react'
+import { ClockPlus, Copy, ExternalLink, Pause, Play, Send, Trash2 } from 'lucide-react'
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
@@ -37,7 +37,7 @@ export default function JanelaCartao({ cartao, ...resto }) {
 
 function Conteudo({
   cartao, colunas, membros, membro, pessoa, podeMexer, podeApagar, podeUsarCronometro, rodando, temDemanda,
-  nomeDaColuna, nomeDaPessoa, confirmar, aoCronometro, aoEntregar, aoFechar,
+  nomeDaColuna, nomeDaPessoa, confirmar, aoCronometro, aoTempoManual, aoEntregar, aoFechar,
 }) {
   const { avisar, executar } = useAvisos()
   const [dados, setDados] = useState({
@@ -190,6 +190,7 @@ function Conteudo({
         rodando={rodando}
         temDemanda={temDemanda}
         aoCronometro={() => aoCronometro(cartao)}
+        aoTempoManual={() => aoTempoManual(cartao)}
       />
       <Comentarios cartao={cartao} pessoa={pessoa} podeMexer={podeMexer} />
 
@@ -264,7 +265,7 @@ function CampoCaminho({ valor, aoMudar, somenteLeitura }) {
   )
 }
 
-function TempoDoCartao({ cartao, membro, podeUsarCronometro, rodando, temDemanda, aoCronometro }) {
+function TempoDoCartao({ cartao, membro, podeUsarCronometro, rodando, temDemanda, aoCronometro, aoTempoManual }) {
   const vinculos = cartao.vinculos ?? []
   const veTudo = veTodasAsAreas(membro.papel)
   const areas = vinculos.map((v) => v.area).filter((area) => veTudo || (membro.areas ?? []).includes(area))
@@ -294,11 +295,19 @@ function TempoDoCartao({ cartao, membro, podeUsarCronometro, rodando, temDemanda
         <p className="texto-suave texto-pequeno">Ninguém registrou tempo neste cartão ainda.</p>
       )}
       {podeUsarCronometro && (
-        <button type="button" className="botao botao--secundario" onClick={aoCronometro}>
-          {rodando ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-          {rodando ? 'Pausar o cronômetro' : temDemanda ? 'Retomar o cronômetro' : 'Iniciar o cronômetro'}
-        </button>
+        <div className="janela-cartao__botoes">
+          <button type="button" className="botao botao--secundario" onClick={aoCronometro}>
+            {rodando ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+            {rodando ? 'Pausar o cronômetro' : temDemanda ? 'Retomar o cronômetro' : 'Iniciar o cronômetro'}
+          </button>
+          {/* Como no Meu Cronômetro, não soma tempo manual na demanda que está rodando. */}
+          <button type="button" className="botao botao--secundario" onClick={aoTempoManual} disabled={rodando}>
+            <ClockPlus aria-hidden="true" />
+            Adicionar tempo manual
+          </button>
+        </div>
       )}
+      {podeUsarCronometro && rodando && <p className="texto-suave texto-pequeno">Para adicionar tempo manual, pause o cronômetro antes.</p>}
     </section>
   )
 }

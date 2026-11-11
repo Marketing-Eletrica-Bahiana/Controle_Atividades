@@ -362,6 +362,12 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
   ser removida, e coluna com cartão precisa ser esvaziada antes.
 - Iniciar pelo cartão: a primeira vez de cada pessoa abre uma janela com área, tipo e demais campos, e
   cria a demanda dela. Depois o botão só retoma ou pausa. Vale a regra de um cronômetro por pessoa.
+- "Adicionar tempo manual" no cartão (pedido da pessoa em 11/11/2026), ao lado do botão do cronômetro, em
+  `src/telas/quadro/JanelaTempoDoCartao.jsx`. Quem já tem demanda no cartão soma nela, como "Demanda existente" no Meu
+  Cronômetro. Na primeira vez, a janela pede área, tipo e demais campos e cria a demanda já com o tempo, sem ligar o
+  cronômetro: `criarDemandaManual` com `cartaoId` grava o vínculo no cartão no mesmo lote. "Essa demanda já foi concluída"
+  vem marcada só com o cartão em Entregues. Com o cronômetro da pessoa rodando nesse cartão, o botão fica desativado,
+  como no Meu Cronômetro. Data e tempo seguem as mesmas regras do lançamento manual (`errosDoTempoManual`).
 - Cartão em Entregues não conclui demanda sozinho, nem demanda concluída move cartão (ainda pode faltar
   aprovação). Ao entregar, quem moveu é perguntado se quer concluir a própria demanda.
 - Na demanda nova, no cronômetro ou no lançamento manual, "Criar cartão no Quadro" é escolha da pessoa. O padrão

@@ -2742,6 +2742,12 @@ button.abas__item.ativo {
   border-top: 1px solid var(--medio-20);
 }
 
+.janela-cartao__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .janela-cartao__tempos,
 .janela-cartao__comentarios {
   display: flex;

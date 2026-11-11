@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, setDoc, Timestamp, where, writeBatch,
+  arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, Timestamp, where, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
@@ -215,13 +215,14 @@ const registroTempoManual = (quem, antesSeg, depoisSeg, segundos, data) =>
   registro(quem, 'tempo_manual', 'tempoGastoSeg', formatarTempo(antesSeg), `${formatarTempo(depoisSeg)} (+${formatarTempo(segundos)} em ${formatarData(data)})`)
 
 // Demanda feita fora do cronômetro: já nasce com o tempo, numa sessão manual na data informada.
-// Não mexe no cronômetro que estiver rodando.
+// Não mexe no cronômetro que estiver rodando. Lançada pelo cartão (dados.cartaoId), entra nos vínculos dele na mesma gravação.
 export async function criarDemandaManual(dados, { data, segundos, concluida }, pessoa) {
   const situacao = situacaoDaDemandaManual({ dataSolicitacao: dados.dataSolicitacao, data, concluida })
   const numero = await numeroNoMes(dados.area, pessoa.email, situacao.mes)
   const novos = camposDaNovaDemanda(dados, pessoa)
   const ref = doc(colecao())
-  await setDoc(ref, {
+  const lote = writeBatch(db)
+  lote.set(ref, {
     ...novos,
     ...situacao,
     numero,
@@ -235,6 +236,13 @@ export async function criarDemandaManual(dados, { data, segundos, concluida }, p
       ...(concluida ? [registro(pessoa.email, 'conclusao', 'status', '', 'Concluída')] : []),
     ],
   })
+  if (dados.cartaoId) {
+    lote.update(doc(db, 'cartoes', dados.cartaoId), {
+      vinculos: arrayUnion({ demandaId: ref.id, area: dados.area, email: pessoa.email, nome: pessoa.nome }),
+      atualizadoEm: serverTimestamp(),
+    })
+  }
+  await lote.commit()
   esquecerHistorico(dados.area)
   return ref.id
 }
