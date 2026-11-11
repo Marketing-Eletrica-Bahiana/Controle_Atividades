@@ -148,12 +148,12 @@ export function exclusaoComDemandas(quantosCartoes, demandas) {
   const titulo = um ? 'Excluir o cartão e as demandas?' : `Excluir ${quantosCartoes} cartões e as demandas?`
   const saem = um ? 'O cartão sai' : `Os ${quantosCartoes} cartões saem`
   const aEles = um ? 'a ele' : 'a eles'
-  if (!demandas.length) return { titulo, texto: `${saem} do Quadro e do calendário de Postagens. Nenhuma demanda está ligada ${aEles}.` }
+  if (!demandas.length) return { titulo, texto: `${saem} do Quadro e do Calendário. Nenhuma demanda está ligada ${aEles}.` }
   const pessoas = [...new Set(demandas.map((d) => d.responsavelNome).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
   const segundos = demandas.reduce((soma, d) => soma + (d.tempoGastoSeg ?? 0), 0)
   const ligadas = demandas.length === 1 ? `a demanda ligada ${aEles} é apagada` : `as ${demandas.length} demandas ligadas ${aEles} são apagadas`
   return {
     titulo,
-    texto: `${saem} do Quadro e do calendário de Postagens, e ${ligadas} de vez, com ${formatarTempo(segundos)} de tempo registrado (${pessoas.join(', ')}). As outras demandas do mês são renumeradas. Não dá para desfazer.`,
+    texto: `${saem} do Quadro e do Calendário, e ${ligadas} de vez, com ${formatarTempo(segundos)} de tempo registrado (${pessoas.join(', ')}). As outras demandas do mês são renumeradas. Não dá para desfazer.`,
   }
 }

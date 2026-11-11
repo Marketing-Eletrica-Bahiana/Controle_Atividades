@@ -93,7 +93,7 @@ export default function Postagens() {
       <header className="pagina__cabecalho">
         <h1 className="titulo-pagina">
           <CalendarCheck aria-hidden="true" />
-          Postagens
+          Calendário
         </h1>
         <div className="linha-circuito" aria-hidden="true" />
       </header>

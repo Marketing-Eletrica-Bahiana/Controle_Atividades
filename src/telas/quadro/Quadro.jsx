@@ -55,7 +55,7 @@ export default function Quadro() {
     const um = lista.length === 1
     const sim = await acoes.confirmar({
       titulo: um ? 'Excluir o cartão do Quadro?' : `Excluir ${lista.length} cartões do Quadro?`,
-      texto: `${um ? 'O cartão sai' : 'Os cartões saem'} do Quadro e do calendário de Postagens. As demandas ligadas continuam em Demandas, com o tempo registrado.`,
+      texto: `${um ? 'O cartão sai' : 'Os cartões saem'} do Quadro e do Calendário. As demandas ligadas continuam em Demandas, com o tempo registrado.`,
       botao: 'Excluir do Quadro',
       perigo: true,
     })

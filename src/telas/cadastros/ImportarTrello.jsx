@@ -114,9 +114,9 @@ export default function ImportarTrello() {
             <SquareKanban aria-hidden="true" />
             Ver o Quadro
           </NavLink>
-          <NavLink to="/postagens" className="botao botao--secundario">
+          <NavLink to="/calendario" className="botao botao--secundario">
             <CalendarCheck aria-hidden="true" />
-            Ver as Postagens
+            Ver o Calendário
           </NavLink>
           <button type="button" className="botao botao--secundario" onClick={recomecar}>
             Importar outro arquivo

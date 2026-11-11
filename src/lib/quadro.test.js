@@ -182,7 +182,7 @@ describe('excluir cartões com as demandas', () => {
   it('um cartão sem demanda', () => {
     expect(exclusaoComDemandas(1, [])).toEqual({
       titulo: 'Excluir o cartão e as demandas?',
-      texto: 'O cartão sai do Quadro e do calendário de Postagens. Nenhuma demanda está ligada a ele.',
+      texto: 'O cartão sai do Quadro e do Calendário. Nenhuma demanda está ligada a ele.',
     })
   })
 
@@ -190,7 +190,7 @@ describe('excluir cartões com as demandas', () => {
     const { titulo, texto } = exclusaoComDemandas(3, [demanda('Reels', 'Taís', 3600, 'pausada'), demanda('Card', 'Ivie', 1800), demanda('Story', 'Ivie', 600)])
     expect(titulo).toBe('Excluir 3 cartões e as demandas?')
     expect(texto).toBe(
-      'Os 3 cartões saem do Quadro e do calendário de Postagens, e as 3 demandas ligadas a eles são apagadas de vez, com 01:40:00 de tempo registrado (Ivie, Taís). As outras demandas do mês são renumeradas. Não dá para desfazer.',
+      'Os 3 cartões saem do Quadro e do Calendário, e as 3 demandas ligadas a eles são apagadas de vez, com 01:40:00 de tempo registrado (Ivie, Taís). As outras demandas do mês são renumeradas. Não dá para desfazer.',
     )
     expect(exclusaoComDemandas(1, [demanda('Card', 'Ivie', 7140)]).texto).toContain('e a demanda ligada a ele é apagada de vez, com 01:59:00')
   })

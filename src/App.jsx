@@ -13,7 +13,7 @@ import SemAcesso from './telas/SemAcesso.jsx'
 const TELAS = {
   '/cronometro': lazy(() => import('./telas/cronometro/MeuCronometro.jsx')),
   '/quadro': lazy(() => import('./telas/quadro/Quadro.jsx')),
-  '/postagens': lazy(() => import('./telas/postagens/Postagens.jsx')),
+  '/calendario': lazy(() => import('./telas/postagens/Postagens.jsx')),
   '/demandas': lazy(() => import('./telas/demandas/Demandas.jsx')),
   '/semana': lazy(() => import('./telas/semana/Semana.jsx')),
   '/painel': lazy(() => import('./telas/painel/Painel.jsx')),
@@ -45,6 +45,8 @@ function Rotas() {
             />
           )
         })}
+        {/* A tela Postagens virou Calendário em 11/11/2026: o endereço antigo, salvo nos favoritos, continua abrindo. */}
+        <Route path="/postagens/*" element={<Navigate to="/calendario" replace />} />
         {/* Qualquer outro endereço, inclusive a entrada, leva à tela inicial do papel (diretoria: Painel). */}
         <Route path="*" element={<Navigate to={PAPEIS[membro.papel].telaInicial} replace />} />
       </Routes>

@@ -12,7 +12,7 @@ const TODOS = Object.keys(PAPEIS)
 export const TELAS = [
   { caminho: '/cronometro', rotulo: 'Meu Cronômetro', Icone: Timer, papeis: ['admin', 'equipe'] },
   { caminho: '/quadro', rotulo: 'Quadro', Icone: SquareKanban, papeis: TODOS },
-  { caminho: '/postagens', rotulo: 'Postagens', Icone: CalendarCheck, papeis: TODOS },
+  { caminho: '/calendario', rotulo: 'Calendário', Icone: CalendarCheck, papeis: TODOS },
   { caminho: '/demandas', rotulo: 'Demandas', Icone: ClipboardList, papeis: TODOS },
   { caminho: '/semana', rotulo: 'Semana', Icone: CalendarDays, papeis: TODOS },
   { caminho: '/painel', rotulo: 'Painel', Icone: ChartColumn, papeis: TODOS },

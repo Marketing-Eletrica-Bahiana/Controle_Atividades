@@ -175,7 +175,7 @@ export function CampoDaPostagem({ campos }) {
       {(ehPost || ehInterna || ehEnvio) && (
         <>
           <CamposDaPostagem valor={campos.postagem} aoMudar={campos.setPostagem} redeSocial={ehPost} interna={ehInterna} envio={ehEnvio} />
-          {(ehPost || ehInterna) && <p className="campo__ajuda">Com a data, a postagem já entra no calendário. Sem data, ela fica na lista Sem data, na tela Postagens.</p>}
+          {(ehPost || ehInterna) && <p className="campo__ajuda">Com a data, a postagem já entra no calendário. Sem data, ela fica na lista Sem data, na tela Calendário.</p>}
         </>
       )}
     </>

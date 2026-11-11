@@ -2855,9 +2855,14 @@ button.abas__item.ativo {
   gap: 16px;
 }
 
+/* Altura fixa de 1600px, por pedido da pessoa em 11/11/2026: as semanas dividem o espaço por igual,
+   seja qual for o número de postagens. Dia com mais postagens do que cabe rola por dentro. */
 .calendario-postagens {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(0, 1fr);
+  height: 1600px;
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--medio-20);
@@ -2878,7 +2883,8 @@ button.abas__item.ativo {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  min-height: 136px;
+  min-height: 0;
+  overflow: hidden;
   padding: 8px;
   background: var(--branco);
   transition: box-shadow var(--transicao);
@@ -2943,6 +2949,19 @@ button.abas__item.ativo {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.dia-postagem__lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 1px;
+  scrollbar-color: var(--medio-20) transparent;
+  scrollbar-width: thin;
+}
+
+.dia-postagem__lista > .postagem {
+  flex-shrink: 0;
 }
 
 .postagens-sem-data {
@@ -3102,6 +3121,8 @@ button.abas__item.ativo {
   /* No celular, o calendário vira uma agenda só com os dias que têm postagem. */
   .calendario-postagens {
     grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    height: auto;
     border: 0;
     background: transparent;
     gap: 8px;
@@ -3114,9 +3135,13 @@ button.abas__item.ativo {
   }
 
   .dia-postagem {
-    min-height: 0;
+    overflow: visible;
     border: 1px solid var(--medio-20);
     border-radius: var(--raio);
+  }
+
+  .dia-postagem__lista {
+    overflow: visible;
   }
 
   .dia-postagem--sem-itens.dia-postagem--hoje {

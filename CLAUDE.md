@@ -45,8 +45,8 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
    importar de volta.
 
 8. (Feita) Tela Quadro (`#/quadro`): quadro no estilo Trello ligado ao cronômetro (ver "Quadro de demandas").
-9. (Feita) Tela Postagens (`#/postagens`): calendário de postagens externas, em que a demanda de
-   postagem entra sozinha, na data da postagem (ver "Calendário de postagens").
+9. (Feita) Tela Calendário (`#/calendario`, chamada Postagens até 11/11/2026): calendário de postagens externas,
+   em que a demanda de postagem entra sozinha, na data da postagem (ver "Calendário de postagens").
 10. (Feita) Importação do Trello por arquivo JSON, em Administração, aba Trello (ver "Importação do Trello").
 
 Em 04/11/2026 a pessoa aprovou as fases 8 e 9 uma a uma e autorizou publicar a fase 10, a última planejada.
@@ -388,6 +388,13 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
 ## Calendário de postagens (Fase 9)
 
 Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/componentes/CamposDaPostagem.jsx`.
+
+- Em 11/11/2026, por pedido da pessoa, a tela passou a se chamar Calendário, no menu e no título, e o endereço virou
+  `#/calendario`. O antigo `#/postagens` leva para o novo (`App.jsx`), por causa dos favoritos. Dentro da tela, os termos
+  da postagem continuam ("Nova postagem", "Postagens no mês").
+- No computador, o calendário tem altura fixa de 1600px, também por pedido dela, mesmo passando da tela de 1920x1080: as
+  semanas dividem o espaço por igual, seja qual for o número de postagens, e o dia lotado rola por dentro. No celular, a
+  agenda continua com a altura natural.
 
 - A postagem é um campo do cartão, não uma coleção à parte: o calendário e o Quadro leem o mesmo dado.
 - Postagens externas em Instagram, LinkedIn, LinkedIn do CAE, YouTube e YouTube Shorts. A data de postagem é
