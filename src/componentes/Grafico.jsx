@@ -41,12 +41,25 @@ export function coresDaPaleta(quantidade, escuro = false) {
 const segundosEmHoras = (s) => Math.round((s / 3600) * 100) / 100
 const horasEmTexto = (h) => formatarTempo(Math.round(h * 3600))
 
-// Configuração de barras. "tempo" faz eixo e dicas aparecerem em HH:MM:SS.
-export function configBarras({ rotulos, valores, tempo = false, horizontal = false, escuro = false, cores }) {
+// Configuração de barras. "tempo" faz eixo e dicas aparecerem em HH:MM:SS. Rótulos maiores que "limiteDoRotulo" são cortados;
+// em gráfico estreito (celular), o limite cai para 20 e a letra para 12: o Chart.js dá só metade da largura aos nomes e
+// corta o começo do que não cabe.
+export function configBarras({ rotulos, valores, tempo = false, horizontal = false, escuro = false, cores, limiteDoRotulo = 28 }) {
   const texto = escuro ? '#ffffff' : '#000000'
   const grade = escuro ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 23, 128, 0.1)'
   const eixoDeValor = { beginAtZero: true, ticks: { color: texto, callback: (v) => (tempo ? horasEmTexto(v) : v), precision: tempo ? undefined : 0 }, grid: { color: grade } }
-  const eixoDeRotulo = { ticks: { color: texto, autoSkip: false, callback: function (v) { const r = this.getLabelForValue(v); return r.length > 28 ? `${r.slice(0, 27)}...` : r } }, grid: { display: false } }
+  const cortar = (r, limite) => (r.length > limite ? `${r.slice(0, limite - 1)}...` : r)
+  const eixoDeRotulo = {
+    ticks: {
+      color: texto,
+      autoSkip: false,
+      font: (contexto) => (contexto.chart.width < 600 ? { size: 12 } : undefined),
+      callback: function (v) {
+        return cortar(this.getLabelForValue(v), this.chart.width < 600 ? Math.min(limiteDoRotulo, 20) : limiteDoRotulo)
+      },
+    },
+    grid: { display: false },
+  }
   return {
     type: 'bar',
     data: {
@@ -105,7 +118,8 @@ export function configEvolucao({ rotulos, segundos, demandas, escuro = false }) 
   }
 }
 
-export default function Grafico({ titulo, configuracao, altura = 320, vazio = false }) {
+// "largo" ocupa a linha inteira da grade de gráficos.
+export default function Grafico({ titulo, configuracao, altura = 320, vazio = false, largo = false }) {
   const tela = useRef(null)
   useEffect(() => {
     if (vazio || !tela.current) return undefined
@@ -114,7 +128,7 @@ export default function Grafico({ titulo, configuracao, altura = 320, vazio = fa
   }, [configuracao, vazio])
 
   return (
-    <figure className="grafico">
+    <figure className={`grafico ${largo ? 'grafico--largo' : ''}`}>
       <figcaption>{titulo}</figcaption>
       {vazio ? (
         <p className="grafico__vazio">Sem dados no período.</p>

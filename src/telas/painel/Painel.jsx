@@ -16,6 +16,9 @@ import { formatarTempo } from '../../lib/tempo.js'
 
 const INICIO_DO_HISTORICO = '2026-07-01'
 
+// Barras deitadas: 30px por barra, e nunca menos que os 380px de antes.
+const alturaDasBarras = (quantidade) => Math.max(380, quantidade * 30 + 60)
+
 const ultimoDiaDoMes = (mes) => {
   const [ano, numero] = mes.split('-').map(Number)
   return `${mes}-${String(new Date(Date.UTC(ano, numero, 0)).getUTCDate()).padStart(2, '0')}`
@@ -187,7 +190,8 @@ export default function Painel() {
 function Graficos({ itens, evolucao, nomeDaArea, escuro }) {
   const configs = useMemo(() => {
     const porArea = horasPor(itens, (d) => nomeDaArea(d.area))
-    const porTipo = principais(quantidadePor(itens, (d) => d.tipo), 10, 'quantidade')
+    // Todos os tipos, sem juntar em "Outros" (pedido da pessoa em 17/11/2026): o gráfico cresce com a lista.
+    const porTipo = quantidadePor(itens, (d) => d.tipo)
     const medio = tempoMedioPorTipo(itens).slice(0, 10)
     const porPessoa = horasPor(itens, (d) => d.responsavelNome)
     const porPublico = quantidadePor(itens, (d) => d.publico)
@@ -203,7 +207,11 @@ function Graficos({ itens, evolucao, nomeDaArea, escuro }) {
         config: configBarras({ rotulos: horasPorSolicitante.map((x) => x.rotulo), valores: horasPorSolicitante.map((x) => x.segundos), tempo: true, horizontal: true, escuro }),
       },
       porArea: { vazio: !porArea.length, config: configBarras({ rotulos: porArea.map((x) => x.rotulo), valores: porArea.map((x) => x.segundos), tempo: true, escuro }) },
-      porTipo: { vazio: !porTipo.length, config: configBarras({ rotulos: porTipo.map((x) => x.rotulo), valores: porTipo.map((x) => x.quantidade), horizontal: true, escuro }) },
+      porTipo: {
+        vazio: !porTipo.length,
+        altura: alturaDasBarras(porTipo.length),
+        config: configBarras({ rotulos: porTipo.map((x) => x.rotulo), valores: porTipo.map((x) => x.quantidade), horizontal: true, escuro, limiteDoRotulo: 70 }),
+      },
       medio: { vazio: !medio.length, config: configBarras({ rotulos: medio.map((x) => x.rotulo), valores: medio.map((x) => x.segundos), tempo: true, horizontal: true, escuro }) },
       porPessoa: { vazio: !porPessoa.length, config: configBarras({ rotulos: porPessoa.map((x) => x.rotulo), valores: porPessoa.map((x) => x.segundos), tempo: true, escuro }) },
       porPublico: { vazio: !porPublico.length, config: configRosca({ rotulos: porPublico.map((x) => x.rotulo), valores: porPublico.map((x) => x.quantidade), escuro }) },
@@ -218,12 +226,13 @@ function Graficos({ itens, evolucao, nomeDaArea, escuro }) {
     <div className="graficos">
       <Grafico titulo="Horas por área" configuracao={configs.porArea.config} vazio={configs.porArea.vazio} />
       <Grafico titulo="Horas por pessoa" configuracao={configs.porPessoa.config} vazio={configs.porPessoa.vazio} />
-      <Grafico titulo="Demandas por tipo" configuracao={configs.porTipo.config} vazio={configs.porTipo.vazio} altura={380} />
+      <Grafico titulo="Demandas por tipo" configuracao={configs.porTipo.config} vazio={configs.porTipo.vazio} altura={configs.porTipo.altura} largo />
       <Grafico titulo="Tempo médio por tipo" configuracao={configs.medio.config} vazio={configs.medio.vazio} altura={380} />
       <Grafico titulo="Demandas por solicitante" configuracao={configs.demandasPorSolicitante.config} vazio={configs.demandasPorSolicitante.vazio} />
       <Grafico titulo="Horas por solicitante" configuracao={configs.horasPorSolicitante.config} vazio={configs.horasPorSolicitante.vazio} />
       <Grafico titulo="Distribuição por público" configuracao={configs.porPublico.config} vazio={configs.porPublico.vazio} />
-      <Grafico titulo="Evolução mês a mês desde julho de 2026" configuracao={configs.evolucao.config} vazio={configs.evolucao.vazio} />
+      {/* Com "Demandas por tipo" na linha inteira, a evolução ficaria sozinha em meia linha: ocupa a linha toda também. */}
+      <Grafico titulo="Evolução mês a mês desde julho de 2026" configuracao={configs.evolucao.config} vazio={configs.evolucao.vazio} largo />
     </div>
   )
 }

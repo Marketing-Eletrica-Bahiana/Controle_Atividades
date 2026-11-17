@@ -2288,6 +2288,10 @@ button.abas__item.ativo {
   color: var(--marinho);
 }
 
+.grafico--largo {
+  grid-column: 1 / -1;
+}
+
 .grafico__area {
   position: relative;
 }

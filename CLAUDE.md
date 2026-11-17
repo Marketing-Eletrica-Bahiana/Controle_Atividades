@@ -40,7 +40,11 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
 6. (Feita) Tela Painel (`#/painel`): área, período (semana, mês, intervalo) e pessoa; indicadores;
    gráficos Chart.js (`src/componentes/Grafico.jsx`) só com as cores da paleta na ordem pedida
    (no fundo escuro do modo apresentação o branco entra no lugar do marinho); evolução mês a mês
-   desde julho de 2026; modo apresentação em tela cheia com o gradiente premium.
+   desde julho de 2026; modo apresentação em tela cheia com o gradiente premium. Desde 17/11/2026, por pedido da pessoa,
+   "Demandas por tipo" mostra todos os tipos, sem juntar em "Outros": ocupa a linha inteira (`largo`), a altura cresce
+   30px por tipo (mínimo 380px) e os nomes aparecem inteiros até 70 letras. A Evolução também ocupa a linha inteira, para
+   não sobrar sozinha em meia linha. No celular, os nomes das barras deitadas param em 20 letras, com letra 12, porque o
+   Chart.js dá só metade da largura aos nomes e corta o começo do que não cabe.
 7. (Feita) Revisão geral: paleta, fontes, datas e tempos, permissões x regras, celular, exportar e
    importar de volta.
 
@@ -530,8 +534,14 @@ Editáveis pelo admin em `config/listas`:
   recente e as datas anteriores que não são solicitação nem entrega vão para `datasAjuste`, sem
   repetir. Nunca criar linha duplicada.
 - Ajuste exibido como "DD e DD/MM" quando as datas são do mesmo mês.
-- Ninguém vê o cronômetro de outra pessoa. Não existe painel "Equipe agora" nem botão de almoço. O
-  tipo "Horário do Almoço" pode existir na tabela como qualquer outro.
+- Ninguém vê o cronômetro de outra pessoa. Não existe painel "Equipe agora" nem botão de almoço. Em
+  16/11/2026, por pedido da pessoa, o tipo "Horário do Almoço" saiu de todas as áreas (na Designs, junto com a
+  palavra-chave "almoço"); as demandas antigas desse tipo continuam como estavam.
+- Toda área precisa de tipos cadastrados: sem eles, o campo Tipo fica vazio e ninguém da área consegue iniciar nem
+  lançar tempo. Em 16/11/2026 a Marketing e a Gerência estavam vazias e a Gleidiane ficou travada; nas duas foram
+  copiados da Designs, com os mesmos tempos e públicos, Postagens em redes sociais (com a grafia corrigida), Conteúdo
+  para Redes Sociais, Cobertura de Eventos, Avisos e Comunicados, Comunicação de Visitas Técnicas, Registro de
+  Campanhas, Ajuda Interna, Demandas Diversas e Reunião de Setor. As duas ainda não têm palavras-chave.
 - Demandas concluídas podem ser editadas e reabertas. Equipe edita e reabre só as próprias; admin,
   de todos.
 - Toda alteração (edição de campo, edição de tempo, tempo manual, reabertura, junção) entra no
