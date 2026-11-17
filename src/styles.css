@@ -2199,6 +2199,24 @@ button.abas__item.ativo {
   transform: translateY(-4px);
 }
 
+.indicador--clicavel {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.indicador--clicavel:focus-visible {
+  outline: 3px solid var(--brilhante);
+  outline-offset: 3px;
+}
+
+/* O indicador aberto ganha um contorno branco por dentro e fica levantado. */
+.indicador--ativo {
+  box-shadow: inset 0 0 0 3px var(--branco), var(--sombra-cartao);
+  transform: translateY(-4px);
+}
+
 .indicador::after {
   content: '';
   position: absolute;

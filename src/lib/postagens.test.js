@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   agruparPorDia, camposDaPostagem, diasDoCalendario, ehInterno, ehPostagem, entraNoCalendario, etiquetasDasRedes, formatoDoNome, FORMATOS, FORMATOS_INTERNOS, GRUPOS_INTERNOS, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensDoMes,
-  postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, rotuloDaData, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS, tiposDaPostagem,
+  postagensDaSituacao, postagensIguais, postagensSemData, publicoDePostagem, publicoInterno, REDES, resumoDaPostagem, resumoDoMes, rotuloDaData, situacaoDaPostagem, SO_EXTERNAS, SO_INTERNAS, tiposDaPostagem,
 } from './postagens.js'
 
 const HOJE = '2026-11-04'
@@ -208,6 +208,23 @@ describe('situação', () => {
   it('conta por situação', () => {
     const lista = [cartao('2026-11-10'), cartao('2026-11-03'), cartao('2026-11-01', { entregue: true })]
     expect(resumoDoMes(lista, HOJE)).toEqual({ total: 3, producao: 1, programada: 0, postada: 1, atrasada: 1 })
+  })
+
+  it('lista as postagens de cada situação pela data, batendo com a contagem', () => {
+    const lista = [
+      { ...cartao('2026-11-10'), titulo: 'B' },
+      { ...cartao('2026-11-03'), titulo: 'Atrasada' },
+      { ...cartao('2026-11-01', { entregue: true }), titulo: 'Postada' },
+      { ...cartao('2026-11-08'), titulo: 'A' },
+      { ...cartao('2026-11-08'), titulo: 'C' },
+    ]
+    const titulos = (situacao) => postagensDaSituacao(lista, situacao, HOJE).map((c) => c.titulo)
+    expect(titulos('producao')).toEqual(['A', 'C', 'B'])
+    expect(titulos('atrasada')).toEqual(['Atrasada'])
+    expect(titulos('programada')).toEqual([])
+    expect(titulos('total')).toEqual(['Postada', 'Atrasada', 'A', 'C', 'B'])
+    const resumo = resumoDoMes(lista, HOJE)
+    for (const situacao of ['total', 'producao', 'programada', 'postada', 'atrasada']) expect(titulos(situacao)).toHaveLength(resumo[situacao])
   })
 })
 

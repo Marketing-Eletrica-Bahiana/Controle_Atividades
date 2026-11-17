@@ -445,6 +445,11 @@ Código em `src/lib/postagens.js` (regras puras), `src/telas/postagens/` e `src/
 - A situação não é preenchida, vem da coluna e da data: em produção; atrasada (data passada e sem estar
   pronta); programada (em Legendado - Programado ou Entregues, com data futura); postada (nessas colunas,
   com data de hoje ou passada). Por isso, depende do ID `legendado-programado` da coluna.
+- Os indicadores do Calendário (Postagens no mês, Em produção, Programadas, Postadas, Atrasadas) são clicáveis, por pedido
+  da pessoa em 17/11/2026: abrem, entre os indicadores e o calendário, a lista das postagens daquela situação, pela data,
+  com o dia escrito e o cartão a um clique. Clicar de novo ou no X fecha. A lista segue o mês e o filtro de Rede, como os
+  números (`postagensDaSituacao`, com as mesmas chaves de `resumoDoMes`). O componente `Indicadores` aceita `aoClicar` e
+  `ativo` em cada item.
 - O site só registra e organiza: não publica nem confere nada no Instagram ou no LinkedIn.
 
 ## Importação do Trello (Fase 10)

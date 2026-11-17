@@ -184,3 +184,14 @@ export function resumoDoMes(cartoes, hoje) {
   for (const cartao of cartoes) resumo[situacaoDaPostagem(cartao, hoje)] += 1
   return resumo
 }
+
+// As postagens de uma situação ("total" para todas), pela data e depois pelo título: a lista que abre ao clicar num
+// indicador do Calendário (pedido em 17/11/2026). Usa as mesmas chaves de resumoDoMes, então lista e número batem.
+export function postagensDaSituacao(cartoes, situacao, hoje) {
+  return cartoes
+    .filter((cartao) => situacao === 'total' || situacaoDaPostagem(cartao, hoje) === situacao)
+    .sort(
+      (a, b) =>
+        String(a.postagem?.data ?? '').localeCompare(String(b.postagem?.data ?? '')) || String(a.titulo ?? '').localeCompare(String(b.titulo ?? ''), 'pt-BR'),
+    )
+}

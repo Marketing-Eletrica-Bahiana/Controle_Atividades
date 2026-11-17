@@ -10,7 +10,8 @@ import { moverPostagem, tirarDoCalendario, useCartoesDoCalendario } from '../../
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import {
-  agruparPorDia, diasDoCalendario, GRUPOS_INTERNOS, postagensDoMes, postagensSemData, REDES, resumoDoMes, situacaoDaPostagem, SITUACOES_POSTAGEM, SO_EXTERNAS, SO_INTERNAS,
+  agruparPorDia, diasDoCalendario, GRUPOS_INTERNOS, postagensDaSituacao, postagensDoMes, postagensSemData, REDES, resumoDoMes, situacaoDaPostagem,
+  SITUACOES_POSTAGEM, SO_EXTERNAS, SO_INTERNAS,
 } from '../../lib/postagens.js'
 import { nomeDoDia } from '../../lib/semana.js'
 import { useAcoesDoCartao } from '../quadro/useAcoesDoCartao.jsx'
@@ -18,6 +19,15 @@ import JanelaNovaPostagem from './JanelaNovaPostagem.jsx'
 
 const SEM_CARTOES = []
 const DIAS_DA_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+// Indicadores do mês. Cada um abre a lista das postagens daquela situação (as chaves são as de resumoDoMes).
+const INDICADORES = [
+  { chave: 'total', rotulo: 'Postagens no mês', vazio: 'Nenhuma postagem neste mês.' },
+  { chave: 'producao', rotulo: 'Em produção', vazio: 'Nenhuma postagem em produção neste mês.' },
+  { chave: 'programada', rotulo: 'Programadas', vazio: 'Nenhuma postagem programada neste mês.' },
+  { chave: 'postada', rotulo: 'Postadas', vazio: 'Nenhuma postagem postada neste mês ainda.' },
+  { chave: 'atrasada', rotulo: 'Atrasadas', vazio: 'Nenhuma postagem atrasada. Mandou bem!' },
+]
 
 export default function Postagens() {
   const { executar } = useAvisos()
@@ -31,6 +41,7 @@ export default function Postagens() {
   const [novaEm, setNovaEm] = useState(undefined)
   const [arrastandoId, setArrastandoId] = useState(null)
   const [alvoDia, setAlvoDia] = useState(null)
+  const [situacaoAberta, setSituacaoAberta] = useState('')
 
   const hoje = hojeISO()
   const doMes = useMemo(() => postagensDoMes(cartoes, mes, rede), [cartoes, mes, rede])
@@ -38,6 +49,8 @@ export default function Postagens() {
   const semData = useMemo(() => postagensSemData(cartoes), [cartoes])
   const dias = useMemo(() => diasDoCalendario(mes), [mes])
   const resumo = resumoDoMes(doMes, hoje)
+  const aberto = INDICADORES.find((i) => i.chave === situacaoAberta)
+  const daSituacao = useMemo(() => (situacaoAberta ? postagensDaSituacao(doMes, situacaoAberta, hoje) : []), [doMes, situacaoAberta, hoje])
 
   function soltarNoDia(dia) {
     const cartao = cartoes.find((c) => c.id === arrastandoId)
@@ -75,11 +88,12 @@ export default function Postagens() {
         }
       : {}
 
-  const postagemNaTela = (cartao) => (
+  const postagemNaTela = (cartao, comData = false) => (
     <PostagemDoCalendario
       key={cartao.id}
       cartao={cartao}
       hoje={hoje}
+      comData={comData}
       nomeDaPessoa={acoes.nomeDaPessoa}
       arrastando={arrastandoId === cartao.id}
       arraste={arraste(cartao)}
@@ -125,14 +139,31 @@ export default function Postagens() {
       ) : (
         <>
           <Indicadores
-            itens={[
-              { rotulo: 'Postagens no mês', valor: resumo.total },
-              { rotulo: 'Em produção', valor: resumo.producao },
-              { rotulo: 'Programadas', valor: resumo.programada },
-              { rotulo: 'Postadas', valor: resumo.postada },
-              { rotulo: 'Atrasadas', valor: resumo.atrasada },
-            ]}
+            itens={INDICADORES.map(({ chave, rotulo }) => ({
+              rotulo,
+              valor: resumo[chave],
+              ativo: situacaoAberta === chave,
+              aoClicar: () => setSituacaoAberta((atual) => (atual === chave ? '' : chave)),
+            }))}
           />
+
+          {aberto && (
+            <section className="bloco" aria-live="polite">
+              <div className="bloco__cabecalho">
+                <h2 className="bloco__titulo">
+                  {aberto.rotulo} · <span className="numero">{daSituacao.length}</span>
+                </h2>
+                <button type="button" className="botao-icone" aria-label="Fechar a lista" title="Fechar a lista" onClick={() => setSituacaoAberta('')}>
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+              {daSituacao.length ? (
+                <ol className="postagens-sem-data">{daSituacao.map((cartao) => postagemNaTela(cartao, true))}</ol>
+              ) : (
+                <p className="texto-suave texto-pequeno">{aberto.vazio}</p>
+              )}
+            </section>
+          )}
 
           <div className="calendario-postagens" aria-label="Calendário de postagens">
             {DIAS_DA_SEMANA.map((nome) => (
@@ -174,7 +205,7 @@ export default function Postagens() {
                       </button>
                     )}
                   </div>
-                  {lista.length > 0 && <ol className="dia-postagem__lista">{lista.map(postagemNaTela)}</ol>}
+                  {lista.length > 0 && <ol className="dia-postagem__lista">{lista.map((cartao) => postagemNaTela(cartao))}</ol>}
                 </div>
               )
             })}
@@ -195,7 +226,7 @@ export default function Postagens() {
                 <p className="texto-suave texto-pequeno">
                   Postagens em andamento que ainda não têm dia. {podeMexer && 'Arraste para o calendário ou abra para informar a data.'}
                 </p>
-                <ol className="postagens-sem-data">{semData.map(postagemNaTela)}</ol>
+                <ol className="postagens-sem-data">{semData.map((cartao) => postagemNaTela(cartao))}</ol>
               </>
             ) : (
               <p className="texto-suave texto-pequeno">Toda postagem em andamento já tem data. Mandou bem!</p>
@@ -216,7 +247,8 @@ export default function Postagens() {
   )
 }
 
-function PostagemDoCalendario({ cartao, hoje, nomeDaPessoa, arrastando, arraste, aoAbrir, aoTirar }) {
+// "comData" mostra o dia da postagem: no calendário o dia já está na grade, na lista de uma situação não.
+function PostagemDoCalendario({ cartao, hoje, comData, nomeDaPessoa, arrastando, arraste, aoAbrir, aoTirar }) {
   const { rotulo, classe } = SITUACOES_POSTAGEM[situacaoDaPostagem(cartao, hoje)]
   const { redes = [], formato, envio, estimada, redeAConfirmar } = cartao.postagem ?? {}
   const responsaveis = cartao.responsaveis ?? []
@@ -232,8 +264,13 @@ function PostagemDoCalendario({ cartao, hoje, nomeDaPessoa, arrastando, arraste,
           <X aria-hidden="true" />
         </button>
       )}
-      {(redes.length > 0 || formato || responsaveis.length > 0) && (
+      {(comData || redes.length > 0 || formato || responsaveis.length > 0) && (
         <span className="postagem__detalhes">
+          {Boolean(comData && cartao.postagem?.data) && (
+            <span className="numero">
+              {nomeDoDia(cartao.postagem.data)}, {formatarData(cartao.postagem.data)}
+            </span>
+          )}
           {redes.map((rede) => (
             <IconeDaRede key={rede} rede={rede} />
           ))}
