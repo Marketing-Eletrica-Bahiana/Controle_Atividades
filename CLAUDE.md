@@ -339,6 +339,13 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
   data informada, não ao mês de hoje. Concluída, a data vira a Data de Entrega; em aberto, fica
   pausada e a data vai para o Ajuste. Conta como demanda do cronômetro (`importada: false`), então
   "Substituir histórico" não a apaga.
+- Lançamento manual em demanda que já existe (opção "Demanda existente" no Meu Cronômetro e o botão do cartão no Quadro):
+  "Somar ao tempo atual" (padrão) cria uma sessão manual na data e leva a data para o Ajuste; "Corrigir o tempo total"
+  (`trocarTempoGasto`) troca o Tempo Gasto como a janela Editar, sem sessão nova e sem mexer nas datas. A janela mostra o
+  tempo atual e a conta ("00:30:00 + 00:45:00 = 01:15:00" ou "passa a ser"). Pedido em 17/11/2026: a pessoa digitou o
+  tempo certo achando que corrigia, ele foi somado e "Artigo - Dia do Engenheiro Eletricista" foi de 02:15:13 para
+  04:47:27; foi corrigida à mão para 02:32:14, mas a sessão manual de 17/11 continua lá (o site não apaga sessão).
+- Os estilos de `.campo input` deixam de fora caixas de marcar e botões de opção (`radio`), senão eles viram campos de texto.
 - Editar o Tempo Gasto não mexe nas sessões. O tempo de cada dia (Total do dia, Semana, Painel) vem de `segundosPorDia`
   (`src/lib/semana.js`): as sessões dizem o dia, e a diferença para o Tempo Gasto sai dos dias mais recentes ou entra no
   último. Antes, em 06/11/2026, o Total do dia continuava com o tempo antigo depois de uma edição. Com mais de uma área, o

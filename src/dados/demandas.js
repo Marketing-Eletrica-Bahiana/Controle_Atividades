@@ -65,6 +65,12 @@ export async function situacaoDaDemanda(id) {
   return demanda.exists() ? demanda.data().status : null
 }
 
+// A demanda inteira, ou null se foi excluída. Só para mostrar na tela: gravações leem dentro de transação.
+export async function lerDemanda(id) {
+  const demanda = await getDoc(refDemanda(id))
+  return demanda.exists() ? { id: demanda.id, ...demanda.data() } : null
+}
+
 export function useDemandasDaArea(area, mes) {
   return useConsulta(area && mes && `demandas/${area}/${mes}`, () =>
     query(colecao(), where('area', '==', area), where('mes', '==', mes)),
@@ -345,6 +351,23 @@ export function adicionarTempoManual(demandaId, { data, segundos }, quem) {
       datasAjuste: novos.datasAjuste,
       ...camposCalculados(novos),
       historico: [...(atual.historico ?? []), registroTempoManual(quem, atual.tempoGastoSeg, tempoGastoSeg, segundos, data)],
+      atualizadoEm: serverTimestamp(),
+    })
+  })
+}
+
+// Corrige o Tempo Gasto para o total informado, sem sessão nova e sem mexer nas datas: o mesmo que editar o Tempo Gasto
+// na janela Editar. Pedido em 17/11/2026, depois de um tempo certo digitado no lançamento manual ter sido somado.
+export function trocarTempoGasto(demandaId, segundos, quem) {
+  return runTransaction(db, async (t) => {
+    const alvo = await t.get(refDemanda(demandaId))
+    const atual = alvo.data()
+    if ((atual.tempoGastoSeg ?? 0) === segundos) return
+    const { rotulo, mostrar } = CAMPOS_EDITAVEIS.tempoGastoSeg
+    t.update(alvo.ref, {
+      tempoGastoSeg: segundos,
+      ...camposCalculados({ ...atual, tempoGastoSeg: segundos }),
+      historico: [...(atual.historico ?? []), registro(quem, 'edicao_tempo', rotulo, mostrar(atual.tempoGastoSeg ?? 0), mostrar(segundos))],
       atualizadoEm: serverTimestamp(),
     })
   })

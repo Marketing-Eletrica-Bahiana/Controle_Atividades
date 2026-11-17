@@ -9,7 +9,8 @@ import JanelaEditarDemanda from '../../componentes/JanelaEditarDemanda.jsx'
 import { useAreas } from '../../dados/areas.js'
 import { criarCartaoDaDemanda, useColunas } from '../../dados/cartoes.js'
 import {
-  adicionarTempoManual, concluir, corrigirInicio, criarDemandaManual, criarEIniciar, pausar, reabrir, retomar, useCronometro, useMinhasDemandas,
+  adicionarTempoManual, concluir, corrigirInicio, criarDemandaManual, criarEIniciar, pausar, reabrir, retomar, trocarTempoGasto, useCronometro,
+  useMinhasDemandas,
 } from '../../dados/demandas.js'
 import { useAgora } from '../../hooks/useAgora.js'
 import { formatarData, formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
@@ -17,6 +18,7 @@ import { mensagemDeErro } from '../../lib/erros.js'
 import { entraNoCalendario } from '../../lib/postagens.js'
 import { segundosPorDia } from '../../lib/semana.js'
 import { COLUNAS_PADRAO } from '../../lib/quadro.js'
+import { formatarTempo } from '../../lib/tempo.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
 import FormDemanda from './FormDemanda.jsx'
 import { JanelaConcluir, JanelaCorrigirInicio, JanelaTempoManual } from './JanelasDoCronometro.jsx'
@@ -215,6 +217,7 @@ export default function MeuCronometro() {
         abertas={abertas}
         aoCriar={registrarManual}
         aoSalvar={(id, dados) => agir(() => adicionarTempoManual(id, dados, membro.email), 'Tempo adicionado.')}
+        aoCorrigir={(id, segundos) => agir(() => trocarTempoGasto(id, segundos, membro.email), `Tempo corrigido para ${formatarTempo(segundos)}.`)}
         aoFechar={() => setTempoManual(false)}
       />
       <JanelaCorrigirInicio

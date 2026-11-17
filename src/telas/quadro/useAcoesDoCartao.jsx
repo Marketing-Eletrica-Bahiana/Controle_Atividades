@@ -4,7 +4,9 @@ import { useAvisos } from '../../componentes/Avisos.jsx'
 import { useConfirmar } from '../../componentes/Confirmar.jsx'
 import { useAreas } from '../../dados/areas.js'
 import { esquecerDemanda, useColunas } from '../../dados/cartoes.js'
-import { adicionarTempoManual, concluir, criarDemandaManual, criarEIniciar, pausar, retomar, situacaoDaDemanda, useCronometro } from '../../dados/demandas.js'
+import {
+  adicionarTempoManual, concluir, criarDemandaManual, criarEIniciar, lerDemanda, pausar, retomar, situacaoDaDemanda, trocarTempoGasto, useCronometro,
+} from '../../dados/demandas.js'
 import { useMembros } from '../../dados/membros.js'
 import { podeExcluirCartao, podeMexerNoQuadro } from '../../lib/papeis.js'
 import { formatarTempo } from '../../lib/tempo.js'
@@ -85,12 +87,13 @@ export function useAcoesDoCartao(cartoes) {
       return
     }
     // A demanda pode ter sido excluída antes de o cartão aprender a se limpar: cria outra em vez de dar erro.
-    const situacao = await situacaoDaDemanda(minha.demandaId).catch(() => undefined)
-    if (situacao === null) {
+    // O tempo atual aparece na janela, com a conta, para ninguém somar achando que corrige.
+    const demanda = await lerDemanda(minha.demandaId).catch(() => undefined)
+    if (demanda === null) {
       if (await executar(() => esquecerDemanda(cartao, minha.demandaId))) setLancando({ cartao, demandaId: null })
       return
     }
-    setLancando({ cartao, demandaId: minha.demandaId })
+    setLancando({ cartao, demandaId: minha.demandaId, tempoAtual: demanda ? (demanda.tempoGastoSeg ?? 0) : null })
   }
 
   const somado = (cartao, segundos) => `${formatarTempo(segundos)} adicionado em ${cartao.titulo}.`
@@ -100,6 +103,9 @@ export function useAcoesDoCartao(cartoes) {
 
   const somarTempo = (cartao, demandaId, lancamento) =>
     executar(() => adicionarTempoManual(demandaId, lancamento, membro.email), somado(cartao, lancamento.segundos))
+
+  const corrigirTempo = (cartao, demandaId, segundos) =>
+    executar(() => trocarTempoGasto(demandaId, segundos, membro.email), `Tempo de ${cartao.titulo} corrigido para ${formatarTempo(segundos)}.`)
 
   // O cartão entregue não conclui a demanda sozinho: quem entregou decide sobre a própria demanda.
   async function oferecerConcluir(cartao) {
@@ -149,6 +155,7 @@ export function useAcoesDoCartao(cartoes) {
         areas={minhasAreas}
         aoCriar={criarComTempo}
         aoSomar={(demandaId, lancamento) => somarTempo(lancando.cartao, demandaId, lancamento)}
+        aoCorrigir={(demandaId, segundos) => corrigirTempo(lancando.cartao, demandaId, segundos)}
         aoFechar={() => setLancando(null)}
       />
       {janelaConfirmar}

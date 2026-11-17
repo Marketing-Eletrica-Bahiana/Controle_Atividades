@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import CampoData from '../../componentes/CampoData.jsx'
 import { CampoLista, ErroCampo, SimNao } from '../../componentes/Campos.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { useListas } from '../../dados/listas.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { agoraNoServidor } from '../../lib/relogio.js'
-import { lerTempo } from '../../lib/tempo.js'
+import { formatarTempo, lerTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
 import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
@@ -48,16 +48,83 @@ export function erroDaSolicitacao(dataSolicitacao, data) {
   return ''
 }
 
-export const CamposDoTempoManual = ({ rotuloDaData, data, aoMudarData, tempo, aoMudarTempo, erros }) => (
+const CampoTempo = ({ rotulo, tempo, aoMudarTempo, erro }) => (
+  <label className="campo">
+    <span className="campo__rotulo">{rotulo}</span>
+    <input value={tempo} onChange={(e) => aoMudarTempo(e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erro)} />
+    <ErroCampo texto={erro} />
+  </label>
+)
+
+export const CamposDoTempoManual = ({ rotuloDaData, rotuloDoTempo = 'Tempo', data, aoMudarData, tempo, aoMudarTempo, erros }) => (
   <div className="grade-duas grade-duas--formulario">
     <CampoData rotulo={rotuloDaData} valor={data} aoMudar={aoMudarData} erro={erros.data} obrigatorio />
-    <label className="campo">
-      <span className="campo__rotulo">Tempo</span>
-      <input value={tempo} onChange={(e) => aoMudarTempo(e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erros.tempo)} />
-      <ErroCampo texto={erros.tempo} />
-    </label>
+    <CampoTempo rotulo={rotuloDoTempo} tempo={tempo} aoMudarTempo={aoMudarTempo} erro={erros.tempo} />
   </div>
 )
+
+// Demanda que já existe: soma uma sessão nova (trabalho feito com o cronômetro desligado) ou corrige o total, como na
+// janela Editar. Em 17/11/2026 um tempo certo digitado aqui foi somado e quase dobrou a demanda: por isso a escolha e a
+// conta à vista antes de gravar.
+const MODOS_DA_EXISTENTE = [
+  { id: 'somar', rotulo: 'Somar ao tempo atual' },
+  { id: 'corrigir', rotulo: 'Corrigir o tempo total' },
+]
+
+export function errosDaExistente(modo, data, segundos) {
+  if (modo === 'somar') return errosDoTempoManual(data, segundos)
+  return segundos == null ? { tempo: 'Use o formato HH:MM:SS, por exemplo 02:30:00.' } : {}
+}
+
+export const rotuloDoBotaoDaExistente = (modo) => (modo === 'somar' ? 'Adicionar' : 'Corrigir')
+
+function ContaDoTempo({ atualSeg, modo, segundos }) {
+  if (atualSeg == null) return null
+  const atual = <strong className="numero">{formatarTempo(atualSeg)}</strong>
+  if (segundos == null) return <p className="conta-do-tempo">Tempo atual: {atual}</p>
+  return modo === 'somar' ? (
+    <p className="conta-do-tempo">
+      Tempo atual {atual} + <strong className="numero">{formatarTempo(segundos)}</strong> = <strong className="numero">{formatarTempo(atualSeg + segundos)}</strong>
+    </p>
+  ) : (
+    <p className="conta-do-tempo">
+      Tempo atual {atual} passa a ser <strong className="numero">{formatarTempo(segundos)}</strong>
+    </p>
+  )
+}
+
+export function CamposDaExistente({ atualSeg, modo, aoMudarModo, data, aoMudarData, tempo, aoMudarTempo, erros }) {
+  const nome = useId()
+  const somar = modo === 'somar'
+  return (
+    <>
+      <fieldset className="campo">
+        <legend className="campo__rotulo">O que fazer com o tempo</legend>
+        <div className="opcoes">
+          {MODOS_DA_EXISTENTE.map(({ id, rotulo }) => (
+            <label key={id} className="opcao">
+              <input type="radio" name={nome} checked={modo === id} onChange={() => aoMudarModo(id)} />
+              {rotulo}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {somar ? (
+        <CamposDoTempoManual rotuloDaData="Data" rotuloDoTempo="Tempo a somar" data={data} aoMudarData={aoMudarData} tempo={tempo} aoMudarTempo={aoMudarTempo} erros={erros} />
+      ) : (
+        <div className="grade-duas grade-duas--formulario">
+          <CampoTempo rotulo="Tempo total certo" tempo={tempo} aoMudarTempo={aoMudarTempo} erro={erros.tempo} />
+        </div>
+      )}
+      <ContaDoTempo atualSeg={atualSeg} modo={modo} segundos={lerTempo(tempo)} />
+      <p className="texto-suave texto-pequeno">
+        {somar
+          ? TEXTOS_DO_TEMPO_MANUAL.existente
+          : 'O Tempo Gasto passa a ser esse, sem sessão nova e sem mexer nas datas, como na janela Editar. A mudança entra no histórico.'}
+      </p>
+    </>
+  )
+}
 
 // Trabalho feito sem o cronômetro ligado: cria uma demanda nova já com o tempo ou soma o tempo em uma que já existe.
 export function JanelaTempoManual({ aberta, aoFechar, ...resto }) {
@@ -68,9 +135,10 @@ export function JanelaTempoManual({ aberta, aoFechar, ...resto }) {
   )
 }
 
-function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar, aoSalvar, aoFechar }) {
+function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar, aoSalvar, aoCorrigir, aoFechar }) {
   const campos = useCamposDaDemanda(area, pessoa)
   const [modo, setModo] = useState('nova')
+  const [modoDaExistente, setModoDaExistente] = useState('somar')
   const [demandaId, setDemandaId] = useState('')
   const [data, setData] = useState(hojeISO())
   const [tempo, setTempo] = useState('')
@@ -87,9 +155,10 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
   const repetidaNaLista = repetida && demandas.some((d) => d.id === repetida.id)
 
   const segundos = lerTempo(tempo)
+  const escolhida = demandas.find((d) => d.id === demandaId)
 
   function validar() {
-    const achados = errosDoTempoManual(data, segundos)
+    const achados = nova ? errosDoTempoManual(data, segundos) : errosDaExistente(modoDaExistente, data, segundos)
     if (nova) {
       if (!campos.nome.trim()) achados.nome = 'Informe o nome da demanda.'
       if (!campos.tipo) achados.tipo = 'Escolha o tipo.'
@@ -117,13 +186,15 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
     setOcupado(true)
     const deuCerto = nova
       ? await aoCriar(campos.paraGravar(dataSolicitacao), { data, segundos, concluida })
-      : await aoSalvar(demandaId, { data, segundos })
+      : modoDaExistente === 'somar'
+        ? await aoSalvar(demandaId, { data, segundos })
+        : await aoCorrigir(demandaId, segundos)
     setOcupado(false)
     if (deuCerto) aoFechar()
   }
 
-  const rotuloDaData = !nova ? 'Data' : concluida ? 'Data de Entrega' : 'Data do trabalho'
-  const texto = TEXTOS_DO_TEMPO_MANUAL[!nova ? 'existente' : concluida ? 'concluida' : 'aberta']
+  const rotuloDaData = concluida ? 'Data de Entrega' : 'Data do trabalho'
+  const texto = TEXTOS_DO_TEMPO_MANUAL[concluida ? 'concluida' : 'aberta']
 
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
@@ -186,20 +257,33 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
           <ErroCampo texto={erros.demanda} />
         </label>
       )}
-      <CamposDoTempoManual rotuloDaData={rotuloDaData} data={data} aoMudarData={setData} tempo={tempo} aoMudarTempo={setTempo} erros={erros} />
-      {nova && (
-        <label className="opcao">
-          <input type="checkbox" checked={concluida} onChange={(e) => setConcluida(e.target.checked)} />
-          Essa demanda já foi concluída
-        </label>
+      {nova ? (
+        <>
+          <CamposDoTempoManual rotuloDaData={rotuloDaData} data={data} aoMudarData={setData} tempo={tempo} aoMudarTempo={setTempo} erros={erros} />
+          <label className="opcao">
+            <input type="checkbox" checked={concluida} onChange={(e) => setConcluida(e.target.checked)} />
+            Essa demanda já foi concluída
+          </label>
+          <CampoNoQuadro campos={campos} />
+          <CampoDaPostagem campos={campos} />
+          <p className="texto-suave texto-pequeno">
+            {nomeDaArea && `Área ${nomeDaArea}. `}
+            {texto}
+          </p>
+        </>
+      ) : (
+        <CamposDaExistente
+          atualSeg={escolhida ? (escolhida.tempoGastoSeg ?? 0) : null}
+          modo={modoDaExistente}
+          aoMudarModo={setModoDaExistente}
+          data={data}
+          aoMudarData={setData}
+          tempo={tempo}
+          aoMudarTempo={setTempo}
+          erros={erros}
+        />
       )}
-      {nova && <CampoNoQuadro campos={campos} />}
-      {nova && <CampoDaPostagem campos={campos} />}
-      <p className="texto-suave texto-pequeno">
-        {nova && nomeDaArea && `Área ${nomeDaArea}. `}
-        {texto}
-      </p>
-      <BotoesDaJanela aoFechar={aoFechar} ocupado={ocupado || Boolean(repetida)} rotulo={nova ? 'Adicionar demanda' : 'Adicionar'} />
+      <BotoesDaJanela aoFechar={aoFechar} ocupado={ocupado || Boolean(repetida)} rotulo={nova ? 'Adicionar demanda' : rotuloDoBotaoDaExistente(modoDaExistente)} />
     </form>
   )
 }

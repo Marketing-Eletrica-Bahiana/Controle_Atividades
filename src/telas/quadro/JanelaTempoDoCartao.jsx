@@ -6,12 +6,14 @@ import { publicoDaEtiqueta } from '../../lib/quadro.js'
 import { lerTempo } from '../../lib/tempo.js'
 import { CamposDaClassificacao, CampoTipo, useCamposDaDemanda } from '../cronometro/CamposDaDemanda.jsx'
 import {
-  BotoesDaJanela, CamposDoTempoManual, erroDaSolicitacao, errosDoTempoManual, TEXTOS_DO_TEMPO_MANUAL,
+  BotoesDaJanela, CamposDaExistente, CamposDoTempoManual, erroDaSolicitacao, errosDaExistente, errosDoTempoManual, rotuloDoBotaoDaExistente,
+  TEXTOS_DO_TEMPO_MANUAL,
 } from '../cronometro/JanelasDoCronometro.jsx'
 
-// Tempo feito sem o cronômetro, lançado pelo cartão. "pedido" é { cartao, demandaId }: quem já tem demanda no cartão soma
-// nela; na primeira vez, a janela também cria a demanda, como "Iniciar o cronômetro", mas sem ligar o cronômetro.
-export default function JanelaTempoDoCartao({ pedido, pessoa, areas, aoCriar, aoSomar, aoFechar }) {
+// Tempo feito sem o cronômetro, lançado pelo cartão. "pedido" é { cartao, demandaId, tempoAtual }: quem já tem demanda no
+// cartão soma nela ou corrige o total; na primeira vez, a janela também cria a demanda, como "Iniciar o cronômetro", mas sem
+// ligar o cronômetro.
+export default function JanelaTempoDoCartao({ pedido, pessoa, areas, aoCriar, aoSomar, aoCorrigir, aoFechar }) {
   return (
     <Janela aberta={Boolean(pedido)} titulo="Adicionar tempo manual" aoFechar={aoFechar} largura={640}>
       {pedido && (
@@ -20,7 +22,7 @@ export default function JanelaTempoDoCartao({ pedido, pessoa, areas, aoCriar, ao
             <strong>{pedido.cartao.titulo}</strong>
           </p>
           {pedido.demandaId ? (
-            <FormSomar demandaId={pedido.demandaId} aoSomar={aoSomar} aoFechar={aoFechar} />
+            <FormExistente pedido={pedido} aoSomar={aoSomar} aoCorrigir={aoCorrigir} aoFechar={aoFechar} />
           ) : (
             <NovaDemanda cartao={pedido.cartao} pessoa={pessoa} areas={areas} aoCriar={aoCriar} aoFechar={aoFechar} />
           )}
@@ -49,17 +51,32 @@ function useEnvio(validar, gravar, aoFechar) {
   return { erros, ocupado, enviar }
 }
 
-function FormSomar({ demandaId, aoSomar, aoFechar }) {
+function FormExistente({ pedido, aoSomar, aoCorrigir, aoFechar }) {
+  const { demandaId, tempoAtual } = pedido
+  const [modo, setModo] = useState('somar')
   const [data, setData] = useState(hojeISO())
   const [tempo, setTempo] = useState('')
   const segundos = lerTempo(tempo)
-  const { erros, ocupado, enviar } = useEnvio(() => errosDoTempoManual(data, segundos), () => aoSomar(demandaId, { data, segundos }), aoFechar)
+  const { erros, ocupado, enviar } = useEnvio(
+    () => errosDaExistente(modo, data, segundos),
+    () => (modo === 'somar' ? aoSomar(demandaId, { data, segundos }) : aoCorrigir(demandaId, segundos)),
+    aoFechar,
+  )
 
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
-      <CamposDoTempoManual rotuloDaData="Data" data={data} aoMudarData={setData} tempo={tempo} aoMudarTempo={setTempo} erros={erros} />
-      <p className="texto-suave texto-pequeno">Soma na sua demanda deste cartão. {TEXTOS_DO_TEMPO_MANUAL.existente}</p>
-      <BotoesDaJanela aoFechar={aoFechar} ocupado={ocupado} rotulo="Adicionar" />
+      <p className="texto-suave texto-pequeno">Sua demanda deste cartão.</p>
+      <CamposDaExistente
+        atualSeg={tempoAtual}
+        modo={modo}
+        aoMudarModo={setModo}
+        data={data}
+        aoMudarData={setData}
+        tempo={tempo}
+        aoMudarTempo={setTempo}
+        erros={erros}
+      />
+      <BotoesDaJanela aoFechar={aoFechar} ocupado={ocupado} rotulo={rotuloDoBotaoDaExistente(modo)} />
     </form>
   )
 }

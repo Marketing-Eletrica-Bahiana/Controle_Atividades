@@ -719,7 +719,7 @@ p {
   color: var(--marinho);
 }
 
-.campo input:not([type='checkbox']),
+.campo input:not([type='checkbox']):not([type='radio']),
 .campo select,
 .tabela select {
   width: 100%;
@@ -733,7 +733,7 @@ p {
   transition: box-shadow var(--transicao), border-color var(--transicao);
 }
 
-.campo input:not([type='checkbox']):focus,
+.campo input:not([type='checkbox']):not([type='radio']):focus,
 .campo select:focus,
 .tabela select:focus {
   outline: none;
@@ -741,7 +741,7 @@ p {
   box-shadow: 0 0 0 3px rgba(0, 55, 255, 0.20);
 }
 
-.campo input:not([type='checkbox']):disabled,
+.campo input:not([type='checkbox']):not([type='radio']):disabled,
 .campo select:disabled {
   background: var(--medio-5);
   opacity: 0.8;
@@ -770,7 +770,7 @@ p {
   pointer-events: none;
 }
 
-.campo--busca input:not([type='checkbox']) {
+.campo--busca input:not([type='checkbox']):not([type='radio']) {
   padding-left: 40px;
 }
 
@@ -798,6 +798,15 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 24px;
+}
+
+/* Conta do lançamento manual: tempo atual e como fica, antes de gravar. */
+.conta-do-tempo {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--raio-etiqueta);
+  background: var(--medio-10);
+  color: var(--marinho);
 }
 
 .opcoes--coluna {
