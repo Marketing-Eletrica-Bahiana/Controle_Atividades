@@ -1,4 +1,5 @@
 import { CircleAlert } from 'lucide-react'
+import { formatarTempo, lerTempoDigitado } from '../lib/tempo.js'
 
 export function ErroCampo({ texto }) {
   if (!texto) return null
@@ -9,6 +10,17 @@ export function ErroCampo({ texto }) {
     </span>
   )
 }
+
+// Embaixo de um campo de tempo: como o que foi digitado vai ficar, quando não está escrito inteiro ("5:00" fica 00:05:00).
+export function AjudaDoTempo({ texto }) {
+  const segundos = lerTempoDigitado(texto)
+  if (segundos == null) return null
+  const inteiro = formatarTempo(segundos)
+  if (String(texto).trim() === inteiro) return null
+  return <span className="campo__ajuda">Fica {inteiro}</span>
+}
+
+export const ERRO_DO_TEMPO = (exemplo) => `Use HH:MM:SS ou MM:SS, por exemplo ${exemplo}.`
 
 // Sim / Não em dois botões. Vazio quando ninguém escolheu ainda.
 export function SimNao({ rotulo, valor, aoMudar }) {

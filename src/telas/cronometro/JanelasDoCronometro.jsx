@@ -1,11 +1,11 @@
 import { useId, useState } from 'react'
 import CampoData from '../../componentes/CampoData.jsx'
-import { CampoLista, ErroCampo, SimNao } from '../../componentes/Campos.jsx'
+import { AjudaDoTempo, CampoLista, ERRO_DO_TEMPO, ErroCampo, SimNao } from '../../componentes/Campos.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { useListas } from '../../dados/listas.js'
 import { formatarData, hojeISO } from '../../lib/datas.js'
 import { agoraNoServidor } from '../../lib/relogio.js'
-import { formatarTempo, lerTempo } from '../../lib/tempo.js'
+import { formatarTempo, lerTempoDigitado } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
 import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
@@ -36,7 +36,7 @@ export function errosDoTempoManual(data, segundos) {
   const achados = {}
   if (!data) achados.data = 'Informe a data.'
   else if (data > hojeISO()) achados.data = 'A data não pode ser no futuro.'
-  if (segundos == null) achados.tempo = 'Use o formato HH:MM:SS, por exemplo 00:45:00.'
+  if (segundos == null) achados.tempo = ERRO_DO_TEMPO('00:45:00 ou 45:00')
   else if (segundos === 0) achados.tempo = 'O tempo precisa ser maior que zero.'
   return achados
 }
@@ -52,7 +52,7 @@ const CampoTempo = ({ rotulo, tempo, aoMudarTempo, erro }) => (
   <label className="campo">
     <span className="campo__rotulo">{rotulo}</span>
     <input value={tempo} onChange={(e) => aoMudarTempo(e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erro)} />
-    <ErroCampo texto={erro} />
+    {erro ? <ErroCampo texto={erro} /> : <AjudaDoTempo texto={tempo} />}
   </label>
 )
 
@@ -73,7 +73,7 @@ const MODOS_DA_EXISTENTE = [
 
 export function errosDaExistente(modo, data, segundos) {
   if (modo === 'somar') return errosDoTempoManual(data, segundos)
-  return segundos == null ? { tempo: 'Use o formato HH:MM:SS, por exemplo 02:30:00.' } : {}
+  return segundos == null ? { tempo: ERRO_DO_TEMPO('02:30:00 ou 45:00') } : {}
 }
 
 export const rotuloDoBotaoDaExistente = (modo) => (modo === 'somar' ? 'Adicionar' : 'Corrigir')
@@ -116,7 +116,7 @@ export function CamposDaExistente({ atualSeg, modo, aoMudarModo, data, aoMudarDa
           <CampoTempo rotulo="Tempo total certo" tempo={tempo} aoMudarTempo={aoMudarTempo} erro={erros.tempo} />
         </div>
       )}
-      <ContaDoTempo atualSeg={atualSeg} modo={modo} segundos={lerTempo(tempo)} />
+      <ContaDoTempo atualSeg={atualSeg} modo={modo} segundos={lerTempoDigitado(tempo)} />
       <p className="texto-suave texto-pequeno">
         {somar
           ? TEXTOS_DO_TEMPO_MANUAL.existente
@@ -154,7 +154,7 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
   const repetida = nova && termo ? abertas.find((d) => normalizar(d.nome) === termo) : null
   const repetidaNaLista = repetida && demandas.some((d) => d.id === repetida.id)
 
-  const segundos = lerTempo(tempo)
+  const segundos = lerTempoDigitado(tempo)
   const escolhida = demandas.find((d) => d.id === demandaId)
 
   function validar() {

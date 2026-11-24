@@ -559,6 +559,11 @@ Editáveis pelo admin em `config/listas`:
 - Toda alteração (edição de campo, edição de tempo, tempo manual, reabertura, junção) entra no
   `historico` da demanda.
 - Tempo nunca negativo. Formato inválido mostra erro em `#d4121a`.
+- Tempo digitado na tela (`lerTempoDigitado`, em `src/lib/tempo.js`): três partes são HH:MM:SS; duas são MM:SS. Pedido em
+  24/11/2026: "05:00" sem o "00:" da frente são 5 minutos, e não 5 horas. Vale no lançamento manual (Meu Cronômetro e
+  cartão), na janela Editar e nos tempos dos tipos. Embaixo do campo, "Fica 00:05:00" mostra como foi entendido quando o
+  tempo não está escrito inteiro (`AjudaDoTempo`). A importação de planilha continua com `lerTempo`, em que duas partes
+  são horas e minutos, porque é assim que o Excel mostra "1:30". "Corrigir início" é hora do relógio e tem leitura própria.
 
 ## Classificação automática do tipo
 

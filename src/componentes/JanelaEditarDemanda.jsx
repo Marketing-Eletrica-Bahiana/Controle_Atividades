@@ -4,10 +4,10 @@ import { editarDemanda } from '../dados/demandas.js'
 import { useListas } from '../dados/listas.js'
 import { useTipos } from '../dados/tipos.js'
 import { formatarAjustes, lerAjustes } from '../lib/datas.js'
-import { formatarTempo, lerTempo } from '../lib/tempo.js'
+import { formatarTempo, lerTempoDigitado } from '../lib/tempo.js'
 import { useAvisos } from './Avisos.jsx'
 import CampoData from './CampoData.jsx'
-import { CampoLista, ErroCampo, SimNao } from './Campos.jsx'
+import { AjudaDoTempo, CampoLista, ERRO_DO_TEMPO, ErroCampo, SimNao } from './Campos.jsx'
 import Janela from './Janela.jsx'
 
 // Janela de edição usada no Meu Cronômetro, em Demandas e em Semana. Vale também para concluídas e importadas.
@@ -48,12 +48,12 @@ function Formulario({ demanda, aoFechar }) {
   async function salvar(evento) {
     evento.preventDefault()
     const ano = Number((dados.dataEntrega ?? dados.dataSolicitacao ?? demanda.mes ?? '').slice(0, 4)) || new Date().getFullYear()
-    const tempoGastoSeg = lerTempo(dados.tempo)
+    const tempoGastoSeg = lerTempoDigitado(dados.tempo)
     const datasAjuste = dados.ajustes.trim() ? lerAjustes(dados.ajustes, ano) : []
     const novosErros = {}
     if (!dados.nome.trim()) novosErros.nome = 'Informe o nome da demanda.'
     if (!dados.tipo) novosErros.tipo = 'Escolha o tipo.'
-    if (tempoGastoSeg == null) novosErros.tempo = 'Use o formato HH:MM:SS, por exemplo 01:30:00.'
+    if (tempoGastoSeg == null) novosErros.tempo = ERRO_DO_TEMPO('01:30:00 ou 45:00')
     if (!datasAjuste) novosErros.ajustes = 'Use datas como 14/09/2026 ou "14 e 15/09".'
     if (dados.dataSolicitacao && dados.dataEntrega && dados.dataEntrega < dados.dataSolicitacao) {
       novosErros.dataEntrega = 'A entrega não pode ser antes da solicitação.'
@@ -102,7 +102,7 @@ function Formulario({ demanda, aoFechar }) {
         <label className="campo">
           <span className="campo__rotulo">Tempo Gasto</span>
           <input value={dados.tempo} onChange={(e) => mudar('tempo', e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erros.tempo)} />
-          <ErroCampo texto={erros.tempo} />
+          {erros.tempo ? <ErroCampo texto={erros.tempo} /> : <AjudaDoTempo texto={dados.tempo} />}
         </label>
         <SimNao rotulo="Uso de IA" valor={dados.usoIA} aoMudar={(v) => mudar('usoIA', v)} />
         <SimNao rotulo="Uso de Template" valor={dados.usoTemplate} aoMudar={(v) => mudar('usoTemplate', v)} />

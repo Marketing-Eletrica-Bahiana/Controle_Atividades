@@ -3,7 +3,7 @@ import CampoData from '../../componentes/CampoData.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { hojeISO } from '../../lib/datas.js'
 import { publicoDaEtiqueta } from '../../lib/quadro.js'
-import { lerTempo } from '../../lib/tempo.js'
+import { lerTempoDigitado } from '../../lib/tempo.js'
 import { CamposDaClassificacao, CampoTipo, useCamposDaDemanda } from '../cronometro/CamposDaDemanda.jsx'
 import {
   BotoesDaJanela, CamposDaExistente, CamposDoTempoManual, erroDaSolicitacao, errosDaExistente, errosDoTempoManual, rotuloDoBotaoDaExistente,
@@ -56,7 +56,7 @@ function FormExistente({ pedido, aoSomar, aoCorrigir, aoFechar }) {
   const [modo, setModo] = useState('somar')
   const [data, setData] = useState(hojeISO())
   const [tempo, setTempo] = useState('')
-  const segundos = lerTempo(tempo)
+  const segundos = lerTempoDigitado(tempo)
   const { erros, ocupado, enviar } = useEnvio(
     () => errosDaExistente(modo, data, segundos),
     () => (modo === 'somar' ? aoSomar(demandaId, { data, segundos }) : aoCorrigir(demandaId, segundos)),
@@ -112,7 +112,7 @@ function FormNova({ cartao, area, pessoa, aoCriar, aoFechar }) {
   // A solicitação acompanha a outra data até a pessoa mexer nela.
   const [solicitacaoEscolhida, setSolicitacaoEscolhida] = useState(undefined)
   const dataSolicitacao = solicitacaoEscolhida === undefined ? data : solicitacaoEscolhida
-  const segundos = lerTempo(tempo)
+  const segundos = lerTempoDigitado(tempo)
 
   function validar() {
     const achados = errosDoTempoManual(data, segundos)

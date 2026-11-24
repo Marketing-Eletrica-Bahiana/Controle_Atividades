@@ -10,9 +10,9 @@ import { useAreas } from '../../dados/areas.js'
 import { useListas } from '../../dados/listas.js'
 import { contarPalavrasDoTipo, excluirTipo, idDoTipo, salvarTipo, useTipos } from '../../dados/tipos.js'
 import { mensagemDeErro } from '../../lib/erros.js'
-import { formatarTempo, horasParaSegundos, lerTempo, segundosParaHoras } from '../../lib/tempo.js'
+import { formatarTempo, horasParaSegundos, lerTempoDigitado, segundosParaHoras } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
-import { ErroCampo } from '../../componentes/Campos.jsx'
+import { AjudaDoTempo, ERRO_DO_TEMPO, ErroCampo } from '../../componentes/Campos.jsx'
 
 export default function Tipos() {
   const { dados: areas } = useAreas()
@@ -148,14 +148,14 @@ function FormTipo({ area, tipo, tiposDaArea, publicos, aoSalvar, aoFechar }) {
 
   async function enviar(evento) {
     evento.preventDefault()
-    const minSeg = lerTempo(dados.min)
-    const maxSeg = lerTempo(dados.max)
+    const minSeg = lerTempoDigitado(dados.min)
+    const maxSeg = lerTempoDigitado(dados.max)
     const prazo = dados.prazo.trim() === '' ? null : Number(dados.prazo)
     const novosErros = {}
     if (!dados.nome.trim()) novosErros.nome = 'Informe o nome do tipo.'
     else if (tiposDaArea.some((t) => t.id === idDoTipo(area, dados.nome) && t.id !== tipo?.id)) novosErros.nome = 'Já existe um tipo com esse nome nesta área.'
-    if (minSeg == null) novosErros.min = 'Use o formato HH:MM:SS, por exemplo 00:30:00.'
-    if (maxSeg == null) novosErros.max = 'Use o formato HH:MM:SS, por exemplo 02:00:00.'
+    if (minSeg == null) novosErros.min = ERRO_DO_TEMPO('00:30:00 ou 30:00')
+    if (maxSeg == null) novosErros.max = ERRO_DO_TEMPO('02:00:00 ou 45:00')
     else if (minSeg != null && maxSeg < minSeg) novosErros.max = 'O tempo máximo não pode ser menor que o mínimo.'
     if (prazo != null && (!Number.isInteger(prazo) || prazo < 0)) novosErros.prazo = 'Use um número inteiro de dias, como 2.'
     setErros(novosErros)
@@ -186,12 +186,12 @@ function FormTipo({ area, tipo, tiposDaArea, publicos, aoSalvar, aoFechar }) {
         <label className="campo">
           <span className="campo__rotulo">Tempo mínimo sem IA</span>
           <input value={dados.min} onChange={(e) => mudar('min', e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erros.min)} />
-          {erros.min && <ErroCampo texto={erros.min} />}
+          {erros.min ? <ErroCampo texto={erros.min} /> : <AjudaDoTempo texto={dados.min} />}
         </label>
         <label className="campo">
           <span className="campo__rotulo">Tempo máximo sem IA</span>
           <input value={dados.max} onChange={(e) => mudar('max', e.target.value)} placeholder="00:00:00" inputMode="numeric" aria-invalid={Boolean(erros.max)} />
-          {erros.max && <ErroCampo texto={erros.max} />}
+          {erros.max ? <ErroCampo texto={erros.max} /> : <AjudaDoTempo texto={dados.max} />}
         </label>
       </div>
       <div className="grade-duas grade-duas--formulario">
