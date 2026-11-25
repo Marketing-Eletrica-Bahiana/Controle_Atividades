@@ -365,7 +365,10 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
   rótulo vira "Total do dia, todas as áreas", porque a lista de baixo mostra só a aba aberta.
 - Concluir grava a entrega de hoje; os outros dias com sessão, a entrega anterior (se foi reaberta)
   e os ajustes já existentes vão para `datasAjuste`, sem solicitação e entrega, sem repetir.
-  Faltando Uso de IA, Template ou Solicitante, uma janela pede antes de concluir.
+  Faltando Público, Solicitante, Uso de IA ou Uso de Template, a janela "Antes de concluir" pede, e sem eles não conclui
+  (desde 25/11/2026, também ao concluir pelo cartão que vai para Entregues). Pedido da pessoa em 25/11/2026: nenhuma
+  demanda nasce sem esses quatro (`errosDaClassificacao`, no Meu Cronômetro, no "Iniciar o cronômetro" do cartão e no
+  lançamento manual de demanda nova); a janela de concluir é para as antigas, que ficaram sem.
 - Reabrir: concluída volta para "pausada" e aparece na busca do formulário para retomar.
 - `historico[].acao`: `criacao`, `conclusao`, `reabertura`, `edicao`, `edicao_tempo`,
   `tempo_manual`, `juncao`, `importacao`. `antes` e `depois` já vêm formatados para leitura

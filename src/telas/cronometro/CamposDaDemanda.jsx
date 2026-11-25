@@ -183,16 +183,30 @@ export function CampoDaPostagem({ campos }) {
 }
 
 // Público, Solicitante, Uso de IA e Uso de Template. "children" entra no fim da primeira linha (a data de solicitação).
-export function CamposDaClassificacao({ campos, children }) {
+// Pedido da pessoa em 25/11/2026: nenhuma demanda nasce sem Público, Solicitante, Uso de IA e Uso de Template.
+// Vale no Meu Cronômetro, no "Iniciar o cronômetro" do cartão e no lançamento manual de demanda nova. Recebe um objeto
+// com esses quatro campos (os da tela ou os de uma demanda já gravada, como na janela "Antes de concluir").
+export function errosDaClassificacao({ publico, solicitante, usoIA, usoTemplate }) {
+  const erros = {}
+  if (!publico) erros.publico = 'Escolha o público.'
+  if (!solicitante) erros.solicitante = 'Escolha o solicitante.'
+  if (!usoIA) erros.usoIA = 'Marque Sim ou Não.'
+  if (!usoTemplate) erros.usoTemplate = 'Marque Sim ou Não.'
+  return erros
+}
+
+export const faltaClassificacao = (demanda) => Object.keys(errosDaClassificacao(demanda ?? {})).length > 0
+
+export function CamposDaClassificacao({ campos, children, erros = {} }) {
   const { listas, publico, solicitante, usoIA, usoTemplate, regra, mudar } = campos
   return (
     <>
       <div className="grade-tres">
-        <CampoLista rotulo="Público" valor={publico} opcoes={listas?.publicos} aoMudar={(v) => mudar('publico', v)} />
-        <CampoLista rotulo="Solicitante" valor={solicitante} opcoes={listas?.solicitantes} aoMudar={(v) => mudar('solicitante', v)} />
+        <CampoLista rotulo="Público" valor={publico} opcoes={listas?.publicos} aoMudar={(v) => mudar('publico', v)} erro={erros.publico} />
+        <CampoLista rotulo="Solicitante" valor={solicitante} opcoes={listas?.solicitantes} aoMudar={(v) => mudar('solicitante', v)} erro={erros.solicitante} />
         {children}
-        <SimNao rotulo="Uso de IA" valor={usoIA} aoMudar={(v) => mudar('usoIA', v)} />
-        <SimNao rotulo="Uso de Template" valor={usoTemplate} aoMudar={(v) => mudar('usoTemplate', v)} />
+        <SimNao rotulo="Uso de IA" valor={usoIA} aoMudar={(v) => mudar('usoIA', v)} erro={erros.usoIA} />
+        <SimNao rotulo="Uso de Template" valor={usoTemplate} aoMudar={(v) => mudar('usoTemplate', v)} erro={erros.usoTemplate} />
       </div>
       {regra && <p className="campo__ajuda">Uso de IA, Template e Solicitante preenchidos pela regra: {regra.motivo}.</p>}
     </>

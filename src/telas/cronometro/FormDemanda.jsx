@@ -6,7 +6,7 @@ import { hojeISO } from '../../lib/datas.js'
 import { SITUACOES } from '../../lib/regras.js'
 import { formatarTempo } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
-import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
+import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, errosDaClassificacao, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
 // Formulário de nova demanda. Busca nas demandas abertas da pessoa (para retomar em vez de duplicar)
 // e classifica o tipo enquanto o nome é digitado.
@@ -29,7 +29,7 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
 
   async function iniciar(evento) {
     evento.preventDefault()
-    const novosErros = {}
+    const novosErros = errosDaClassificacao(campos)
     if (!campos.nome.trim()) novosErros.nome = 'Informe o nome da demanda.'
     if (!campos.tipo) novosErros.tipo = 'Escolha o tipo.'
     if (!dataSolicitacao) novosErros.dataSolicitacao = 'Informe a data de solicitação.'
@@ -83,7 +83,7 @@ export default function FormDemanda({ area, pessoa, abertas, ocupado, aoIniciar,
 
         <CampoTipo campos={campos} erro={erros.tipo} />
 
-        <CamposDaClassificacao campos={campos}>
+        <CamposDaClassificacao campos={campos} erros={erros}>
           <CampoData rotulo="Data de Solicitação" valor={dataSolicitacao} aoMudar={setDataSolicitacao} erro={erros.dataSolicitacao} obrigatorio />
         </CamposDaClassificacao>
         <CampoNoQuadro campos={campos} />

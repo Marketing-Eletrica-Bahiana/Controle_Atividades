@@ -22,10 +22,10 @@ export function AjudaDoTempo({ texto }) {
 
 export const ERRO_DO_TEMPO = (exemplo) => `Use HH:MM:SS ou MM:SS, por exemplo ${exemplo}.`
 
-// Sim / Não em dois botões. Vazio quando ninguém escolheu ainda.
-export function SimNao({ rotulo, valor, aoMudar }) {
+// Sim / Não em dois botões. Vazio quando ninguém escolheu ainda. "erro" aparece embaixo, em vermelho.
+export function SimNao({ rotulo, valor, aoMudar, erro }) {
   return (
-    <fieldset className="campo">
+    <fieldset className={`campo ${erro ? 'sim-nao--faltando' : ''}`}>
       <legend className="campo__rotulo">{rotulo}</legend>
       <div className="sim-nao" role="radiogroup">
         {['Sim', 'Não'].map((opcao) => (
@@ -41,6 +41,7 @@ export function SimNao({ rotulo, valor, aoMudar }) {
           </button>
         ))}
       </div>
+      <ErroCampo texto={erro} />
     </fieldset>
   )
 }

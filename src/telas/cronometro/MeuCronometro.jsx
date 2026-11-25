@@ -21,6 +21,7 @@ import { horasDeTrabalho, segundosPorDia } from '../../lib/semana.js'
 import { COLUNAS_PADRAO } from '../../lib/quadro.js'
 import { formatarTempo } from '../../lib/tempo.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
+import { faltaClassificacao } from './CamposDaDemanda.jsx'
 import { escolherComoIniciar } from './escolherComoIniciar.js'
 import FormDemanda from './FormDemanda.jsx'
 import { JanelaConcluir, JanelaCorrigirInicio, JanelaTempoManual } from './JanelasDoCronometro.jsx'
@@ -119,7 +120,7 @@ export default function MeuCronometro() {
   }
 
   function pedirConclusao(demanda) {
-    if (!demanda.usoIA || !demanda.usoTemplate || !demanda.solicitante) setConcluindo(demanda)
+    if (faltaClassificacao(demanda)) setConcluindo(demanda)
     else agir(() => concluir(demanda.id, pessoa), `${demanda.nome} concluída. Mandou bem!`)
   }
 

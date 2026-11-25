@@ -7,7 +7,7 @@ import { formatarData, hojeISO } from '../../lib/datas.js'
 import { agoraNoServidor } from '../../lib/relogio.js'
 import { formatarTempo, lerTempoDigitado } from '../../lib/tempo.js'
 import { normalizar } from '../../lib/texto.js'
-import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, useCamposDaDemanda } from './CamposDaDemanda.jsx'
+import { CampoDaPostagem, CamposDaClassificacao, CampoNoQuadro, CampoTipo, errosDaClassificacao, useCamposDaDemanda } from './CamposDaDemanda.jsx'
 
 export const BotoesDaJanela = ({ aoFechar, ocupado, rotulo }) => (
   <div className="janela-modal__acoes">
@@ -158,7 +158,7 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
   const escolhida = demandas.find((d) => d.id === demandaId)
 
   function validar() {
-    const achados = nova ? errosDoTempoManual(data, segundos) : errosDaExistente(modoDaExistente, data, segundos)
+    const achados = nova ? { ...errosDoTempoManual(data, segundos), ...errosDaClassificacao(campos) } : errosDaExistente(modoDaExistente, data, segundos)
     if (nova) {
       if (!campos.nome.trim()) achados.nome = 'Informe o nome da demanda.'
       if (!campos.tipo) achados.tipo = 'Escolha o tipo.'
@@ -233,7 +233,7 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
             </div>
           )}
           <CampoTipo campos={campos} erro={erros.tipo} />
-          <CamposDaClassificacao campos={campos}>
+          <CamposDaClassificacao campos={campos} erros={erros}>
             <CampoData
               rotulo="Data de Solicitação"
               valor={dataSolicitacao}
@@ -343,7 +343,8 @@ function FormCorrigirInicio({ inicioAtual, aoSalvar, aoFechar }) {
   )
 }
 
-// Antes de concluir, completa o que ficou em branco (dá para concluir assim mesmo).
+// Antes de concluir, pede o que ficou em branco: Público, Solicitante, Uso de IA e Uso de Template. Desde 25/11/2026 (pedido
+// da pessoa) não dá para concluir sem eles. Demandas novas já nascem com os quatro; esta janela é para as antigas.
 export function JanelaConcluir({ demanda, aoConcluir, aoFechar }) {
   return (
     <Janela aberta={Boolean(demanda)} titulo="Antes de concluir" aoFechar={aoFechar} largura={480}>
@@ -354,12 +355,21 @@ export function JanelaConcluir({ demanda, aoConcluir, aoFechar }) {
 
 function FormConcluir({ demanda, aoConcluir, aoFechar }) {
   const { dados: listas } = useListas()
-  const [extras, setExtras] = useState({ usoIA: demanda.usoIA ?? '', usoTemplate: demanda.usoTemplate ?? '', solicitante: demanda.solicitante ?? '' })
+  const [extras, setExtras] = useState({
+    publico: demanda.publico ?? '',
+    solicitante: demanda.solicitante ?? '',
+    usoIA: demanda.usoIA ?? '',
+    usoTemplate: demanda.usoTemplate ?? '',
+  })
+  const [tentou, setTentou] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const mudar = (campo, valor) => setExtras((atual) => ({ ...atual, [campo]: valor }))
+  const erros = tentou ? errosDaClassificacao(extras) : {}
 
   async function enviar(evento) {
     evento.preventDefault()
+    setTentou(true)
+    if (Object.keys(errosDaClassificacao(extras)).length) return
     setOcupado(true)
     const deuCerto = await aoConcluir(demanda, extras)
     setOcupado(false)
@@ -369,11 +379,12 @@ function FormConcluir({ demanda, aoConcluir, aoFechar }) {
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
       <p>
-        Falta informar alguns dados de <strong>{demanda.nome}</strong>.
+        Para concluir <strong>{demanda.nome}</strong>, complete os dados abaixo.
       </p>
-      <SimNao rotulo="Uso de IA" valor={extras.usoIA} aoMudar={(v) => mudar('usoIA', v)} />
-      <SimNao rotulo="Uso de Template" valor={extras.usoTemplate} aoMudar={(v) => mudar('usoTemplate', v)} />
-      <CampoLista rotulo="Solicitante" valor={extras.solicitante} opcoes={listas?.solicitantes} aoMudar={(v) => mudar('solicitante', v)} />
+      <CampoLista rotulo="Público" valor={extras.publico} opcoes={listas?.publicos} aoMudar={(v) => mudar('publico', v)} erro={erros.publico} />
+      <CampoLista rotulo="Solicitante" valor={extras.solicitante} opcoes={listas?.solicitantes} aoMudar={(v) => mudar('solicitante', v)} erro={erros.solicitante} />
+      <SimNao rotulo="Uso de IA" valor={extras.usoIA} aoMudar={(v) => mudar('usoIA', v)} erro={erros.usoIA} />
+      <SimNao rotulo="Uso de Template" valor={extras.usoTemplate} aoMudar={(v) => mudar('usoTemplate', v)} erro={erros.usoTemplate} />
       <BotoesDaJanela aoFechar={aoFechar} ocupado={ocupado} rotulo="Concluir" />
     </form>
   )

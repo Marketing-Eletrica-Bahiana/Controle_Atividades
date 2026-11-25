@@ -4,7 +4,7 @@ import Janela from '../../componentes/Janela.jsx'
 import { hojeISO } from '../../lib/datas.js'
 import { publicoDaEtiqueta } from '../../lib/quadro.js'
 import { lerTempoDigitado } from '../../lib/tempo.js'
-import { CamposDaClassificacao, CampoTipo, useCamposDaDemanda } from '../cronometro/CamposDaDemanda.jsx'
+import { CamposDaClassificacao, CampoTipo, errosDaClassificacao, useCamposDaDemanda } from '../cronometro/CamposDaDemanda.jsx'
 import {
   BotoesDaJanela, CamposDaExistente, CamposDoTempoManual, erroDaSolicitacao, errosDaExistente, errosDoTempoManual, rotuloDoBotaoDaExistente,
   TEXTOS_DO_TEMPO_MANUAL,
@@ -115,7 +115,7 @@ function FormNova({ cartao, area, pessoa, aoCriar, aoFechar }) {
   const segundos = lerTempoDigitado(tempo)
 
   function validar() {
-    const achados = errosDoTempoManual(data, segundos)
+    const achados = { ...errosDoTempoManual(data, segundos), ...errosDaClassificacao(campos) }
     if (!campos.tipo) achados.tipo = 'Escolha o tipo.'
     const solicitacao = erroDaSolicitacao(dataSolicitacao, data)
     if (solicitacao) achados.dataSolicitacao = solicitacao
@@ -127,7 +127,7 @@ function FormNova({ cartao, area, pessoa, aoCriar, aoFechar }) {
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
       <CampoTipo campos={campos} erro={erros.tipo} />
-      <CamposDaClassificacao campos={campos}>
+      <CamposDaClassificacao campos={campos} erros={erros}>
         <CampoData rotulo="Data de Solicitação" valor={dataSolicitacao} aoMudar={setSolicitacaoEscolhida} erro={erros.dataSolicitacao} obrigatorio />
       </CamposDaClassificacao>
       <CamposDoTempoManual

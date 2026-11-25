@@ -4,7 +4,7 @@ import CampoData from '../../componentes/CampoData.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { hojeISO } from '../../lib/datas.js'
 import { publicoDaEtiqueta } from '../../lib/quadro.js'
-import { CamposDaClassificacao, CampoTipo, useCamposDaDemanda } from '../cronometro/CamposDaDemanda.jsx'
+import { CamposDaClassificacao, CampoTipo, errosDaClassificacao, useCamposDaDemanda } from '../cronometro/CamposDaDemanda.jsx'
 
 // Primeira vez de uma pessoa neste cartão: cria a demanda dela, com os dados que o cronômetro precisa.
 export default function JanelaIniciarCartao({ cartao, pessoa, areas, aoIniciar, aoFechar }) {
@@ -48,7 +48,7 @@ function Formulario({ cartao, area, pessoa, aoIniciar, aoFechar }) {
 
   async function enviar(evento) {
     evento.preventDefault()
-    const novosErros = {}
+    const novosErros = errosDaClassificacao(campos)
     if (!campos.tipo) novosErros.tipo = 'Escolha o tipo.'
     if (!dataSolicitacao) novosErros.dataSolicitacao = 'Informe a data de solicitação.'
     setErros(novosErros)
@@ -62,7 +62,7 @@ function Formulario({ cartao, area, pessoa, aoIniciar, aoFechar }) {
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
       <CampoTipo campos={campos} erro={erros.tipo} />
-      <CamposDaClassificacao campos={campos}>
+      <CamposDaClassificacao campos={campos} erros={erros}>
         <CampoData rotulo="Data de Solicitação" valor={dataSolicitacao} aoMudar={setDataSolicitacao} erro={erros.dataSolicitacao} obrigatorio />
       </CamposDaClassificacao>
       <div className="janela-modal__acoes">

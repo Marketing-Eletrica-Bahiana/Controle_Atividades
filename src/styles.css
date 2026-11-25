@@ -1548,6 +1548,11 @@ p {
   color: var(--branco);
 }
 
+/* Sim/Não obrigatório sem resposta: borda vermelha, como os outros campos faltando. */
+.sim-nao--faltando .sim-nao {
+  border-color: var(--vermelho);
+}
+
 .campo-tipo--faltando select {
   border-color: var(--vermelho);
   color: var(--vermelho);

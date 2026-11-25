@@ -11,7 +11,9 @@ import { useMembros } from '../../dados/membros.js'
 import { ativosDoCronometro } from '../../lib/cronometro.js'
 import { podeExcluirCartao, podeMexerNoQuadro } from '../../lib/papeis.js'
 import { formatarTempo } from '../../lib/tempo.js'
+import { faltaClassificacao } from '../cronometro/CamposDaDemanda.jsx'
 import { escolherComoIniciar } from '../cronometro/escolherComoIniciar.js'
+import { JanelaConcluir } from '../cronometro/JanelasDoCronometro.jsx'
 import JanelaCartao from './JanelaCartao.jsx'
 import JanelaIniciarCartao from './JanelaIniciarCartao.jsx'
 import JanelaTempoDoCartao from './JanelaTempoDoCartao.jsx'
@@ -33,6 +35,7 @@ export function useAcoesDoCartao(cartoes) {
   const [abertoId, setAbertoId] = useState(null)
   const [iniciando, setIniciando] = useState(null)
   const [lancando, setLancando] = useState(null)
+  const [concluindo, setConcluindo] = useState(null)
 
   const listaDeColunas = colunas.dados ?? SEM_COLUNAS
   const nomeDaColuna = (id) => listaDeColunas.find((c) => c.id === id)?.nome ?? id
@@ -113,17 +116,20 @@ export function useAcoesDoCartao(cartoes) {
     executar(() => trocarTempoGasto(demandaId, segundos, membro.email), `Tempo de ${cartao.titulo} corrigido para ${formatarTempo(segundos)}.`)
 
   // O cartão entregue não conclui a demanda sozinho: quem entregou decide sobre a própria demanda.
+  // Faltando Público, Solicitante, Uso de IA ou Uso de Template, a janela "Antes de concluir" pede antes de concluir.
   async function oferecerConcluir(cartao) {
     const minha = minhaDemanda(cartao)
     if (!minha) return
-    const situacao = await situacaoDaDemanda(minha.demandaId).catch(() => null)
-    if (!situacao || situacao === 'concluida') return
+    const demanda = await lerDemanda(minha.demandaId).catch(() => null)
+    if (!demanda || demanda.status === 'concluida') return
     const sim = await confirmar({
       titulo: 'Concluir sua demanda também?',
       texto: `"${cartao.titulo}" foi para Entregues, e a sua demanda dela ainda está aberta no cronômetro.`,
       botao: 'Concluir',
     })
-    if (sim) executar(() => concluir(minha.demandaId, pessoa), `${cartao.titulo} concluída. Mandou bem!`)
+    if (!sim) return
+    if (faltaClassificacao(demanda)) setConcluindo(demanda)
+    else executar(() => concluir(demanda.id, pessoa), `${cartao.titulo} concluída. Mandou bem!`)
   }
 
   const janelas = (
@@ -154,6 +160,11 @@ export function useAcoesDoCartao(cartoes) {
         aoFechar={() => setAbertoId(null)}
       />
       <JanelaIniciarCartao cartao={iniciando} pessoa={pessoa} areas={minhasAreas} aoIniciar={iniciarDoCartao} aoFechar={() => setIniciando(null)} />
+      <JanelaConcluir
+        demanda={concluindo}
+        aoConcluir={(demanda, extras) => executar(() => concluir(demanda.id, pessoa, extras), `${demanda.nome} concluída. Mandou bem!`)}
+        aoFechar={() => setConcluindo(null)}
+      />
       <JanelaTempoDoCartao
         pedido={lancando}
         pessoa={pessoa}
