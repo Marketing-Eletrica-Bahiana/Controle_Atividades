@@ -85,14 +85,72 @@ export function tempoPorDia(demandas, inicio, fim) {
   return itens.sort((a, b) => a.dia.localeCompare(b.dia) || String(a.demanda.nome).localeCompare(b.demanda.nome, 'pt-BR'))
 }
 
-// Indicadores do período: horas, demandas, tempo economizado (das demandas com IA, concluídas no período)
-// e porcentagem de demandas com IA.
+// ---------- Horas de trabalho com demandas simultâneas ----------
+// Pedido em 25/11/2026: a pessoa pode rodar várias demandas ao mesmo tempo. Cada demanda conta o tempo inteiro em
+// que rodou, mas as horas de trabalho da pessoa contam o relógio uma vez só: o trecho em que duas ou mais rodaram
+// juntas não é somado de novo.
+
+const emMs = (momento) => momento?.toMillis?.() ?? (momento instanceof Date ? momento.getTime() : null)
+
+// Segundos contados mais de uma vez num conjunto de intervalos { inicio, fim } em milissegundos: a soma de todos
+// menos o tempo de relógio que eles cobrem.
+export function segundosRepetidos(intervalos) {
+  const ordenados = intervalos.filter((i) => i.fim > i.inicio).sort((a, b) => a.inicio - b.inicio)
+  let soma = 0
+  let coberto = 0
+  let fimAtual = -Infinity
+  for (const { inicio, fim } of ordenados) {
+    soma += fim - inicio
+    if (inicio >= fimAtual) coberto += fim - inicio
+    else if (fim > fimAtual) coberto += fim - fimAtual
+    fimAtual = Math.max(fimAtual, fim)
+  }
+  return Math.round((soma - coberto) / 1000)
+}
+
+// Sessões do cronômetro de uma demanda num dia, como intervalos de relógio. A sessão manual fica de fora: ela não
+// tem horário de verdade (é gravada às 08:00) e soma inteira.
+function intervalosReais(demanda, dia) {
+  return (demanda.sessoes ?? [])
+    .filter((sessao) => !sessao.manual && diaDaSessao(sessao) === dia && emMs(sessao.inicio) != null)
+    .map((sessao) => ({ inicio: emMs(sessao.inicio), fim: emMs(sessao.inicio) + (sessao.seg ?? 0) * 1000 }))
+}
+
+// Horas de trabalho de cada pessoa, a partir dos itens de tempoPorDia ({ dia, demanda, segundos }). Por pessoa e dia:
+// a soma do tempo das demandas menos o que se repetiu nas sessões que correram juntas. "vivos" são as sessões que
+// ainda estão rodando ({ email, dia, inicio, fim }, em ms), com o tempo delas já somado nos itens. O dia nunca fica
+// abaixo da maior demanda dele: um Tempo Gasto corrigido para menos deixa sessões mais longas do que o tempo que vale.
+// Devolve Map(email → { nome, segundos }).
+export function horasDeTrabalhoPorPessoa(itens, vivos = []) {
+  const grupos = new Map()
+  for (const item of itens) {
+    const email = item.demanda.responsavelEmail
+    const chave = `${email}|${item.dia}`
+    if (!grupos.has(chave)) grupos.set(chave, { email, nome: item.demanda.responsavelNome, dia: item.dia, itens: [] })
+    grupos.get(chave).itens.push(item)
+  }
+  const porPessoa = new Map()
+  for (const { email, nome, dia, itens: doDia } of grupos.values()) {
+    const soma = doDia.reduce((s, i) => s + i.segundos, 0)
+    const maior = Math.max(0, ...doDia.map((i) => i.segundos))
+    const intervalos = [...doDia.flatMap((i) => intervalosReais(i.demanda, dia)), ...vivos.filter((v) => v.email === email && v.dia === dia)]
+    const segundos = Math.max(maior, soma - segundosRepetidos(intervalos))
+    const atual = porPessoa.get(email)
+    porPessoa.set(email, { nome: atual?.nome ?? nome, segundos: (atual?.segundos ?? 0) + segundos })
+  }
+  return porPessoa
+}
+
+export const horasDeTrabalho = (itens, vivos = []) => [...horasDeTrabalhoPorPessoa(itens, vivos).values()].reduce((s, p) => s + p.segundos, 0)
+
+// Indicadores do período: horas de trabalho, demandas, tempo economizado (das demandas com IA, concluídas no
+// período) e porcentagem de demandas com IA.
 export function resumoDoPeriodo(itens, inicio, fim) {
   const demandas = [...new Map(itens.map((i) => [i.demanda.id, i.demanda])).values()]
   const comIA = demandas.filter((d) => d.usoIA === 'Sim')
   const concluidasComIA = comIA.filter((d) => d.dataEntrega && d.dataEntrega >= inicio && d.dataEntrega <= fim)
   return {
-    totalSeg: itens.reduce((s, i) => s + i.segundos, 0),
+    totalSeg: horasDeTrabalho(itens),
     demandas: demandas.length,
     economizadoMinSeg: concluidasComIA.reduce((s, d) => s + (d.economizadoMinSeg ?? 0), 0),
     economizadoMaxSeg: concluidasComIA.reduce((s, d) => s + (d.economizadoMaxSeg ?? 0), 0),

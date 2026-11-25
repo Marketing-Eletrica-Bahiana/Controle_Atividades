@@ -239,7 +239,7 @@ Empolgante, humano, direto, orgulho baiano. Assinatura: "Mais forte por você!".
 - Nas telas Demandas, Semana e Painel: admin, gestor e diretoria escolhem qualquer área ou
   "Todas as áreas"; equipe vê só as próprias áreas.
 - Toda consulta de demandas no código deve filtrar por área (as regras do Firestore exigem).
-- Uma pessoa tem um só cronômetro rodando, mesmo trabalhando em mais de uma área.
+- Uma pessoa pode ter várias demandas rodando ao mesmo tempo, de qualquer área (desde 25/11/2026; ver "Cronômetro").
 
 ## Equipe
 
@@ -298,7 +298,7 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   (`{id, url, ultimaAtividade, importadoEm}`). O ID desses documentos é `trello-{id do cartão}`.
 - `config/quadro`: `colunas` (lista de `{id, nome}`). Sem esse documento, valem as colunas padrão de
   `src/lib/quadro.js`.
-- `cronometros/{email}`: `demandaId`, `area`, `inicio` (serverTimestamp), `rodando`.
+- `cronometros/{email}`: `ativos` (mapa `{ [demandaId]: { area, inicio } }`, `inicio` em serverTimestamp) e `rodando`. Antes de 25/11/2026: `demandaId`, `area`, `inicio`, `rodando`.
 
 Convenções de gravação (definidas na Fase 2):
 
@@ -319,11 +319,23 @@ Convenções de gravação (definidas na Fase 2):
 
 Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cronometro/`.
 
-- `cronometros/{email}` parado fica `{ rodando: false, demandaId: null, area: null, inicio: null }`.
-  O tempo na tela é sempre "agora menos `inicio`", então continua certo ao fechar a aba ou trocar
-  de computador.
-- Um cronômetro por pessoa: iniciar ou retomar outra demanda pergunta antes e pausa a atual na
-  mesma transação.
+- Demandas simultâneas (pedido da pessoa em 25/11/2026, porque às vezes faz várias ao mesmo tempo): a pessoa pode ter
+  quantas demandas quiser rodando juntas, em qualquer área. `cronometros/{email}` guarda
+  `{ ativos: { [demandaId]: { area, inicio } }, rodando }` (mapa, porque o `serverTimestamp` não funciona em listas);
+  parado fica `{ ativos: {}, rodando: false }`. O documento antigo, de uma demanda só (`demandaId`, `area`, `inicio`),
+  continua sendo lido e é regravado no formato novo (`src/lib/cronometro.js`). O tempo de cada uma é sempre "agora menos
+  o `inicio` dela", então continua certo ao fechar a aba ou trocar de computador. As regras publicadas de `cronometros`
+  não olham o formato, então não precisaram mudar.
+- Ao iniciar ou retomar uma demanda com outra rodando, a janela pergunta "Rodar junto" ou "Pausar a outra" (ou "as
+  outras"), em `escolherComoIniciar.js`; pausar vai na mesma transação. Pausar, concluir e "Corrigir início" valem para uma
+  demanda só; as outras continuam. O cartão do Meu Cronômetro mostra cada uma com o próprio tempo e botões, e a pílula
+  do topo mostra o tempo desde a mais antiga e quantas estão rodando.
+- Horas de trabalho (`horasDeTrabalho` em `src/lib/semana.js`): cada demanda conta o tempo inteiro em que rodou, mas o
+  trecho em que a pessoa rodou várias juntas conta uma vez só no "Total do dia" do Meu Cronômetro, no total e nos dias
+  da Semana e no Painel ("Horas no período", "Horas por pessoa" e a evolução mês a mês). Exemplo dela: Reels das 9h às
+  10h e Card das 9h30 às 10h20 dão Reels 1h, Card 50 min e 1h20 de trabalho. Tempo Gasto, Demandas, exportações e os
+  gráficos por tipo, área e solicitante continuam com o tempo de cada demanda. A sessão manual não tem horário de
+  verdade e soma inteira. O dia nunca fica abaixo da maior demanda dele.
 - `inicio` é a hora do servidor, e o relógio do computador pode estar diferente. Atrasado, o cronômetro ficava
   parado em 00:00:00 e pausar gravava zero. Por isso, o tempo usa `agoraNoServidor()` (`src/lib/relogio.js`),
   com a diferença medida a cada vez que a pessoa liga o cronômetro. Nunca usar `Date.now()` para calcular sessão.
@@ -372,7 +384,7 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
   Entregues, filtrada por mês. O admin edita as colunas em Administração, aba Quadro. Entregues não pode
   ser removida, e coluna com cartão precisa ser esvaziada antes.
 - Iniciar pelo cartão: a primeira vez de cada pessoa abre uma janela com área, tipo e demais campos, e
-  cria a demanda dela. Depois o botão só retoma ou pausa. Vale a regra de um cronômetro por pessoa.
+  cria a demanda dela. Depois o botão só retoma ou pausa a demanda da pessoa naquele cartão. Com outra rodando, pergunta "Rodar junto" ou "Pausar a outra".
 - "Adicionar tempo manual" no cartão (pedido da pessoa em 11/11/2026), ao lado do botão do cronômetro, em
   `src/telas/quadro/JanelaTempoDoCartao.jsx`. Quem já tem demanda no cartão soma nela, como "Demanda existente" no Meu
   Cronômetro. Na primeira vez, a janela pede área, tipo e demais campos e cria a demanda já com o tempo, sem ligar o

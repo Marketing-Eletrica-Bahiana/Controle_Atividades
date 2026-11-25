@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { diasDaSemana, mesesEntre, nomeDoDia, resumoDoPeriodo, segundaDaSemana, segundosPorDia, tempoPorDia } from './semana.js'
+import {
+  diasDaSemana, horasDeTrabalho, horasDeTrabalhoPorPessoa, mesesEntre, nomeDoDia, resumoDoPeriodo, segundaDaSemana, segundosPorDia, segundosRepetidos, tempoPorDia,
+} from './semana.js'
 
 const sessao = (quando, seg) => ({ inicio: new Date(quando), seg })
 
@@ -67,5 +69,55 @@ describe('semana', () => {
       economizadoMaxSeg: 1200,
       porcentagemIA: 50,
     })
+  })
+})
+
+describe('horas de trabalho com demandas simultâneas', () => {
+  const hora = (h, m = 0) => new Date(`2026-11-25T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00-03:00`).getTime()
+  const demanda = (id, email, sessoes, extra = {}) => ({
+    id, responsavelEmail: email, responsavelNome: email, sessoes, tempoGastoSeg: sessoes.reduce((s, x) => s + x.seg, 0), ...extra,
+  })
+  const DIA = '2026-11-25'
+
+  it('conta o relógio uma vez só no trecho em que rodaram juntas', () => {
+    expect(segundosRepetidos([{ inicio: hora(9), fim: hora(10) }, { inicio: hora(9, 30), fim: hora(10) }])).toBe(1800)
+    expect(segundosRepetidos([{ inicio: hora(9), fim: hora(10) }, { inicio: hora(10), fim: hora(11) }])).toBe(0)
+    expect(segundosRepetidos([{ inicio: hora(9), fim: hora(12) }, { inicio: hora(9, 30), fim: hora(10) }, { inicio: hora(11), fim: hora(13) }])).toBe(1800 + 3600)
+  })
+
+  it('o exemplo da pessoa: Reels 9h às 10h e Card 9h30 às 10h20 dão 1h20 de trabalho', () => {
+    const reels = demanda('reels', 'ivie', [sessao('2026-11-25T09:00:00-03:00', 3600)])
+    const card = demanda('card', 'ivie', [sessao('2026-11-25T09:30:00-03:00', 3000)])
+    const itens = tempoPorDia([reels, card], DIA, DIA)
+    expect(itens.map((i) => i.segundos).sort()).toEqual([3000, 3600])
+    expect(horasDeTrabalho(itens)).toBe(4800)
+    expect(resumoDoPeriodo(itens, DIA, DIA).totalSeg).toBe(4800)
+  })
+
+  it('pessoas diferentes trabalhando ao mesmo tempo somam normalmente', () => {
+    const daIvie = demanda('a', 'ivie', [sessao('2026-11-25T09:00:00-03:00', 3600)])
+    const daTais = demanda('b', 'tais', [sessao('2026-11-25T09:00:00-03:00', 3600)])
+    const porPessoa = horasDeTrabalhoPorPessoa(tempoPorDia([daIvie, daTais], DIA, DIA))
+    expect(porPessoa.get('ivie').segundos).toBe(3600)
+    expect(porPessoa.get('tais').segundos).toBe(3600)
+  })
+
+  it('sessão manual não tem horário de verdade e soma inteira', () => {
+    const manual = (seg) => ({ ...sessao('2026-11-25T08:00:00-03:00', seg), manual: true })
+    const itens = tempoPorDia([demanda('a', 'ivie', [manual(1800)]), demanda('b', 'ivie', [manual(1800)])], DIA, DIA)
+    expect(horasDeTrabalho(itens)).toBe(3600)
+  })
+
+  it('soma a sessão que ainda está rodando', () => {
+    const reels = demanda('reels', 'ivie', [sessao('2026-11-25T09:00:00-03:00', 3600)])
+    const card = demanda('card', 'ivie', [])
+    const itens = [...tempoPorDia([reels], DIA, DIA), { dia: DIA, demanda: card, segundos: 1800 }]
+    expect(horasDeTrabalho(itens, [{ email: 'ivie', dia: DIA, inicio: hora(9, 30), fim: hora(10) }])).toBe(3600)
+  })
+
+  it('nunca fica abaixo da maior demanda do dia', () => {
+    const corrigida = demanda('a', 'ivie', [sessao('2026-11-25T09:00:00-03:00', 7200)], { tempoGastoSeg: 600 })
+    const outra = demanda('b', 'ivie', [sessao('2026-11-25T09:00:00-03:00', 3600)])
+    expect(horasDeTrabalho(tempoPorDia([corrigida, outra], DIA, DIA))).toBe(3600)
   })
 })

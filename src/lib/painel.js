@@ -1,6 +1,6 @@
 // Contas dos gráficos do Painel. Recebem os itens de tempoPorDia (demanda + segundos no dia).
 
-import { tempoPorDia } from './semana.js'
+import { horasDeTrabalho, horasDeTrabalhoPorPessoa, tempoPorDia } from './semana.js'
 
 const unicas = (itens) => [...new Map(itens.map((i) => [i.demanda.id, i.demanda])).values()]
 
@@ -12,6 +12,14 @@ export function horasPor(itens, rotuloDe) {
     soma.set(rotulo, (soma.get(rotulo) ?? 0) + item.segundos)
   }
   return [...soma.entries()].map(([rotulo, segundos]) => ({ rotulo, segundos })).sort((a, b) => b.segundos - a.segundos)
+}
+
+// Horas de trabalho de cada pessoa no período, do maior para o menor. Diferente de horasPor: quando a pessoa rodou
+// demandas ao mesmo tempo, o trecho junto conta uma vez só (pedido em 25/11/2026).
+export function horasDeTrabalhoPorNome(itens) {
+  return [...horasDeTrabalhoPorPessoa(itens).values()]
+    .map(({ nome, segundos }) => ({ rotulo: nome || 'Não informado', segundos }))
+    .sort((a, b) => b.segundos - a.segundos)
 }
 
 // Quantidade de demandas (sem repetir) por um campo.
@@ -43,7 +51,7 @@ export function evolucaoMensal(demandas, meses) {
     const [ano, numero] = mes.split('-').map(Number)
     const ultimo = new Date(Date.UTC(ano, numero, 0)).getUTCDate()
     const itens = tempoPorDia(demandas, `${mes}-01`, `${mes}-${String(ultimo).padStart(2, '0')}`)
-    return { mes, segundos: itens.reduce((s, i) => s + i.segundos, 0), demandas: unicas(itens).length }
+    return { mes, segundos: horasDeTrabalho(itens), demandas: unicas(itens).length }
   })
 }
 

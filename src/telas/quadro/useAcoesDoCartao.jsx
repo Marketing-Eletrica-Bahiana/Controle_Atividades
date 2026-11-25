@@ -8,8 +8,10 @@ import {
   adicionarTempoManual, concluir, criarDemandaManual, criarEIniciar, lerDemanda, pausar, retomar, situacaoDaDemanda, trocarTempoGasto, useCronometro,
 } from '../../dados/demandas.js'
 import { useMembros } from '../../dados/membros.js'
+import { ativosDoCronometro } from '../../lib/cronometro.js'
 import { podeExcluirCartao, podeMexerNoQuadro } from '../../lib/papeis.js'
 import { formatarTempo } from '../../lib/tempo.js'
+import { escolherComoIniciar } from '../cronometro/escolherComoIniciar.js'
 import JanelaCartao from './JanelaCartao.jsx'
 import JanelaIniciarCartao from './JanelaIniciarCartao.jsx'
 import JanelaTempoDoCartao from './JanelaTempoDoCartao.jsx'
@@ -41,22 +43,23 @@ export function useAcoesDoCartao(cartoes) {
     .map((id) => todasAsAreas?.find((a) => a.id === id) ?? { id, nome: id, ativa: true })
     .filter((a) => a.ativa !== false)
   const podeUsarCronometro = podeMexer && minhasAreas.length > 0
-  const rodandoId = cronometro.dados?.rodando ? cronometro.dados.demandaId : null
-  const estaRodando = (cartao) => Boolean(rodandoId) && (cartao.vinculos ?? []).some((v) => v.demandaId === rodandoId)
+  // Várias demandas da pessoa podem rodar ao mesmo tempo (desde 25/11/2026).
+  const rodandoIds = useMemo(() => new Set(ativosDoCronometro(cronometro.dados).map((a) => a.demandaId)), [cronometro.dados])
   const minhaDemanda = (cartao) => (cartao.vinculos ?? []).find((v) => v.email === membro.email)
+  const estaRodando = (cartao) => rodandoIds.has(minhaDemanda(cartao)?.demandaId)
 
-  async function podeTrocar(nomeNovo) {
-    if (!rodandoId) return true
-    return confirmar({
-      titulo: 'Pausar o cronômetro atual?',
-      texto: `O cronômetro que está rodando será pausado para começar "${nomeNovo}".`,
-      botao: 'Pausar e começar',
-    })
+  // Com outra demanda rodando, a pessoa escolhe: rodar junto ou pausar. O nome mostrado é o do cartão, quando ele
+  // está na tela; senão, "uma demanda".
+  function comoIniciar(nomeNovo) {
+    const nomes = [...rodandoIds].map(
+      (id) => cartoes.find((c) => (c.vinculos ?? []).some((v) => v.demandaId === id))?.titulo ?? 'uma demanda do Meu Cronômetro',
+    )
+    return escolherComoIniciar(confirmar, nomeNovo, nomes)
   }
 
   async function usarCronometro(cartao) {
     if (estaRodando(cartao)) {
-      executar(() => pausar(pessoa), 'Cronômetro pausado.')
+      executar(() => pausar(pessoa, minhaDemanda(cartao).demandaId), `${cartao.titulo} pausada.`)
       return
     }
     const minha = minhaDemanda(cartao)
@@ -70,12 +73,14 @@ export function useAcoesDoCartao(cartoes) {
       if (await executar(() => esquecerDemanda(cartao, minha.demandaId))) setIniciando(cartao)
       return
     }
-    if (await podeTrocar(cartao.titulo)) executar(() => retomar(minha.demandaId, pessoa), `Cronômetro rodando: ${cartao.titulo}`)
+    const escolha = await comoIniciar(cartao.titulo)
+    if (escolha) executar(() => retomar(minha.demandaId, pessoa, escolha), `Cronômetro rodando: ${cartao.titulo}`)
   }
 
   async function iniciarDoCartao(cartao, dados) {
-    if (!(await podeTrocar(dados.nome))) return false
-    return executar(() => criarEIniciar({ ...dados, cartaoId: cartao.id }, pessoa), `Cronômetro rodando: ${dados.nome}`)
+    const escolha = await comoIniciar(dados.nome)
+    if (!escolha) return false
+    return executar(() => criarEIniciar({ ...dados, cartaoId: cartao.id }, pessoa, escolha), `Cronômetro rodando: ${dados.nome}`)
   }
 
   // Tempo feito sem o cronômetro. Soma na demanda da pessoa no cartão; sem demanda, a janela também cria a dela.

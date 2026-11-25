@@ -289,9 +289,15 @@ function FormTempoManual({ area, nomeDaArea, pessoa, demandas, abertas, aoCriar,
 }
 
 // Corrige a hora em que o cronômetro foi ligado (hoje). Não pode ser no futuro.
-export function JanelaCorrigirInicio({ aberta, inicioAtual, aoSalvar, aoFechar }) {
+// Com várias demandas rodando, "nome" diz de qual delas é o início corrigido.
+export function JanelaCorrigirInicio({ aberta, nome, inicioAtual, aoSalvar, aoFechar }) {
   return (
     <Janela aberta={aberta} titulo="Corrigir horário de início" aoFechar={aoFechar} largura={420}>
+      {aberta && nome && (
+        <p className="janela-iniciar__titulo">
+          <strong>{nome}</strong>
+        </p>
+      )}
       {aberta && <FormCorrigirInicio inicioAtual={inicioAtual} aoSalvar={aoSalvar} aoFechar={aoFechar} />}
     </Janela>
   )

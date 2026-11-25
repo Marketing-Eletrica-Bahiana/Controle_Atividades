@@ -3,7 +3,8 @@ import EstadoVazio from '../../componentes/EstadoVazio.jsx'
 import { SITUACOES } from '../../lib/regras.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
-export default function ListaDeHoje({ demandas, rodandoId, decorrido, ocupado, aoRetomar, aoConcluir, aoEditar, aoReabrir, aoTempoManual }) {
+// "rodandoIds": as demandas que estão com o cronômetro ligado (podem ser várias); "decorridoDe(id)": o tempo da sessão aberta.
+export default function ListaDeHoje({ demandas, rodandoIds, decorridoDe, ocupado, aoRetomar, aoConcluir, aoEditar, aoReabrir, aoTempoManual }) {
   return (
     <section className="bloco">
       <div className="bloco__cabecalho">
@@ -31,7 +32,7 @@ export default function ListaDeHoje({ demandas, rodandoId, decorrido, ocupado, a
           </thead>
           <tbody>
             {demandas.map((d) => {
-              const rodando = d.id === rodandoId
+              const rodando = rodandoIds.has(d.id)
               const situacao = SITUACOES[d.status] ?? SITUACOES.pausada
               return (
                 <tr key={d.id} className={rodando ? 'linha-rodando' : ''}>
@@ -42,7 +43,7 @@ export default function ListaDeHoje({ demandas, rodandoId, decorrido, ocupado, a
                   </td>
                   <td data-rotulo="Tipo">{d.tipo || <span className="texto-alerta">Sem tipo</span>}</td>
                   <td data-rotulo="Tempo" className="numero">
-                    {formatarTempo((d.tempoGastoSeg ?? 0) + (rodando ? decorrido : 0))}
+                    {formatarTempo((d.tempoGastoSeg ?? 0) + (rodando ? decorridoDe(d.id) : 0))}
                   </td>
                   <td data-rotulo="Situação">
                     <span className={`etiqueta-situacao ${situacao.classe}`}>{situacao.rotulo}</span>

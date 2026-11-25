@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import Janela from './Janela.jsx'
 
 // Pergunta de confirmação. Uso: const [janela, confirmar] = useConfirmar(); if (await confirmar({...})) ...
+// Com "outro" (rótulo de um segundo botão), a resposta pode ser true (botão principal), "outro" ou false (Cancelar).
 export function useConfirmar() {
   const [pedido, setPedido] = useState(null)
 
@@ -19,6 +20,11 @@ export function useConfirmar() {
         <button type="button" className="botao botao--secundario" onClick={() => responder(false)}>
           Cancelar
         </button>
+        {pedido?.outro && (
+          <button type="button" className="botao botao--secundario" onClick={() => responder('outro')}>
+            {pedido.outro}
+          </button>
+        )}
         <button
           type="button"
           className={`botao ${pedido?.perigo ? 'botao--perigo' : 'botao--principal'}`}

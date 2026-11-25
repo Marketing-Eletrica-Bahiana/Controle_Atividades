@@ -10,7 +10,7 @@ import { SeletorDeAreas, SeletorMes, useAreasVisiveis, useMesEscolhido } from '.
 import { useDemandasDosMeses } from '../../dados/demandas.js'
 import { formatarData, formatarMes, hojeISO } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
-import { evolucaoMensal, horasPor, principais, quantidadePor, tempoMedioPorTipo } from '../../lib/painel.js'
+import { evolucaoMensal, horasDeTrabalhoPorNome, horasPor, principais, quantidadePor, tempoMedioPorTipo } from '../../lib/painel.js'
 import { mesesEntre, resumoDoPeriodo, segundaDaSemana, somarDias, tempoPorDia } from '../../lib/semana.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
@@ -193,7 +193,7 @@ function Graficos({ itens, evolucao, nomeDaArea, escuro }) {
     // Todos os tipos, sem juntar em "Outros" (pedido da pessoa em 17/11/2026): o gráfico cresce com a lista.
     const porTipo = quantidadePor(itens, (d) => d.tipo)
     const medio = tempoMedioPorTipo(itens).slice(0, 10)
-    const porPessoa = horasPor(itens, (d) => d.responsavelNome)
+    const porPessoa = horasDeTrabalhoPorNome(itens)
     const porPublico = quantidadePor(itens, (d) => d.publico)
     const demandasPorSolicitante = principais(quantidadePor(itens, (d) => d.solicitante), 10, 'quantidade')
     const horasPorSolicitante = principais(horasPor(itens, (d) => d.solicitante), 10, 'segundos')

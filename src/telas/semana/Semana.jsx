@@ -13,7 +13,7 @@ import { useMembros } from '../../dados/membros.js'
 import { formatarData } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import { podeEditar } from '../../lib/papeis.js'
-import { diasDaSemana, mesesEntre, nomeDoDia, resumoDoPeriodo, segundaDaSemana, somarDias, tempoPorDia } from '../../lib/semana.js'
+import { diasDaSemana, horasDeTrabalho, mesesEntre, nomeDoDia, resumoDoPeriodo, segundaDaSemana, somarDias, tempoPorDia } from '../../lib/semana.js'
 import { formatarTempo } from '../../lib/tempo.js'
 
 export default function Semana() {
@@ -134,7 +134,8 @@ export default function Semana() {
       ) : (
         diasComTrabalho.map((dia) => {
           const doDia = itens.filter((i) => i.dia === dia)
-          const total = doDia.reduce((s, i) => s + i.segundos, 0)
+          // Demandas que rodaram juntas: o relógio conta uma vez só no total do dia.
+          const total = horasDeTrabalho(doDia)
           return (
             <section key={dia} className="bloco dia-da-semana">
               <div className="bloco__cabecalho">

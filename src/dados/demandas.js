@@ -7,6 +7,7 @@ import {
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarAjustes, formatarData, hojeISO, mesDe } from '../lib/datas.js'
+import { ativosDoCronometro, cronometroComAtivos } from '../lib/cronometro.js'
 import { vinculosSemDemanda } from '../lib/quadro.js'
 import { acertarRelogio, agoraNoServidor } from '../lib/relogio.js'
 import { camposCalculados, datasAoConcluir, diasTrabalhados, fecharSessao, proximoNumero, situacaoDaDemandaManual } from '../lib/regras.js'
@@ -109,18 +110,30 @@ export const esquecerHistorico = (area) => historicoEmMemoria.delete(area)
 
 // ---------- Cronômetro ----------
 
-async function lerRodando(t, email) {
+// Desde 25/11/2026 a pessoa pode ter várias demandas rodando ao mesmo tempo (ver src/lib/cronometro.js).
+// Lê o cronômetro e cada demanda que está rodando: a transação exige todas as leituras antes de gravar.
+// Demanda que não existe mais vem com "demanda: null" e sai da lista na próxima gravação.
+async function lerAtivos(t, email) {
   const cron = await t.get(refCronometro(email))
-  const dados = cron.exists() ? cron.data() : null
-  if (!dados?.rodando || !dados.demandaId) return { cron: dados, demanda: null }
-  const demanda = await t.get(refDemanda(dados.demandaId))
-  return { cron: dados, demanda: demanda.exists() ? demanda : null }
+  const ativos = ativosDoCronometro(cron.exists() ? cron.data() : null)
+  const comDemanda = []
+  for (const ativo of ativos) {
+    const demanda = await t.get(refDemanda(ativo.demandaId))
+    comDemanda.push({ ...ativo, demanda: demanda.exists() ? demanda : null })
+  }
+  return comDemanda
 }
 
-// Fecha a sessão aberta e soma o tempo. Devolve os dados atualizados da demanda.
-function fecharSessaoNaTransacao(t, { cron, demanda }, agoraMs, alteracoes = {}) {
+const gravarAtivos = (t, email, lista) => t.set(refCronometro(email), cronometroComAtivos(lista.filter((a) => a.demanda !== null)))
+
+// Pausa, na mesma transação, as que estão rodando (quando a pessoa escolhe "Pausar a outra" ao iniciar uma nova).
+function pausarTodasNaTransacao(t, ativos, agoraMs) {
+  for (const ativo of ativos) if (ativo.demanda) fecharSessaoNaTransacao(t, ativo, agoraMs, { status: 'pausada' })
+}
+
+// Fecha a sessão aberta de uma demanda que está rodando e soma o tempo. Devolve os dados atualizados da demanda.
+function fecharSessaoNaTransacao(t, { inicio, demanda }, agoraMs, alteracoes = {}) {
   const atual = demanda.data()
-  const inicio = cron.inicio
   const { segundos } = fecharSessao(inicio.toMillis(), agoraMs)
   const sessoes = [...(atual.sessoes ?? []), { inicio, fim: Timestamp.fromMillis(agoraMs), seg: segundos }]
   const tempoGastoSeg = (atual.tempoGastoSeg ?? 0) + segundos
@@ -135,8 +148,6 @@ function fecharSessaoNaTransacao(t, { cron, demanda }, agoraMs, alteracoes = {})
   return novos
 }
 
-const cronometroParado = { demandaId: null, area: null, inicio: null, rodando: false }
-
 // Mede a diferença entre este computador e o servidor logo depois de ligar o cronômetro. Não pode ser getDoc:
 // com o documento já sendo escutado (o cabeçalho escuta sempre), ele devolve a última foto, de antes de ligar.
 // A leitura dentro de uma transação vai direto ao servidor.
@@ -144,7 +155,8 @@ const cronometroParado = { demandaId: null, area: null, inicio: null, rodando: f
 async function medirRelogio(email, demandaId, horaLocal) {
   try {
     const cronometro = await runTransaction(db, async (t) => (await t.get(refCronometro(email))).data())
-    if (cronometro?.demandaId === demandaId && cronometro.inicio?.toMillis) acertarRelogio(cronometro.inicio.toMillis(), horaLocal)
+    const ligado = ativosDoCronometro(cronometro).find((a) => a.demandaId === demandaId)
+    if (ligado?.inicio?.toMillis) acertarRelogio(ligado.inicio.toMillis(), horaLocal)
   } catch {
     // Sem medição nova.
   }
@@ -176,15 +188,16 @@ const camposDaNovaDemanda = (dados, pessoa) => ({
   atualizadoEm: serverTimestamp(),
 })
 
-// Cria a demanda e já liga o cronômetro. Se havia outro rodando, ele é pausado na mesma gravação.
-export async function criarEIniciar(dados, pessoa) {
+// Cria a demanda e já liga o cronômetro dela. Com "pausarOutras", as que estavam rodando são pausadas na mesma
+// gravação; sem, ela roda junto com as outras (escolha da pessoa, desde 25/11/2026).
+export async function criarEIniciar(dados, pessoa, { pausarOutras = true } = {}) {
   const hoje = hojeISO()
   const mes = mesDe(hoje)
   const numero = await numeroNoMes(dados.area, pessoa.email, mes)
   const ref = doc(colecao())
   await runTransaction(db, async (t) => {
-    const rodando = await lerRodando(t, pessoa.email)
-    if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, agoraNoServidor(), { status: 'pausada' })
+    const ativos = await lerAtivos(t, pessoa.email)
+    if (pausarOutras) pausarTodasNaTransacao(t, ativos, agoraNoServidor())
     const novos = camposDaNovaDemanda(dados, pessoa)
     t.set(ref, {
       ...novos,
@@ -198,7 +211,8 @@ export async function criarEIniciar(dados, pessoa) {
       sessoes: [],
       historico: [registro(pessoa.email, 'criacao')],
     })
-    t.set(refCronometro(pessoa.email), { demandaId: ref.id, area: dados.area, inicio: serverTimestamp(), rodando: true })
+    const ficam = pausarOutras ? [] : ativos
+    gravarAtivos(t, pessoa.email, [...ficam, { demandaId: ref.id, area: dados.area, inicio: serverTimestamp(), demanda: undefined }])
     if (dados.cartaoId) {
       t.update(doc(db, 'cartoes', dados.cartaoId), {
         vinculos: arrayUnion({ demandaId: ref.id, area: dados.area, email: pessoa.email, nome: pessoa.nome }),
@@ -253,48 +267,52 @@ export async function criarDemandaManual(dados, { data, segundos, concluida }, p
   return ref.id
 }
 
-// Liga o cronômetro numa demanda que já existe (pausada, em andamento ou concluída).
-export async function retomar(demandaId, pessoa) {
+// Liga o cronômetro numa demanda que já existe (pausada, em andamento ou concluída). Com "pausarOutras", as que
+// estavam rodando são pausadas; sem, ela roda junto com as outras.
+export async function retomar(demandaId, pessoa, { pausarOutras = true } = {}) {
   const ligou = await runTransaction(db, async (t) => {
-    const rodando = await lerRodando(t, pessoa.email)
-    if (rodando.demanda?.id === demandaId) return false
+    const ativos = await lerAtivos(t, pessoa.email)
+    if (ativos.some((a) => a.demandaId === demandaId)) return false
     const alvo = await t.get(refDemanda(demandaId))
-    if (rodando.demanda) fecharSessaoNaTransacao(t, rodando, agoraNoServidor(), { status: 'pausada' })
+    if (pausarOutras) pausarTodasNaTransacao(t, ativos, agoraNoServidor())
     const atual = alvo.data()
     const alteracoes = { status: 'em_andamento', atualizadoEm: serverTimestamp() }
     if (atual.status === 'concluida') {
       alteracoes.historico = [...(atual.historico ?? []), registro(pessoa.email, 'reabertura', 'status', 'Concluída', 'Em andamento')]
     }
     t.update(alvo.ref, alteracoes)
-    t.set(refCronometro(pessoa.email), { demandaId, area: atual.area, inicio: serverTimestamp(), rodando: true })
+    const ficam = pausarOutras ? [] : ativos
+    gravarAtivos(t, pessoa.email, [...ficam, { demandaId, area: atual.area, inicio: serverTimestamp(), demanda: undefined }])
     return true
   })
   if (ligou) medirRelogio(pessoa.email, demandaId, Date.now())
 }
 
-export function pausar(pessoa) {
+// Pausa uma demanda que está rodando; as outras continuam.
+export function pausar(pessoa, demandaId) {
   return runTransaction(db, async (t) => {
-    const rodando = await lerRodando(t, pessoa.email)
-    if (!rodando.demanda) return
-    fecharSessaoNaTransacao(t, rodando, agoraNoServidor(), { status: 'pausada' })
-    t.set(refCronometro(pessoa.email), cronometroParado)
+    const ativos = await lerAtivos(t, pessoa.email)
+    const alvo = ativos.find((a) => a.demandaId === demandaId)
+    if (!alvo) return
+    if (alvo.demanda) fecharSessaoNaTransacao(t, alvo, agoraNoServidor(), { status: 'pausada' })
+    gravarAtivos(t, pessoa.email, ativos.filter((a) => a !== alvo))
   })
 }
 
 // Conclui: fecha a sessão (se estiver rodando), grava a entrega de hoje e leva as outras datas para o Ajuste.
 export function concluir(demandaId, pessoa, extras = {}) {
   return runTransaction(db, async (t) => {
-    const rodando = await lerRodando(t, pessoa.email)
-    const estaRodando = rodando.demanda?.id === demandaId
-    const alvo = estaRodando ? rodando.demanda : await t.get(refDemanda(demandaId))
+    const ativos = await lerAtivos(t, pessoa.email)
+    const rodando = ativos.find((a) => a.demandaId === demandaId && a.demanda)
+    const alvo = rodando ? rodando.demanda : await t.get(refDemanda(demandaId))
     let atual = alvo.data()
-    if (estaRodando) {
+    if (rodando) {
       // Calcula a sessão sem gravar ainda: a gravação vai junto com a conclusão, num update só.
       const agora = agoraNoServidor()
-      const { segundos } = fecharSessao(rodando.cron.inicio.toMillis(), agora)
+      const { segundos } = fecharSessao(rodando.inicio.toMillis(), agora)
       atual = {
         ...atual,
-        sessoes: [...(atual.sessoes ?? []), { inicio: rodando.cron.inicio, fim: Timestamp.fromMillis(agora), seg: segundos }],
+        sessoes: [...(atual.sessoes ?? []), { inicio: rodando.inicio, fim: Timestamp.fromMillis(agora), seg: segundos }],
         tempoGastoSeg: (atual.tempoGastoSeg ?? 0) + segundos,
       }
     }
@@ -317,22 +335,23 @@ export function concluir(demandaId, pessoa, extras = {}) {
       historico: [...(atual.historico ?? []), registro(pessoa.email, 'conclusao', 'status', '', 'Concluída')],
       atualizadoEm: serverTimestamp(),
     })
-    if (estaRodando) t.set(refCronometro(pessoa.email), cronometroParado)
+    if (rodando) gravarAtivos(t, pessoa.email, ativos.filter((a) => a !== rodando))
   })
 }
 
-// Corrige o horário em que o cronômetro foi ligado (para quando esqueceu de ligar na hora).
-export function corrigirInicio(pessoa, novoInicio) {
+// Corrige o horário em que o cronômetro de uma demanda foi ligado (para quando esqueceu de ligar na hora).
+export function corrigirInicio(pessoa, demandaId, novoInicio) {
   return runTransaction(db, async (t) => {
-    const rodando = await lerRodando(t, pessoa.email)
-    if (!rodando.demanda) throw new Error('Nenhum cronômetro está rodando.')
+    const ativos = await lerAtivos(t, pessoa.email)
+    const rodando = ativos.find((a) => a.demandaId === demandaId && a.demanda)
+    if (!rodando) throw new Error('Essa demanda não está com o cronômetro rodando.')
     const atual = rodando.demanda.data()
     const novo = Timestamp.fromDate(novoInicio)
     t.update(rodando.demanda.ref, {
-      historico: [...(atual.historico ?? []), registro(pessoa.email, 'edicao_tempo', 'inicio', horaDe(rodando.cron.inicio), horaDe(novo))],
+      historico: [...(atual.historico ?? []), registro(pessoa.email, 'edicao_tempo', 'inicio', horaDe(rodando.inicio), horaDe(novo))],
       atualizadoEm: serverTimestamp(),
     })
-    t.update(refCronometro(pessoa.email), { inicio: novo })
+    gravarAtivos(t, pessoa.email, ativos.map((a) => (a === rodando ? { ...a, inicio: novo } : a)))
   })
 }
 

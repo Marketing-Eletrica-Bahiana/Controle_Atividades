@@ -3,6 +3,7 @@ import { NavLink } from 'react-router'
 import { useAcesso } from '../acesso/ProvedorAcesso.jsx'
 import { useCronometro } from '../dados/demandas.js'
 import { useAgora } from '../hooks/useAgora.js'
+import { ativosDoCronometro } from '../lib/cronometro.js'
 import { PAPEIS } from '../lib/papeis.js'
 import { formatarTempo } from '../lib/tempo.js'
 import { primeiroNome } from '../lib/texto.js'
@@ -48,16 +49,20 @@ export default function Layout({ telas, children }) {
   )
 }
 
-// Enquanto o cronômetro da pessoa roda, o tempo da sessão aparece no topo de qualquer tela.
+// Enquanto o cronômetro da pessoa roda, o tempo da sessão aparece no topo de qualquer tela. Com várias demandas
+// rodando juntas, mostra o tempo desde a mais antiga e quantas são.
 function CronometroNoCabecalho({ email }) {
   const { dados } = useCronometro(email)
-  const inicio = dados?.rodando ? dados.inicio?.toDate?.() : null
+  const ativos = ativosDoCronometro(dados)
+  const inicio = ativos[0]?.inicio?.toDate?.() ?? null
   const agora = useAgora(Boolean(inicio))
   if (!inicio) return null
+  const titulo = ativos.length > 1 ? `${ativos.length} cronômetros rodando. Abrir Meu Cronômetro` : 'Cronômetro rodando. Abrir Meu Cronômetro'
   return (
-    <NavLink to="/cronometro" className="pilula-cronometro" title="Cronômetro rodando. Abrir Meu Cronômetro">
+    <NavLink to="/cronometro" className="pilula-cronometro" title={titulo}>
       <Timer aria-hidden="true" />
       <span className="numero">{formatarTempo(Math.max(0, Math.floor((agora - inicio.getTime()) / 1000)))}</span>
+      {ativos.length > 1 && <span className="pilula-cronometro__quantas">{ativos.length}</span>}
     </NavLink>
   )
 }

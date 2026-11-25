@@ -1756,6 +1756,27 @@ p {
   gap: 8px;
 }
 
+/* Cada demanda rodando: tempo, nome, detalhe e os botões dela. */
+.cartao-cronometro__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cartao-cronometro__item .cartao-cronometro__acoes {
+  margin-top: 8px;
+}
+
+/* Várias rodando juntas: tempo menor e uma linha fina entre elas. */
+.cartao-cronometro--varias .cartao-cronometro__item + .cartao-cronometro__item {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.cartao-cronometro--varias .cartao-cronometro__tempo {
+  font-size: clamp(2.25rem, 6vw, 3.25rem);
+}
+
 .botao--pausar {
   background: var(--medio);
   color: var(--branco);
@@ -1802,6 +1823,20 @@ p {
 .pilula-cronometro svg {
   width: 16px;
   height: 16px;
+}
+
+/* Quantas demandas estão rodando juntas, ao lado do tempo. */
+.pilula-cronometro__quantas {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: var(--raio-pilula);
+  background: var(--branco);
+  color: var(--marinho);
+  font-size: 0.75rem;
 }
 
 .numero {

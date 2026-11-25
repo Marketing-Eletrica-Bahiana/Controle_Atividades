@@ -16,10 +16,12 @@ import { useAgora } from '../../hooks/useAgora.js'
 import { formatarData, formatarMes, hojeISO, mesDe } from '../../lib/datas.js'
 import { mensagemDeErro } from '../../lib/erros.js'
 import { entraNoCalendario } from '../../lib/postagens.js'
-import { segundosPorDia } from '../../lib/semana.js'
+import { ativosDoCronometro } from '../../lib/cronometro.js'
+import { horasDeTrabalho, segundosPorDia } from '../../lib/semana.js'
 import { COLUNAS_PADRAO } from '../../lib/quadro.js'
 import { formatarTempo } from '../../lib/tempo.js'
 import CartaoCronometro from './CartaoCronometro.jsx'
+import { escolherComoIniciar } from './escolherComoIniciar.js'
 import FormDemanda from './FormDemanda.jsx'
 import { JanelaConcluir, JanelaCorrigirInicio, JanelaTempoManual } from './JanelasDoCronometro.jsx'
 import ListaDeHoje from './ListaDeHoje.jsx'
@@ -44,26 +46,38 @@ export default function MeuCronometro() {
   const hoje = hojeISO()
   const cronometro = useCronometro(membro.email)
   const minhas = useMinhasDemandas(minhasAreas.map((a) => a.id), membro.email, mesDe(hoje))
-  const rodandoId = cronometro.dados?.rodando ? cronometro.dados.demandaId : null
-  const inicio = cronometro.dados?.rodando ? cronometro.dados.inicio?.toDate?.() : null
-  const agora = useAgora(Boolean(rodandoId))
-  const decorrido = inicio ? Math.max(0, Math.floor((agora - inicio.getTime()) / 1000)) : 0
+  // Várias demandas podem rodar ao mesmo tempo (desde 25/11/2026). Cada uma tem o próprio início.
+  const ativos = useMemo(() => ativosDoCronometro(cronometro.dados), [cronometro.dados])
+  const rodandoIds = useMemo(() => new Set(ativos.map((a) => a.demandaId)), [ativos])
+  const agora = useAgora(ativos.length > 0)
+  const decorridoDe = (id) => {
+    const inicio = ativos.find((a) => a.demandaId === id)?.inicio?.toDate?.()
+    return inicio ? Math.max(0, Math.floor((agora - inicio.getTime()) / 1000)) : 0
+  }
 
   const [ocupado, setOcupado] = useState(false)
   const [editando, setEditando] = useState(null)
   const [concluindo, setConcluindo] = useState(null)
   const [tempoManual, setTempoManual] = useState(false)
-  const [corrigindo, setCorrigindo] = useState(false)
+  const [corrigindo, setCorrigindo] = useState(null)
 
   const todas = minhas.dados ?? []
-  const demandaRodando = todas.find((d) => d.id === rodandoId)
-  const totalDoDia =
-    todas.reduce((soma, d) => soma + (segundosPorDia(d).get(hoje) ?? 0), 0) + decorrido
+  const rodando = ativos
+    .map((a) => ({ demanda: todas.find((d) => d.id === a.demandaId), inicio: a.inicio?.toDate?.() ?? null, decorrido: decorridoDe(a.demandaId) }))
+    .filter((r) => r.demanda)
+  // Horas de trabalho do dia: cada demanda soma o próprio tempo, mas o trecho em que rodaram juntas conta uma vez só.
+  const itensDeHoje = todas
+    .map((d) => ({ dia: hoje, demanda: d, segundos: (segundosPorDia(d).get(hoje) ?? 0) + (rodandoIds.has(d.id) ? decorridoDe(d.id) : 0) }))
+    .filter((i) => i.segundos > 0)
+  const vivos = rodando
+    .filter((r) => r.inicio && hojeISO(r.inicio) === hoje)
+    .map((r) => ({ email: membro.email, dia: hoje, inicio: r.inicio.getTime(), fim: agora }))
+  const totalDoDia = horasDeTrabalho(itensDeHoje, vivos)
   const daArea = todas.filter((d) => d.area === area)
   const abertas = daArea.filter((d) => d.status !== 'concluida')
   const deHoje = daArea
     .filter((d) => d.status !== 'concluida' || d.dataEntrega === hoje || (d.sessoes ?? []).some((s) => diaDaSessao(s) === hoje))
-    .sort((a, b) => (b.id === rodandoId) - (a.id === rodandoId) || (a.status === 'concluida') - (b.status === 'concluida') || (b.numero ?? 0) - (a.numero ?? 0))
+    .sort((a, b) => rodandoIds.has(b.id) - rodandoIds.has(a.id) || (a.status === 'concluida') - (b.status === 'concluida') || (b.numero ?? 0) - (a.numero ?? 0))
   const nomeDaArea = (id) => minhasAreas.find((a) => a.id === id)?.nome ?? id
 
   async function agir(acao, mensagem) {
@@ -73,15 +87,8 @@ export default function MeuCronometro() {
     return deuCerto
   }
 
-  // Um cronômetro por pessoa: antes de ligar outro, pergunta se pode pausar o atual.
-  async function podeTrocar(nomeNovo) {
-    if (!demandaRodando) return true
-    return confirmar({
-      titulo: 'Pausar o cronômetro atual?',
-      texto: `"${demandaRodando.nome}" está rodando. Ela será pausada para começar "${nomeNovo}".`,
-      botao: 'Pausar e começar',
-    })
-  }
+  // Com outra demanda rodando, a pessoa escolhe: rodar junto ou pausar a(s) outra(s). null quando cancela.
+  const comoIniciar = (nomeNovo) => escolherComoIniciar(confirmar, nomeNovo, rodando.map((r) => r.demanda.nome))
 
   // O cartão vem depois da demanda: se ele falhar, o tempo continua valendo e a pessoa é avisada.
   async function criarCartaoDe(demandaId, dados, concluidaEm = null) {
@@ -96,17 +103,19 @@ export default function MeuCronometro() {
   const noCalendario = (dados) => (dados.postagem?.data && entraNoCalendario(dados) ? ` No calendário em ${formatarData(dados.postagem.data)}.` : '')
 
   async function iniciarNova(dados) {
-    if (!(await podeTrocar(dados.nome))) return false
+    const escolha = await comoIniciar(dados.nome)
+    if (!escolha) return false
     return agir(async () => {
-      const id = await criarEIniciar(dados, pessoa)
+      const id = await criarEIniciar(dados, pessoa, escolha)
       await criarCartaoDe(id, dados)
     }, `Cronômetro rodando: ${dados.nome}.${noCalendario(dados)}`)
   }
 
   async function retomarDemanda(demanda) {
-    if (demanda.id === rodandoId) return true
-    if (!(await podeTrocar(demanda.nome))) return false
-    return agir(() => retomar(demanda.id, pessoa), `Cronômetro rodando: ${demanda.nome}`)
+    if (rodandoIds.has(demanda.id)) return true
+    const escolha = await comoIniciar(demanda.nome)
+    if (!escolha) return false
+    return agir(() => retomar(demanda.id, pessoa, escolha), `Cronômetro rodando: ${demanda.nome}`)
   }
 
   function pedirConclusao(demanda) {
@@ -155,15 +164,14 @@ export default function MeuCronometro() {
       </header>
 
       <CartaoCronometro
-        demanda={demandaRodando}
-        decorrido={decorrido}
+        rodando={rodando}
         totalDoDia={totalDoDia}
         variasAreas={minhasAreas.length > 1}
-        nomeDaArea={minhasAreas.length > 1 && demandaRodando ? nomeDaArea(demandaRodando.area) : ''}
+        nomeDaArea={(id) => (minhasAreas.length > 1 ? nomeDaArea(id) : '')}
         ocupado={ocupado}
-        aoPausar={() => agir(() => pausar(pessoa), 'Cronômetro pausado.')}
+        aoPausar={(demanda) => agir(() => pausar(pessoa, demanda.id), `${demanda.nome} pausada.`)}
         aoConcluir={pedirConclusao}
-        aoCorrigir={() => setCorrigindo(true)}
+        aoCorrigir={(r) => setCorrigindo(r)}
       />
 
       {minhasAreas.length > 1 && (
@@ -191,8 +199,8 @@ export default function MeuCronometro() {
       ) : (
         <ListaDeHoje
           demandas={deHoje}
-          rodandoId={rodandoId}
-          decorrido={decorrido}
+          rodandoIds={rodandoIds}
+          decorridoDe={decorridoDe}
           ocupado={ocupado}
           aoRetomar={retomarDemanda}
           aoConcluir={pedirConclusao}
@@ -213,7 +221,7 @@ export default function MeuCronometro() {
         area={area}
         nomeDaArea={minhasAreas.length > 1 ? nomeDaArea(area) : ''}
         pessoa={pessoa}
-        demandas={[...daArea].filter((d) => d.id !== rodandoId).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))}
+        demandas={[...daArea].filter((d) => !rodandoIds.has(d.id)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))}
         abertas={abertas}
         aoCriar={registrarManual}
         aoSalvar={(id, dados) => agir(() => adicionarTempoManual(id, dados, membro.email), 'Tempo adicionado.')}
@@ -221,10 +229,11 @@ export default function MeuCronometro() {
         aoFechar={() => setTempoManual(false)}
       />
       <JanelaCorrigirInicio
-        aberta={corrigindo}
-        inicioAtual={inicio}
-        aoSalvar={(novo) => agir(() => corrigirInicio(pessoa, novo), 'Horário de início corrigido.')}
-        aoFechar={() => setCorrigindo(false)}
+        aberta={Boolean(corrigindo)}
+        nome={corrigindo?.demanda.nome}
+        inicioAtual={corrigindo?.inicio ?? null}
+        aoSalvar={(novo) => agir(() => corrigirInicio(pessoa, corrigindo.demanda.id, novo), 'Horário de início corrigido.')}
+        aoFechar={() => setCorrigindo(null)}
       />
       {janelaConfirmar}
     </section>
