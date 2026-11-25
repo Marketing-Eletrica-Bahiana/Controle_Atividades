@@ -83,5 +83,28 @@ service cloud.firestore {
     match /cronometros/{id} {
       allow read, write: if ativo() && id == email() && papel() in ['admin', 'equipe'];
     }
+
+    // Imagens do cartão e da demanda (desde 25/11/2026), reduzidas no navegador. Todo membro vê; admin e equipe
+    // enviam em nome próprio; quem apaga é o admin ou quem enviou. A única mudança permitida é a demanda dona, ao
+    // juntar demandas repetidas.
+    match /imagens/{id} {
+      allow read: if ativo();
+      allow create: if (admin() || equipe())
+        && request.resource.data.enviadoPor == email()
+        && request.resource.data.miniatura is string
+        && request.resource.data.miniatura.size() < 100000;
+      allow update: if (admin() || equipe())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['demandaId']);
+      allow delete: if admin() || (equipe() && resource.data.enviadoPor == email());
+    }
+    // A imagem inteira, à parte, para a lista carregar só as miniaturas.
+    match /imagensConteudo/{id} {
+      allow read: if ativo();
+      allow create: if (admin() || equipe())
+        && request.resource.data.enviadoPor == email()
+        && request.resource.data.dados is string
+        && request.resource.data.dados.size() < 1000000;
+      allow delete: if admin() || (equipe() && resource.data.enviadoPor == email());
+    }
   }
 }

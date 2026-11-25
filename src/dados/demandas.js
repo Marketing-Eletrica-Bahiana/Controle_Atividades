@@ -5,6 +5,7 @@ import {
   arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, Timestamp, where, writeBatch,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
+import { apagarImagensNoLote, moverImagensNoLote } from './imagens.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarAjustes, formatarData, hojeISO, mesDe } from '../lib/datas.js'
 import { ativosDoCronometro, cronometroComAtivos } from '../lib/cronometro.js'
@@ -486,6 +487,7 @@ async function tirarDoCartaoNoLote(lote, cartaoId, demandaId, novoVinculo = null
 export async function excluirDemanda(demanda) {
   const lote = writeBatch(db)
   await tirarDoCartaoNoLote(lote, demanda.cartaoId, demanda.id)
+  await apagarImagensNoLote(lote, { demandaId: demanda.id })
   lote.delete(refDemanda(demanda.id))
   await renumerarNoLote(lote, demanda.area, demanda.responsavelEmail, demanda.mes, { ignorar: [demanda.id] })
   await lote.commit()
@@ -518,6 +520,7 @@ export async function juntarDemandas(principal, repetida, quem) {
   const vinculoDaPrincipal = { demandaId: principal.id, area: principal.area, email: principal.responsavelEmail, nome: principal.responsavelNome }
   const lote = writeBatch(db)
   await tirarDoCartaoNoLote(lote, repetida.cartaoId, repetida.id, herdaCartao ? vinculoDaPrincipal : null)
+  await moverImagensNoLote(lote, repetida.id, principal.id)
   lote.update(refDemanda(principal.id), {
     tempoGastoSeg,
     dataEntrega,

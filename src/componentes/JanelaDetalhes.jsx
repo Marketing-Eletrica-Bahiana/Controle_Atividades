@@ -1,6 +1,7 @@
 import { Pencil } from 'lucide-react'
 import { formatarAjustes, formatarData, formatarMes } from '../lib/datas.js'
 import { formatarTempo } from '../lib/tempo.js'
+import Imagens from './Imagens.jsx'
 import Janela from './Janela.jsx'
 import { EtiquetaSituacao } from './Seletores.jsx'
 
@@ -72,6 +73,9 @@ export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => emai
               </div>
             ))}
           </dl>
+          <h3 className="bloco__subtitulo">Imagens</h3>
+          {/* Quem pode editar a demanda também pode acrescentar imagens nela. */}
+          <Imagens dono={{ demandaId: demanda.id }} podeAdicionar={Boolean(aoEditar)} />
           <h3 className="bloco__subtitulo">Histórico</h3>
           {historico.length ? (
             <ol className="historico">

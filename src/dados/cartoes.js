@@ -1,13 +1,14 @@
 // Leitura e gravação dos cartões do quadro. O cartão é separado da demanda: ele existe antes de alguém
 // ligar o cronômetro e pode reunir o tempo de várias pessoas. Cada pessoa tem a própria demanda ligada a ele.
 
-import { arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useConsulta, useConsultas } from '../hooks/useConsulta.js'
 import { formatarData, hojeISO } from '../lib/datas.js'
 import { camposDaPostagem, ehPostagem, mudarPostagem, POSTAGEM_VAZIA, postagemDasOpcoes, postagemPadrao, postagensIguais, resumoDaPostagem, rotuloDaData, tiposDaPostagem } from '../lib/postagens.js'
 import { camposDeEntrega, colunaDaEtiqueta, COLUNA_ENTREGUES, COLUNAS_PADRAO, etiquetaDoPublico, vinculosSemDemanda } from '../lib/quadro.js'
 import { excluirDemanda, refDemanda, registro } from './demandas.js'
+import { apagarImagensNoLote } from './imagens.js'
 
 const colecao = () => collection(db, 'cartoes')
 const refCartao = (id) => doc(db, 'cartoes', id)
@@ -187,7 +188,13 @@ export const esquecerDemanda = (cartao, demandaId) =>
   updateDoc(refCartao(cartao.id), { vinculos: vinculosSemDemanda(cartao.vinculos, demandaId), atualizadoEm: serverTimestamp() })
 
 // Só admin. As demandas ligadas continuam existindo, com o tempo registrado.
-export const excluirCartao = (cartao) => deleteDoc(refCartao(cartao.id))
+// O cartão sai junto com as imagens dele (as das demandas ficam com as demandas).
+export async function excluirCartao(cartao) {
+  const lote = writeBatch(db)
+  await apagarImagensNoLote(lote, { cartaoId: cartao.id })
+  lote.delete(refCartao(cartao.id))
+  await lote.commit()
+}
 
 // Demandas ligadas aos cartões, de qualquer área e pessoa, lidas uma a uma. As já apagadas ficam de fora.
 export async function demandasDosCartoes(cartoes) {
@@ -199,6 +206,6 @@ export async function demandasDosCartoes(cartoes) {
 // Só admin. Apaga os cartões do Quadro, e com isso do calendário. Com as demandas, apaga também elas, com o tempo,
 // uma a uma para renumerar cada mês. Os cartões vão antes: assim nenhum fica apontando para demanda apagada.
 export async function excluirCartoes(cartoes, demandas = []) {
-  for (const cartao of cartoes) await deleteDoc(refCartao(cartao.id))
+  for (const cartao of cartoes) await excluirCartao(cartao)
   for (const demanda of demandas) await excluirDemanda(demanda)
 }

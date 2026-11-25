@@ -2808,6 +2808,89 @@ button.abas__item.ativo {
   border-top: 1px solid var(--medio-20);
 }
 
+/* Imagens do cartão e da demanda: miniaturas quadradas e a imagem grande no visualizador. */
+.imagens {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  border-radius: var(--raio);
+  transition: outline-color var(--transicao);
+}
+
+.imagens--arrastando {
+  outline: 2px dashed var(--brilhante);
+  outline-offset: 4px;
+  background: var(--medio-5);
+}
+
+.imagens__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.imagens__miniatura {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--medio-20);
+  border-radius: var(--raio);
+  background: var(--medio-5);
+  cursor: zoom-in;
+  transition: transform var(--transicao);
+}
+
+.imagens__miniatura:hover {
+  transform: translateY(-2px);
+}
+
+.imagens__miniatura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagens__enviar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.visualizador {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visualizador__imagem {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 0 auto;
+  border-radius: var(--raio);
+}
+
+.visualizador__barra,
+.visualizador__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.visualizador__barra {
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
 .janela-cartao__botoes {
   display: flex;
   flex-wrap: wrap;

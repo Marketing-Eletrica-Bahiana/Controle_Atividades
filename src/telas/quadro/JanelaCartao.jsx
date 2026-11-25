@@ -3,6 +3,7 @@ import { ClockPlus, Copy, ExternalLink, Pause, Play, Send, Trash2 } from 'lucide
 import { useAvisos } from '../../componentes/Avisos.jsx'
 import CampoData from '../../componentes/CampoData.jsx'
 import { ErroCampo } from '../../componentes/Campos.jsx'
+import Imagens from '../../componentes/Imagens.jsx'
 import CamposDaPostagem, { OpcoesDaPostagem } from '../../componentes/CamposDaPostagem.jsx'
 import Janela from '../../componentes/Janela.jsx'
 import { dataHora } from '../../componentes/JanelaDetalhes.jsx'
@@ -192,6 +193,10 @@ function Conteudo({
         aoCronometro={() => aoCronometro(cartao)}
         aoTempoManual={() => aoTempoManual(cartao)}
       />
+      <section className="janela-cartao__secao">
+        <h3 className="bloco__subtitulo">Imagens</h3>
+        <Imagens dono={{ cartaoId: cartao.id }} podeAdicionar={podeMexer} />
+      </section>
       <Comentarios cartao={cartao} pessoa={pessoa} podeMexer={podeMexer} />
 
       {(cartao.historico ?? []).length > 0 && (

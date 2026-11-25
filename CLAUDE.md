@@ -298,6 +298,7 @@ do Firestore e esconde o que o papel da pessoa não pode usar. O menu por papel 
   (`{id, url, ultimaAtividade, importadoEm}`). O ID desses documentos é `trello-{id do cartão}`.
 - `config/quadro`: `colunas` (lista de `{id, nome}`). Sem esse documento, valem as colunas padrão de
   `src/lib/quadro.js`.
+- `imagens/{id}` e `imagensConteudo/{id}`: ver "Imagens".
 - `cronometros/{email}`: `ativos` (mapa `{ [demandaId]: { area, inicio } }`, `inicio` em serverTimestamp) e `rodando`. Antes de 25/11/2026: `demandaId`, `area`, `inicio`, `rodando`.
 
 Convenções de gravação (definidas na Fase 2):
@@ -410,9 +411,31 @@ Código em `src/lib/quadro.js` (regras puras), `src/dados/cartoes.js` e `src/tel
 - Excluir ou juntar uma demanda atualiza `vinculos` no cartão: ele não pode apontar para demanda apagada. Ao
   juntar, a que fica herda o cartão da que sai, se ainda não tiver um. Não dá para juntar demanda em
   andamento: apagá-la deixaria o cronômetro preso.
-- Anexos ainda não entram no quadro: o projeto está no plano gratuito (Spark) do Firebase. Arquivos seguem
-  na pasta da rede, com o endereço no campo Caminho do cartão. O navegador não deixa um site abrir pastas do
-  computador: o botão Copiar leva o caminho para colar no Explorador de Arquivos, e quem só lê também pode copiar.
+- Arquivos de trabalho seguem na pasta da rede, com o endereço no campo Caminho do cartão. O navegador não deixa um site
+  abrir pastas do computador: o botão Copiar leva o caminho para colar no Explorador de Arquivos, e quem só lê também
+  pode copiar. Imagens entram no cartão e na demanda desde 25/11/2026 (ver "Imagens").
+
+## Imagens (pedido da pessoa em 25/11/2026)
+
+Código em `src/lib/imagens.js` (tamanhos, testes), `src/lib/reduzirImagem.js` (canvas), `src/dados/imagens.js` e
+`src/componentes/Imagens.jsx`.
+
+- Ficam no cartão do Quadro (seção Imagens da janela do cartão, também pelo Calendário) e na demanda (seção Imagens dos
+  Detalhes, em Demandas e Semana). No cartão, admin e equipe acrescentam; na demanda, quem pode editá-la. Excluir: o
+  admin ou quem enviou. Todo membro vê.
+- O projeto continua no plano gratuito (Spark), que não guarda arquivos: por escolha dela, a imagem é reduzida no navegador
+  (lado maior 1600 px, JPEG, fundo branco no lugar da transparência, até cerca de 900 mil caracteres em base64) e
+  guardada no próprio Firestore. `imagens/{id}` tem os dados, o dono (`cartaoId` ou `demandaId`) e uma miniatura de
+  320 px; `imagensConteudo/{id}` tem a imagem inteira, lida só ao abrir. Assim abrir o cartão lê pouco. O espaço gratuito
+  do Firestore (1 GiB) cabe alguns milhares de imagens.
+- Enviar: botão "Adicionar imagens" (várias de uma vez), arrastar para a seção ou colar com Ctrl+V (a colada recebe o nome
+  "Imagem colada em DD/MM/AAAA HH:MM"). JPG, PNG, WEBP, GIF e BMP; SVG e HEIC (iPhone) não abrem no navegador.
+- O visualizador mostra a imagem grande, quem enviou e quando, o tamanho, setas entre as imagens, Baixar (sempre .jpg) e
+  Excluir.
+- Excluir um cartão apaga as imagens dele; excluir uma demanda apaga as dela; juntar demandas passa as imagens da que sai
+  para a que fica (a única alteração que as regras deixam fazer numa imagem).
+- As coleções `imagens` e `imagensConteudo` precisam estar nas regras publicadas no console **antes** de o código ir para
+  o ar (texto em `firestore.rules`, com os nomes de função do console).
 
 ## Calendário de postagens (Fase 9)
 
@@ -653,7 +676,7 @@ Colunas nesta ordem:
   admin, em `areas`, `membros`, `solicitacoes` (apaga ao liberar ou recusar), `tipos`,
   `palavrasChave`, `config/listas`, `config/quadro`, `demandas` e `cartoes`. As regras não são publicadas
   pelo GitHub Actions: coleção nova precisa estar publicada no console **antes** de o código ir para o ar.
-  `cartoes` foi publicada à mão em 04/11/2026.
+  `cartoes` foi publicada à mão em 04/11/2026; `imagens` e `imagensConteudo`, em 25/11/2026 (com `membro()` e `meuEmail()`), antes do código.
 - Coluna Responsável na `relatorio_designers_atualizado.xlsx` antes da importação real.
 - Nomes trocados no par de logos azuis: se a marca corrigir os arquivos, ajustar a tabela de logos
   e `src/lib/marca.js`.
