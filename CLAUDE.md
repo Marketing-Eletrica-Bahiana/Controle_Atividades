@@ -9,6 +9,12 @@ próprio cronômetro, que só ela vê. Gestores e diretoria só leem.
 
 ## Como trabalhar neste projeto
 
+- **Projeto editado em mais de um computador (pedido da pessoa em 26/11/2026).** Antes de qualquer alteração, em
+  qualquer conversa: rodar `git pull` para trazer o que foi feito no outro computador e ler a seção "Registro de
+  alterações" do `README.md`, das entradas mais recentes para as mais antigas. Depois de cada alteração: escrever uma
+  entrada no topo desse registro (data, o que mudou em palavras simples, arquivos principais e o que ficou pendente),
+  no mesmo commit da alteração. Mudança feita direto no Firebase (dados, tipos, regras) também vai para o registro.
+  Sem `git pull`, um computador pode desfazer o trabalho do outro.
 - Trabalhar em fases. Ao fim de cada fase: testar, fazer o commit, enviar para o GitHub e explicar
   em português simples como conferir. Esperar a aprovação antes de começar a fase seguinte.
 - Toda a interface em português do Brasil.
