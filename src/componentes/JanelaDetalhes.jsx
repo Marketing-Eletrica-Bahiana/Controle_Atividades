@@ -1,6 +1,8 @@
 import { Pencil } from 'lucide-react'
 import { formatarAjustes, formatarData, formatarMes } from '../lib/datas.js'
 import { formatarTempo } from '../lib/tempo.js'
+import BotaoCronometroDaDemanda from './BotaoCronometroDaDemanda.jsx'
+import { useConfirmar } from './Confirmar.jsx'
 import Imagens from './Imagens.jsx'
 import Janela from './Janela.jsx'
 import { EtiquetaSituacao } from './Seletores.jsx'
@@ -27,6 +29,7 @@ export const dataHora = (ts) => {
 // Detalhes da demanda com todos os campos e o histórico de alterações.
 // "aoEditar" só vem quando a pessoa pode editar essa demanda; sem ele, o botão não aparece.
 export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => email, aoEditar = null, aoFechar }) {
+  const [janelaConfirmar, confirmar] = useConfirmar()
   const campos = demanda
     ? [
         ['Nº', demanda.numero],
@@ -57,6 +60,7 @@ export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => emai
             <h3 className="nome-demanda nome-demanda--grande">{demanda.nome}</h3>
             <div className="detalhes-demanda__acoes">
               <EtiquetaSituacao status={demanda.status} />
+              <BotaoCronometroDaDemanda demanda={demanda} confirmar={confirmar} />
               {aoEditar && (
                 <button type="button" className="botao botao--secundario botao--pequeno" onClick={() => aoEditar(demanda)}>
                   <Pencil aria-hidden="true" />
@@ -114,6 +118,7 @@ export default function JanelaDetalhes({ demanda, nomeDaPessoa = (email) => emai
               </ol>
             </>
           )}
+          {janelaConfirmar}
         </div>
       )}
     </Janela>

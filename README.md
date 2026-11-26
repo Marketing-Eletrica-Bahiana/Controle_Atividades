@@ -43,6 +43,16 @@ Desde 26/11/2026 o projeto é editado em mais de um computador. Para nada se per
 As mais recentes primeiro. Cada entrada diz o que mudou em palavras simples, os arquivos principais e o envio
 (commit) correspondente. Os detalhes de cada regra estão no [CLAUDE.md](CLAUDE.md).
 
+### 26/11/2026 · Cronômetro nos detalhes da demanda
+- Na janela de detalhes (telas Demandas e Semana), quem é responsável pela demanda tem o botão "Retomar cronômetro"
+  (pausada), "Reabrir e retomar" (concluída, com confirmação) ou "Pausar cronômetro" (rodando). Com outra demanda
+  rodando, pergunta "Rodar junto" ou "Pausar a outra", como no Meu Cronômetro.
+- O botão não aparece para gestão, diretoria nem para demanda de outra pessoa: o cronômetro é de cada um.
+- No celular, os botões do topo dos detalhes descem de linha em vez de serem cortados.
+- Arquivos: `src/componentes/BotaoCronometroDaDemanda.jsx` (novo), `src/componentes/JanelaDetalhes.jsx`,
+  `src/styles.css`.
+- Pendente: nada. Sem mudança no Firebase.
+
 ### 26/11/2026 · Registro de alterações e uso em mais de um computador
 - Este registro no README e a regra no CLAUDE.md: ler antes de começar e anotar depois de cada alteração.
 - Pacote `Controle_Atividades_outro_PC.zip` para levar o projeto a outro computador (sem `node_modules` e `dist`).

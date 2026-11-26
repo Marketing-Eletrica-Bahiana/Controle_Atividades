@@ -376,6 +376,11 @@ Código em `src/dados/demandas.js` (gravação, em transações) e `src/telas/cr
   demanda nasce sem esses quatro (`errosDaClassificacao`, no Meu Cronômetro, no "Iniciar o cronômetro" do cartão e no
   lançamento manual de demanda nova); a janela de concluir é para as antigas, que ficaram sem.
 - Reabrir: concluída volta para "pausada" e aparece na busca do formulário para retomar.
+- Cronômetro nos detalhes da demanda (pedido da pessoa em 26/11/2026, `src/componentes/BotaoCronometroDaDemanda.jsx`):
+  na janela de detalhes de Demandas e Semana, o responsável (admin ou equipe) retoma a pausada, reabre e retoma a
+  concluída (com confirmação; `retomar` registra a reabertura) ou pausa a que está rodando. Com outra rodando, usa
+  `escolherComoIniciar`, lendo os nomes das que rodam com `lerDemanda`, porque podem ser de outro mês. Para a demanda
+  de outra pessoa o botão não aparece, porque `cronometros/{email}` é de quem está logado.
 - `historico[].acao`: `criacao`, `conclusao`, `reabertura`, `edicao`, `edicao_tempo`,
   `tempo_manual`, `juncao`, `importacao`. `antes` e `depois` já vêm formatados para leitura
   (DD/MM/AAAA, HH:MM:SS).
